@@ -22,7 +22,7 @@
 #include <tbb/blocked_range.h>
 #endif
 
-#include "blake3.h" // Include Blake3 header
+#include "blake3/blake3.h" // Include Blake3 header
 
 #ifndef NONCE_SIZE
 #define NONCE_SIZE 5 // Default nonce size

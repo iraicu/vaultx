@@ -1,4 +1,4 @@
-NAME=blake3
+NAME=blake3/blake3
 CC=gcc
 CCP=g++-14
 #torus
