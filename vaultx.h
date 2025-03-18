@@ -1,3 +1,6 @@
+#ifndef VAULTX_H
+#define VAULTX_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
@@ -51,6 +54,7 @@ bool BENCHMARK = false;
 bool HASHGEN = true;
 bool SEARCH = false;
 bool SEARCH_BATCH = false;
+bool TABLE2 = true; 
 size_t PREFIX_SEARCH_SIZE = 1;
 int NUM_THREADS = 0;
 
@@ -73,3 +77,7 @@ typedef struct
     size_t count; // Number of records in the bucket
     size_t flush; // Number of flushes of bucket
 } Bucket;
+
+int hamming_distance(int x, int y);
+
+#endif // VAULTX_H
