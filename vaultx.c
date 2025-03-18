@@ -1,78 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <omp.h>
-#include <time.h>
-#include <unistd.h> // For getpid()
-#include <string.h> // For strcmp
-#include <getopt.h> // For getopt_long
-#include <stdbool.h>
-#include <fcntl.h>     // For open, O_RDWR, O_CREAT, O_TRUNC
-#include <sys/types.h> // For data types
-#include <sys/stat.h>  // For file modes
-#include <math.h>
-#include <errno.h>
-
-#ifdef __linux__
-#include <linux/fs.h> // Provides `syncfs` on Linux
-#endif
-
-#ifdef __cplusplus
-// Your C++-specific code here
-#include <tbb/parallel_for.h>
-#include <tbb/blocked_range.h>
-#endif
-
-#include "blake3/blake3.h" // Include Blake3 header
-
-#ifndef NONCE_SIZE
-#define NONCE_SIZE 5 // Default nonce size
-#endif
-
-#ifndef RECORD_SIZE
-#define RECORD_SIZE 8 // Default record size
-#endif
-
-#define HASH_SIZE (RECORD_SIZE - NONCE_SIZE)
-#define PREFIX_SIZE 3 // Example prefix size for getBucketIndex
-
-unsigned long long num_buckets = 1;
-unsigned long long num_records_in_bucket = 1;
-unsigned long long rounds = 1;
-
-size_t BATCH_SIZE = 1024;
-
-bool VERIFY = false;
-bool DEBUG = false;
-bool writeData = false;
-bool writeDataFinal = false;
-bool MEMORY_WRITE = true;
-bool CIRCULAR_ARRAY = false;
-bool BENCHMARK = false;
-bool HASHGEN = true;
-bool SEARCH = false;
-bool SEARCH_BATCH = false;
-size_t PREFIX_SEARCH_SIZE = 1;
-int NUM_THREADS = 0;
-
-// Structure to hold a record with nonce and hash
-typedef struct
-{
-    uint8_t hash[HASH_SIZE];   // 32-byte Blake3 hash
-    uint8_t nonce[NONCE_SIZE]; // Nonce to store the seed
-} MemoAllRecord;
-
-// Structure to hold a record with nonce
-typedef struct
-{
-    uint8_t nonce[NONCE_SIZE]; // Nonce to store the seed
-} MemoRecord;
-
-typedef struct
-{
-    MemoRecord *records;
-    size_t count; // Number of records in the bucket
-    size_t flush; // Number of flushes of bucket
-} Bucket;
+#include <vaultx.h>
 
 // Function to display usage information
 void print_usage(char *prog_name)
@@ -1021,6 +947,7 @@ int main(int argc, char *argv[])
         {"batch-size", required_argument, 0, 'b'},
         {"memory_write", required_argument, 0, 'w'},
         {"circular_array", required_argument, 0, 'c'},
+        {"table2", required_argument, 0, '2'},
         {"verify", required_argument, 0, 'v'},
         {"search", required_argument, 0, 's'},
         {"prefix_search_size", required_argument, 0, 'p'},
@@ -1029,13 +956,11 @@ int main(int argc, char *argv[])
         {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0}};
 
-    // add option x for benchmark
-
     int opt;
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:b:w:c:v:s:p:x:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:b:w:c:2:v:s:p:x:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -1125,6 +1050,15 @@ int main(int argc, char *argv[])
                 CIRCULAR_ARRAY = false;
             }
             break;
+        case '2':
+            if (strcmp(optarg, "true") == 0)
+            {
+                TABLE2 = true;
+            }
+            else
+            {
+                TABLE2 = false;
+            }
         case 'v':
             if (strcmp(optarg, "true") == 0)
             {
@@ -1819,6 +1753,14 @@ int main(int argc, char *argv[])
         {
             printf("%s %d %lu %d %llu %.2f %zu %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
             return 0;
+        }
+
+        if (TABLE2)
+        {
+            // printf("TABLE2 has not been implemented yet...\n");
+            // Find matches in Table1, those hashes that are matched will be stored in Table2
+            // Table2 will be used to store the final hashes
+            
         }
     }
     // end of HASHGEN
