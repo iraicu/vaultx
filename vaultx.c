@@ -1,4 +1,4 @@
-#include <vaultx.h>
+#include "vaultx.h"
 
 // Function to display usage information
 void print_usage(char *prog_name)
@@ -254,7 +254,6 @@ long get_file_size(const char *filename)
 
 size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
 {
-    // const size_t BATCH_SIZE = 1000000; // 1 million MemoRecords per batch
     MemoRecord *buffer = NULL;
     size_t total_records = 0;
     size_t zero_nonce_count = 0;
@@ -642,7 +641,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
 }
 
 // not sure if the search of more than PREFIX_LENGTH works
-void search_memo_records_batch(const char *filename, int num_lookups, int search_size)
+void search_memo_records_batch(const char *filename, int num_lookups, int search_size, int num_threads)
 {
     // Seed the random number generator with the current time
     srand((unsigned int)time(NULL));
@@ -650,7 +649,6 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     // uint8_t *SEARCH_UINT8 = hexStringToByteArray("000000");
     size_t SEARCH_LENGTH = search_size;
     // uint8_t *SEARCH_UINT8 = convert_string_to_uint8_array(SEARCH_STRING);
-    // num_records_in_bucket
     MemoRecord *buffer = NULL;
     // size_t total_records = 0;
     // size_t zero_nonce_count = 0;
@@ -682,7 +680,6 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
         printf("SEARCH: num_buckets=%llu\n", num_buckets_search);
         printf("SEARCH: num_records_in_bucket=%llu\n", num_records_in_bucket_search);
     }
-    // printf("SEARCH: SEARCH_STRING=%s\n",SEARCH_STRING);
 
     // Open the file for reading in binary mode
     file = fopen(filename, "rb");
@@ -743,7 +740,7 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     if (!BENCHMARK)
         printf("searched for %d lookups of %d bytes long, found %d, not found %d in %.2f seconds, %.4f ms per lookup\n", num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
     else
-        printf("%s %d %zu %llu %llu %d %d %d %d %.2f %.2f\n", filename, NUM_THREADS, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
+        printf("%s %d %zu %llu %llu %d %d %d %d %.2f %.2f\n", filename, num_threads, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
     // return NULL;
 }
 
@@ -852,7 +849,6 @@ int move_file_overwrite(const char *source_path, const char *destination_path)
         return EXIT_FAILURE;
     }
 
-    // char buffer[1024*1024];
     size_t bytes;
 
     while ((bytes = fread(buffer, 1, sizeof(buffer), source)) > 0)
@@ -1059,6 +1055,7 @@ int main(int argc, char *argv[])
             {
                 TABLE2 = false;
             }
+            break;
         case 'v':
             if (strcmp(optarg, "true") == 0)
             {
@@ -1113,7 +1110,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    NUM_THREADS = num_threads;
     // Set the number of threads if specified
     if (num_threads > 0)
     {
@@ -1174,11 +1170,9 @@ int main(int argc, char *argv[])
         if (SEARCH)
         {
             printf("SEARCH                      : true\n");
-            // printf("SEARCH_STRING               : %s\n",SEARCH_STRING);
         }
         else
         {
-            // printf("SEARCH                      : false\n");
             printf("File Size (GB)              : %.2f\n", file_size_gb);
             printf("File Size (bytes)           : %llu\n", file_size_bytes);
 
@@ -1438,9 +1432,6 @@ int main(int argc, char *argv[])
             if (!BENCHMARK)
                 printf("[%.2f] HashGen %.2f%%: %.2f MH/s : I/O %.2f MB/s\n", omp_get_wtime() - start_time, (r + 1) * 100.0 / rounds, throughput_hash, throughput_io);
             // end of loop
-            // else {
-            //    printf("\n");
-            //}
         }
 
         start_time_io = omp_get_wtime();
@@ -1553,7 +1544,6 @@ int main(int argc, char *argv[])
 #pragma omp parallel for schedule(static)
                 for (unsigned long long r = 0; r < rounds; r++)
                 {
-                    // off_t offset_src_old = r * num_records_in_bucket * num_buckets * NONCE_SIZE + i*num_records_in_bucket*NONCE_SIZE;
                     //  Calculate the source offset
                     off_t offset_src = ((r * num_buckets + i) * num_records_in_bucket) * sizeof(MemoRecord);
                     // printf("read data: offset_src_old=%llu offset_src=%llu\n",offset_src_old,offset_src);
@@ -1571,7 +1561,6 @@ int main(int argc, char *argv[])
 
                     // size_t recordsRead = fread(buffer+num_records_in_bucket*num_buckets_to_read*sizeof(MemoRecord)*r, sizeof(MemoRecord), num_records_in_bucket*num_buckets_to_read, fd);
                     //  Correct pointer arithmetic
-
                     size_t index = r * records_per_batch;
                     if (DEBUG)
                         printf("storing read data at index %lu\n", index);
@@ -1754,16 +1743,15 @@ int main(int argc, char *argv[])
             printf("%s %d %lu %d %llu %.2f %zu %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
             return 0;
         }
-
-        if (TABLE2)
-        {
-            // printf("TABLE2 has not been implemented yet...\n");
-            // Find matches in Table1, those hashes that are matched will be stored in Table2
-            // Table2 will be used to store the final hashes
-            
-        }
     }
     // end of HASHGEN
+
+    if (TABLE2)
+    {
+        // printf("TABLE2 has not been implemented yet...\n");
+        // Find matches in Table1, those hashes that are matched will be stored in Table2
+        // Table2 will be used to store the final hashes
+    }
 
     omp_set_num_threads(num_threads);
 
@@ -1776,7 +1764,7 @@ int main(int argc, char *argv[])
     if (SEARCH_BATCH)
     {
         // printf("search has not been implemented yet...\n");
-        search_memo_records_batch(FILENAME_FINAL, BATCH_SIZE, PREFIX_SEARCH_SIZE);
+        search_memo_records_batch(FILENAME_FINAL, BATCH_SIZE, PREFIX_SEARCH_SIZE, num_threads);
     }
 
     // Call the function to count zero-value MemoRecords
