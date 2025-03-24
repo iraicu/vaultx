@@ -2,7 +2,7 @@
 
 // Function to calculate hamming distance between 2 hashes
 // Takes in 2 arguments that represent 2 hashes
-int hamming_distance(uint8_t *hash1, uint8_t *hash2, size_t hash_size)
+size_t hamming_distance(uint8_t *hash1, uint8_t *hash2, size_t hash_size)
 {
     int distance = 0;
     for (size_t i = 0; i < hash_size; i++)
@@ -17,15 +17,28 @@ int hamming_distance(uint8_t *hash1, uint8_t *hash2, size_t hash_size)
     return distance;
 }
 
-void scan_records(MemoRecord *buffer, size_t num_buckets_to_read)
+void scan_records(MemoAllRecord *buffer)
 {
 // Iterate over buckets in the buffer
 #pragma omp parallel for
     for (size_t bucket = 0; bucket < num_buckets_to_read; bucket++)
     {
-        for (size_t record = bucket * num_records_in_bucket; record < num_records_in_bucket; record++)
+        for (size_t record = bucket * num_records_in_bucket; record < (bucket + 1) * num_records_in_bucket - 1; record++)
         {
-            // hamming_distance(buffer[bucket].hash, SEARCH_UINT8, HASH_SIZE);
+            size_t distance = hamming_distance(buffer[record].hash, buffer[record + 1].hash, HASH_SIZE);
+
+            if (distance <= match_threshold) {
+                // Create a new hash from the two matching hashes
+                uint8_t new_hash[HASH_SIZE];
+                blake3_hasher hasher;
+                blake3_hasher_init(&hasher);
+                blake3_hasher_update(&hasher, buffer[record].hash, HASH_SIZE);
+                blake3_hasher_update(&hasher, buffer[record + 1].hash, HASH_SIZE);
+                blake3_hasher_finalize(&hasher, new_hash, HASH_SIZE);
+
+                // Write the new hash to table2
+                // write_to_table2(new_hash, buffer[record].nonce);
+            }
         }
     }
 }
@@ -61,7 +74,7 @@ void process_table1(const char *table1_filename, const char *table2_filename, in
 
     size_t records_per_batch = num_records_in_bucket * num_buckets_to_read;
     size_t buffer_size = records_per_batch * rounds;
-    MemoRecord *buffer = (MemoRecord *)malloc(records_per_batch * sizeof(MemoRecord)); // Allocate the buffer
+    MemoAllRecord *buffer = (MemoAllRecord *)malloc(records_per_batch * sizeof(MemoAllRecord)); // Allocate the buffer
 
     if (buffer == NULL)
     {
@@ -73,8 +86,8 @@ void process_table1(const char *table1_filename, const char *table2_filename, in
 
     // Allocate the buffer for the records that go into table2
     if (DEBUG)
-        printf("allocating %lu bytes for bufferShuffled\n", buffer_size * sizeof(MemoRecord));
-    MemoRecord *buffer_for_table2 = (MemoRecord *)malloc(buffer_size * sizeof(MemoRecord));
+        printf("allocating %lu bytes for bufferShuffled\n", buffer_size * sizeof(MemoAllRecord));
+    MemoTable2Record *buffer_for_table2 = (MemoTable2Record *)malloc(buffer_size * sizeof(MemoTable2Record));
     if (buffer_for_table2 == NULL)
     {
         fprintf(stderr, "Error allocating memory for bufferShuffled.\n");
@@ -96,10 +109,10 @@ void process_table1(const char *table1_filename, const char *table2_filename, in
         for (unsigned long long r = 0; r < rounds; r++)
         {
             //  Calculate the source offset
-            off_t offset_src = ((r * num_buckets + i) * num_records_in_bucket) * sizeof(MemoRecord);
+            off_t offset_src = ((r * num_buckets + i) * num_records_in_bucket) * sizeof(MemoAllRecord);
             if (DEBUG)
                 printf("read data: offset_src=%lu bytes=%lu\n",
-                       offset_src, records_per_batch * sizeof(MemoRecord));
+                       offset_src, records_per_batch * sizeof(MemoAllRecord));
 
             if (fseeko(fd, offset_src, SEEK_SET) < 0)
             {
@@ -113,7 +126,7 @@ void process_table1(const char *table1_filename, const char *table2_filename, in
             if (DEBUG)
                 printf("storing read data at index %lu\n", index);
             size_t records_read = fread(&buffer[index],
-                                        sizeof(MemoRecord),
+                                        sizeof(MemoAllRecord),
                                         records_per_batch,
                                         fd);
             if (records_read != records_per_batch)
@@ -130,7 +143,7 @@ void process_table1(const char *table1_filename, const char *table2_filename, in
             }
 
             // Scan through the records in the batch, finding matches
-            scan_records(buffer, num_buckets_to_read);
+            scan_records(buffer);
 
             // off_t offset_dest = i * num_records_in_bucket * NONCE_SIZE * rounds;
             // if (DEBUG)

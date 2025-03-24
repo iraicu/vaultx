@@ -33,6 +33,7 @@
 extern unsigned long long num_records_in_bucket;
 extern unsigned long long rounds;
 extern unsigned long long num_buckets;
+extern unsigned long long num_buckets_to_read;
 
 extern bool DEBUG;
 extern bool writeData;
@@ -48,6 +49,7 @@ extern bool VERIFY;
 
 extern size_t BATCH_SIZE;
 extern size_t PREFIX_SEARCH_SIZE;
+extern size_t match_threshold;
 
 // Structure to hold a record with nonce and hash
 typedef struct
@@ -55,6 +57,13 @@ typedef struct
     uint8_t hash[HASH_SIZE];   // 32-byte Blake3 hash
     uint8_t nonce[NONCE_SIZE]; // Nonce to store the seed
 } MemoAllRecord;
+
+typedef struct
+{
+    uint8_t hash[HASH_SIZE];    
+    uint8_t nonce1[NONCE_SIZE]; 
+    uint8_t nonce2[NONCE_SIZE]; 
+} MemoTable2Record;
 
 // Structure to hold a record with nonce
 typedef struct

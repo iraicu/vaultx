@@ -4,5 +4,5 @@
 #include "globals.h"
 
 int hamming_distance(uint8_t *hash1, uint8_t *hash2, size_t hash_size);
-
+void scan_records(MemoAllRecord *buffer);
 #endif

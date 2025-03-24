@@ -11,6 +11,8 @@ void print_usage(char *prog_name)
     printf("  -m, --memory NUM             Memory size in MB (default: 1)\n");
     printf("  -f, --file NAME              Output file name\n");
     printf("  -b, --batch-size NUM         Batch size (default: 1024)\n");
+    printf("  -2, --table2                 Use Table2 approach (should specify -f (table1 file), if table1 was created previously, turn off HASHGEN)\n");
+    printf("  -M, --match THRESHOLD        Specify the threshold to match hashes against in table2 creation (default: 3)\n");
     printf("  -h, --help                   Display this help message\n");
     printf("\nExample:\n");
     printf("  %s -a task -t 8 -K 20 -m 1024 -f output.dat\n", prog_name);
@@ -956,7 +958,7 @@ int main(int argc, char *argv[])
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:b:w:c:2:v:s:p:x:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:b:w:c:2:M:v:s:p:x:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -1054,6 +1056,15 @@ int main(int argc, char *argv[])
             else
             {
                 TABLE2 = false;
+            }
+            break;
+        case 'M':
+            match_threshold = atoi(optarg);
+            if (match_threshold < 1)
+            {
+                fprintf(stderr, "Match threshold must be 1 or greater.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
             }
             break;
         case 'v':
