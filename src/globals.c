@@ -4,6 +4,7 @@
 unsigned long long num_records_in_bucket = 1;
 unsigned long long num_buckets = 1;
 unsigned long long rounds = 1; // filesize : memorysize 
+unsigned long long num_buckets_to_read = 1;
 
 bool DEBUG = false;
 bool BENCHMARK = false; 

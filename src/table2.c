@@ -17,7 +17,15 @@ size_t hamming_distance(uint8_t *hash1, uint8_t *hash2, size_t hash_size)
     return distance;
 }
 
-void scan_records(MemoAllRecord *buffer)
+// void write_to_table2(uint8_t *new_hash, uint8_t *nonce1, uint8_t *nonce2)
+// {
+//     // Write the new hash to table2
+//     // fwrite(new_hash, HASH_SIZE, 1, fd_dest);
+//     // fwrite(nonce1, NONCE_SIZE, 1, fd_dest);
+//     // fwrite(nonce2, NONCE_SIZE, 1, fd_dest); 
+// }
+
+void scan_records(MemoAllRecord *buffer, MemoTable2Record *buffer_for_table2)
 {
 // Iterate over buckets in the buffer
 #pragma omp parallel for
@@ -27,7 +35,8 @@ void scan_records(MemoAllRecord *buffer)
         {
             size_t distance = hamming_distance(buffer[record].hash, buffer[record + 1].hash, HASH_SIZE);
 
-            if (distance <= match_threshold) {
+            if (distance <= match_threshold)
+            {
                 // Create a new hash from the two matching hashes
                 uint8_t new_hash[HASH_SIZE];
                 blake3_hasher hasher;
@@ -37,7 +46,7 @@ void scan_records(MemoAllRecord *buffer)
                 blake3_hasher_finalize(&hasher, new_hash, HASH_SIZE);
 
                 // Write the new hash to table2
-                // write_to_table2(new_hash, buffer[record].nonce);
+                // write_to_table2(new_hash, buffer[record].nonce, buffer[record + 1].nonce);
             }
         }
     }
@@ -59,7 +68,8 @@ void process_table1(const char *table1_filename, const char *table2_filename, in
     // rounds = ceil(file_size_bytes / MEMORY_SIZE_bytes);
 
     // Calculate variables for the number of buckets to read, the number of records to read per batch, and the size of the buffer needed
-    unsigned long long num_buckets_to_read = ceil((memory_size_bytes / (num_records_in_bucket * rounds * NONCE_SIZE)) / 2);
+    // num_buckets_to_read = ceil((memory_size_bytes / (num_records_in_bucket * rounds * NONCE_SIZE)) / 2);
+    printf("num_buckets_to_read=%llu\n", num_buckets_to_read);
     // need to fix this for 5 byte NONCE_SIZE
     if (num_buckets % num_buckets_to_read != 0)
     {
@@ -143,7 +153,7 @@ void process_table1(const char *table1_filename, const char *table2_filename, in
             }
 
             // Scan through the records in the batch, finding matches
-            scan_records(buffer);
+            scan_records(buffer, buffer_for_table2);
 
             // off_t offset_dest = i * num_records_in_bucket * NONCE_SIZE * rounds;
             // if (DEBUG)
@@ -175,7 +185,7 @@ void process_table1(const char *table1_filename, const char *table2_filename, in
         // end of for loop num_buckets_to_read
 
         // should write in parallel if possible
-        size_t elementsWritten = fwrite(buffer_for_table2, sizeof(MemoRecord), num_records_in_bucket * num_buckets_to_read * rounds, fd_dest);
+        size_t elementsWritten = fwrite(buffer_for_table2, sizeof(MemoTable2Record), num_records_in_bucket * num_buckets_to_read * rounds, fd_dest);
         if (elementsWritten != num_records_in_bucket * num_buckets_to_read * rounds)
         {
             fprintf(stderr, "Error writing bucket to file; elements written %zu when expected %llu\n",
@@ -241,6 +251,7 @@ void process_table1(const char *table1_filename, const char *table2_filename, in
     }
 
     free(buffer);
+    free(buffer_for_table2);
 }
 
 void save_to_table2()

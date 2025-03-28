@@ -1229,7 +1229,7 @@ int main(int argc, char *argv[])
 
     if (HASHGEN)
     {
-        printf("HASHGEN                      : true\n");
+        // printf("HASHGEN                     : true\n"); already printed before
 
         // Open the file for writing in binary mode
         FILE *fd = NULL;
@@ -1414,7 +1414,7 @@ int main(int argc, char *argv[])
                 start_time_io = omp_get_wtime();
 
                 // Seek to the correct position in the file
-                off_t offset = r * num_records_in_bucket * num_buckets * NONCE_SIZE;
+                off_t offset = r * num_records_in_bucket * num_buckets * NONCE_SIZE; // num_buckets that fit in memory
                 if (fseeko(fd, offset, SEEK_SET) < 0)
                 {
                     perror("Error seeking in file");
@@ -1447,7 +1447,7 @@ int main(int argc, char *argv[])
 
         start_time_io = omp_get_wtime();
 
-        // Flush and close the file
+        // Flush memory buffer to disk and close the file
         if (writeData)
         {
             if (fflush(fd) != 0)
@@ -1456,7 +1456,6 @@ int main(int argc, char *argv[])
                 fclose(fd);
                 return EXIT_FAILURE;
             }
-            // fclose(fd);
         }
 
         end_time_io = omp_get_wtime();
@@ -1489,20 +1488,18 @@ int main(int argc, char *argv[])
         {
             // Open the file for writing in binary mode
             FILE *fd_dest = NULL;
-            if (writeDataFinal)
+            fd_dest = fopen(FILENAME_FINAL, "wb+");
+            if (fd_dest == NULL)
             {
-                fd_dest = fopen(FILENAME_FINAL, "wb+");
-                if (fd_dest == NULL)
-                {
-                    printf("Error opening file %s (#5)\n", FILENAME_FINAL);
-                    perror("Error opening file");
+                printf("Error opening file %s (#5)\n", FILENAME_FINAL);
+                perror("Error opening file");
 
-                    // perror("Error opening file");
-                    return EXIT_FAILURE;
-                }
+                // perror("Error opening file");
+                return EXIT_FAILURE;
             }
 
-            unsigned long long num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * NONCE_SIZE)) / 2);
+            num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * NONCE_SIZE)) / 2);
+            printf("num_buckets_to_read=%llu\n", num_buckets_to_read);
             if (DEBUG)
                 printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * NONCE_SIZE * num_buckets_to_read);
             // need to fix this for 5 byte NONCE_SIZE
@@ -1513,6 +1510,7 @@ int main(int argc, char *argv[])
                 if (DEBUG)
                     printf("Largest power of 2 less than %lu is %lu\n", ratio, result);
                 num_buckets_to_read = num_buckets / result;
+                printf("num_buckets_to_read (if num_buckets mod num_buckets_to_read != 0)=%llu\n", num_buckets_to_read);
                 if (DEBUG)
                     printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * NONCE_SIZE * num_buckets_to_read);
                 // printf("error, num_buckets_to_read is not a multiple of num_buckets, exiting: num_buckets=%llu num_buckets_to_read=%llu...\n",num_buckets,num_buckets_to_read);
@@ -1759,7 +1757,7 @@ int main(int argc, char *argv[])
 
     if (TABLE2)
     {
-        // printf("TABLE2 has not been implemented yet...\n");
+        printf("TABLE2 has not been implemented yet...\n");
         // Find matches in Table1, those hashes that are matched will be stored in Table2
         // Table2 will be used to store the final hashes
     }
