@@ -17,14 +17,6 @@ size_t hamming_distance(uint8_t *hash1, uint8_t *hash2, size_t hash_size)
     return distance;
 }
 
-// void write_to_table2(uint8_t *new_hash, uint8_t *nonce1, uint8_t *nonce2)
-// {
-//     // Write the new hash to table2
-//     // fwrite(new_hash, HASH_SIZE, 1, fd_dest);
-//     // fwrite(nonce1, NONCE_SIZE, 1, fd_dest);
-//     // fwrite(nonce2, NONCE_SIZE, 1, fd_dest); 
-// }
-
 void scan_records(MemoAllRecord *buffer, MemoTable2Record *buffer_for_table2)
 {
 // Iterate over buckets in the buffer

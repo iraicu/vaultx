@@ -13,6 +13,25 @@
 
 #include "globals.h"
 
+void print_usage(char *prog_name);
+off_t getBucketIndex(const uint8_t *hash, size_t prefix_size);
+unsigned long long byteArrayToLongLong(const uint8_t *byteArray, size_t length);
+void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long seed);
+size_t writeBucketToDiskSequential(const Bucket *bucket, FILE *fd);
+void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex);
+char *concat_strings(const char *str1, const char *str2);
+bool is_nonce_nonzero(const uint8_t *nonce, size_t nonce_size);
+size_t count_zero_memo_records(const char *filename);
+long get_file_size(const char *filename);
+size_t process_memo_records(const char *filename, const size_t BATCH_SIZE);
+uint8_t *convert_string_to_uint8_array(const char *SEARCH_STRING);
+uint8_t *hexStringToByteArray(const char *hexString);
+long long search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH, unsigned long long num_records_in_bucket_search, MemoRecord *buffer);
+void search_memo_records(const char *filename, const char *SEARCH_STRING);
+void search_memo_records_batch(const char *filename, int num_lookups, int search_size, int num_threads);
 uint64_t largest_power_of_two_less_than(uint64_t number);
+int rename_file(const char *old_name, const char *new_name);
+void remove_file(const char *fileName);
+int move_file_overwrite(const char *source_path, const char *destination_path);
 
 #endif // VAULTX_H
