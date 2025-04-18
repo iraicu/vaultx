@@ -112,11 +112,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
     uint8_t *SEARCH_UINT8 = hexStringToByteArray(SEARCH_STRING);
     size_t SEARCH_LENGTH = strlen(SEARCH_STRING) / 2;
     off_t bucketIndex = getBucketIndex(SEARCH_UINT8, PREFIX_SIZE);
-    // uint8_t *SEARCH_UINT8 = convert_string_to_uint8_array(SEARCH_STRING);
-    // num_records_in_bucket
     MemoRecord *buffer = NULL;
-    // size_t total_records = 0;
-    // size_t zero_nonce_count = 0;
 
     FILE *file = NULL;
     // uint8_t prev_hash[PREFIX_SIZE] = {0}; // Initialize previous hash prefix to zero
@@ -196,7 +192,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
 }
 
 // not sure if the search of more than PREFIX_LENGTH works
-void search_memo_records_batch(const char *filename, int num_lookups, int search_size, int num_threads)
+void search_memo_records_batch(const char *filename, int num_lookups, int search_size)
 {
     // Seed the random number generator with the current time
     srand((unsigned int)time(NULL));
@@ -295,6 +291,6 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     if (!BENCHMARK)
         printf("searched for %d lookups of %d bytes long, found %d, not found %d in %.2f seconds, %.4f ms per lookup\n", num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
     else
-        printf("%s %d %zu %llu %llu %d %d %d %d %.2f %.2f\n", filename, num_threads, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
+        printf("%s %zu %llu %llu %d %d %d %d %.2f %.2f\n", filename, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
     // return NULL;
 }

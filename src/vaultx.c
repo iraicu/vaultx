@@ -23,7 +23,6 @@ void print_usage(char *prog_name)
     printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo\n", prog_name);
     printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo -x true (Only prints time)\n", prog_name);
     printf("  %s -a for -t 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo -2 true\n", prog_name);
-
 }
 
 // Function to compute the bucket index based on hash prefix
@@ -68,6 +67,23 @@ void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long
     blake3_hasher_finalize(&hasher, record_hash, HASH_SIZE);
 }
 
+// Comparator function to sort based on hash values (Blake3 hashes)
+int compare_by_hash(const void *a, const void *b)
+{
+    MemoRecord *record_a = (MemoRecord *)a;
+    MemoRecord *record_b = (MemoRecord *)b;
+
+    uint8_t hash_a[HASH_SIZE];
+    uint8_t hash_b[HASH_SIZE];
+
+    // Generate hashes for both records' nonces
+    generateBlake3(hash_a, record_a, 0);
+    generateBlake3(hash_b, record_b, 0);
+
+    // Compare the hashes lexicographically
+    return memcmp(hash_a, hash_b, HASH_SIZE);
+}
+
 // Function to write a bucket of records to disk sequentially
 size_t writeBucketToDiskSequential(const Bucket *bucket, FILE *fd)
 {
@@ -93,11 +109,13 @@ void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
     }
 
     Bucket *bucket = &buckets[bucketIndex];
-
-    // Protect count increment with atomic operation
     size_t idx;
+
 #pragma omp atomic capture
-    idx = bucket->count++;
+    {
+        idx = bucket->count;
+        bucket->count++;
+    }
 
     // Check if there's room in the bucket
     if (idx < num_records_in_bucket)
@@ -108,6 +126,14 @@ void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
     {
         // Bucket is full; handle overflow if necessary
         // For now, we ignore overflow
+        bucket->count = num_records_in_bucket;
+        if (!bucket->full)
+        {
+#pragma omp atomic
+            full_buckets_global++;
+            bucket->full = true;
+        }
+        bucket->count_waste++;
     }
 }
 
@@ -476,154 +502,44 @@ uint64_t largest_power_of_two_less_than(uint64_t number)
     return (number + 1) >> 1;
 }
 
-int rename_file(const char *old_name, const char *new_name)
+// Recursive function to generate numbers using divide and conquer
+void generateHashes(unsigned long long start, unsigned long long end)
 {
-    // Attempt to rename the file
-    if (rename(old_name, new_name) != 0)
+    if (end - start < BATCH_SIZE)
     {
-        // If rename fails, perror prints a descriptive error message
-        perror("Error renaming file");
-        return -1;
-    }
+        // printf("%d\n", start); // Print a single number
 
-    // Success
-    return 0;
-}
+        MemoRecord record;
+        uint8_t record_hash[HASH_SIZE];
 
-void remove_file(const char *fileName)
-{
-    // Attempt to remove the file
-    if (remove(fileName) == 0)
-    {
-        if (DEBUG)
-            printf("File '%s' removed successfully.\n", fileName);
-    }
-    else
-    {
-        perror("Error removing file");
-    }
-}
+        // unsigned long long batch_end = i + BATCH_SIZE;
+        // if (batch_end > end_idx) {
+        //     batch_end = end_idx;
+        // }
 
-int move_file_overwrite(const char *source_path, const char *destination_path)
-{
-    if (DEBUG)
-        printf("move_file_overwrite()...\n");
-    // Attempt to rename the file
-    if (rename(source_path, destination_path) == 0)
-    {
-        if (!BENCHMARK)
-            printf("rename success!\n");
-        return 0;
-    }
-
-    // If rename failed, check if it's due to cross-device move
-    if (errno != EXDEV)
-    {
-        perror("Error renaming file");
-        return -1;
-    }
-
-    // Proceed to copy and delete since it's a cross-filesystem move
-
-    // Remove the destination file if it exists to allow overwriting
-    if (remove(destination_path) != 0 && errno != ENOENT)
-    {
-        perror("Error removing existing destination file");
-        return -1;
-    }
-
-    // Continue with copying as in the original move_file function
-    FILE *source = fopen(source_path, "rb");
-    if (source == NULL)
-    {
-        perror("Error opening source file for reading");
-        return -1;
-    }
-
-    FILE *destination = fopen(destination_path, "wb");
-    if (destination == NULL)
-    {
-        perror("Error opening destination file for writing");
-        fclose(source);
-        return -1;
-    }
-
-    if (!BENCHMARK)
-        printf("deep copy started...\n");
-    size_t buffer_size = 1024 * 1024 * 8; // 1 MB
-    uint8_t *buffer = (uint8_t *)calloc(buffer_size, 1);
-
-    if (buffer == NULL)
-    {
-        perror("Failed to allocate memory");
-        return EXIT_FAILURE;
-    }
-
-    size_t bytes;
-
-    while ((bytes = fread(buffer, 1, sizeof(buffer), source)) > 0)
-    {
-        size_t bytes_written = fwrite(buffer, 1, bytes, destination);
-        if (bytes_written != bytes)
+        for (unsigned long long j = start; j <= end; j++)
         {
-            perror("Error writing to destination file");
-            fclose(source);
-            fclose(destination);
-            return -1;
+            generateBlake3(record_hash, &record, j);
+            if (MEMORY_WRITE)
+            {
+                off_t bucketIndex = getBucketIndex(record_hash, PREFIX_SIZE);
+                insert_record(buckets, &record, bucketIndex);
+            }
         }
+
+        return;
     }
 
-    if (ferror(source))
-    {
-        perror("Error reading from source file");
-        fclose(source);
-        fclose(destination);
-        return -1;
-    }
+    unsigned long long mid = (start + end) / 2;
 
-    if (fflush(source) != 0)
-    {
-        perror("Failed to flush buffer");
-        fclose(source);
-        return EXIT_FAILURE;
-    }
+// Recursive calls for the left and right halves
+#pragma omp task shared(start, mid) // Task for the left half
+    generateHashes(start, mid);     // Generate numbers in the left half
 
-    if (fsync(fileno(source)) != 0)
-    {
-        perror("Failed to fsync buffer");
-        fclose(source);
-        return EXIT_FAILURE;
-    }
+#pragma omp task shared(mid, end) // Task for the right half
+    generateHashes(mid + 1, end); // Generate numbers in the right half
 
-    fclose(source);
-
-    if (fflush(destination) != 0)
-    {
-        perror("Failed to flush buffer");
-        fclose(destination);
-        return EXIT_FAILURE;
-    }
-
-    if (fsync(fileno(destination)) != 0)
-    {
-        perror("Failed to fsync buffer");
-        fclose(destination);
-        return EXIT_FAILURE;
-    }
-
-    fclose(destination);
-
-    if (remove(source_path) != 0)
-    {
-        perror("Error deleting source file after moving");
-        return -1;
-    }
-
-    if (!BENCHMARK)
-        printf("deep copy finished!\n");
-    if (DEBUG)
-        printf("move_file_overwrite() finished!\n");
-    return 0; // Success
+#pragma omp taskwait // Wait for both tasks to complete
 }
 
 int main(int argc, char *argv[])
@@ -639,7 +555,8 @@ int main(int argc, char *argv[])
     // unsigned long long MEMORY_SIZE_bytes_original = 0;
     char *FILENAME = NULL;       // Default output file name
     char *FILENAME_FINAL = NULL; // Default output file name
-    char *SEARCH_STRING = NULL;  // Default output file name
+    char *FILENAME_TABLE2 = NULL;
+    char *SEARCH_STRING = NULL; // Default output file name
 
     // Define long options
     static struct option long_options[] = {
@@ -650,10 +567,10 @@ int main(int argc, char *argv[])
         {"memory", required_argument, 0, 'm'},
         {"file", required_argument, 0, 'f'},
         {"file_final", required_argument, 0, 'g'},
+        {"file_table2", required_argument, 0, '2'},
         {"batch_size", required_argument, 0, 'b'},
         {"memory_write", required_argument, 0, 'w'},
         {"circular_array", required_argument, 0, 'c'},
-        {"table2", required_argument, 0, '2'},
         {"verify", required_argument, 0, 'v'},
         {"search", required_argument, 0, 's'},
         {"prefix_search_size", required_argument, 0, 'S'},
@@ -666,12 +583,12 @@ int main(int argc, char *argv[])
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:b:w:c:2:M:v:s:S:x:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:b:w:c:2:v:s:S:x:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
         case 'a':
-            if (strcmp(optarg, "task") == 0 || strcmp(optarg, "for") == 0 || strcmp(optarg, "tbb") == 0)
+            if (strcmp(optarg, "xtask") == 0 || strcmp(optarg, "task") == 0 || strcmp(optarg, "for") == 0 || strcmp(optarg, "tbb") == 0)
             {
                 approach = optarg;
             }
@@ -727,6 +644,10 @@ int main(int argc, char *argv[])
             FILENAME_FINAL = optarg;
             writeDataFinal = true;
             break;
+        case '2':
+            FILENAME_TABLE2 = optarg;
+            writeDataTable2 = true;
+            break;
         case 'b':
             BATCH_SIZE = atoi(optarg);
             if (BATCH_SIZE < 1)
@@ -754,25 +675,6 @@ int main(int argc, char *argv[])
             else
             {
                 CIRCULAR_ARRAY = false;
-            }
-            break;
-        case '2':
-            if (strcmp(optarg, "true") == 0)
-            {
-                TABLE2 = true;
-            }
-            else
-            {
-                TABLE2 = false;
-            }
-            break;
-        case 'M':
-            match_threshold = atoi(optarg);
-            if (match_threshold < 1)
-            {
-                fprintf(stderr, "Match threshold must be 1 or greater.\n");
-                print_usage(argv[0]);
-                exit(EXIT_FAILURE);
             }
             break;
         case 'v':
@@ -931,11 +833,6 @@ int main(int argc, char *argv[])
             else
                 printf("CIRCULAR_ARRAY              : false\n");
 
-            if (TABLE2)
-                printf("TABLE2                      : true\n");
-            else
-                printf("TABLE2                      : false\n");
-
             if (writeData)
             {
                 printf("Temporary File              : %s\n", FILENAME);
@@ -944,13 +841,15 @@ int main(int argc, char *argv[])
             {
                 printf("Output File Final           : %s\n", FILENAME_FINAL);
             }
+            if (writeDataTable2)
+            {
+                printf("Output File Table2          : %s\n", FILENAME_TABLE2);
+            }
         }
     }
 
     if (HASHGEN)
     {
-        // printf("HASHGEN                     : true\n"); already printed before
-
         // Open the file for writing in binary mode
         FILE *fd = NULL;
         if (writeData)
@@ -969,7 +868,7 @@ int main(int argc, char *argv[])
         double start_time = omp_get_wtime();
 
         // Allocate memory for the array of Buckets
-        Bucket *buckets = (Bucket *)calloc(num_buckets, sizeof(Bucket));
+        buckets = (Bucket *)calloc(num_buckets, sizeof(Bucket));
         if (buckets == NULL)
         {
             fprintf(stderr, "Error: Unable to allocate memory for buckets.\n");
@@ -1010,23 +909,44 @@ int main(int argc, char *argv[])
             for (unsigned long long i = 0; i < num_buckets; i++)
             {
                 buckets[i].count = 0;
+                buckets[i].count_waste = 0;
+                buckets[i].full = false;
                 buckets[i].flush = 0;
             }
 
+            unsigned long long MAX_NUM_HASHES = 1ULL << (NONCE_SIZE * 8);
+
             unsigned long long start_idx = r * num_hashes;
             unsigned long long end_idx = start_idx + num_hashes;
+            unsigned long long nonce_max = 0;
+
+            printf("MAX_NUM_HASHES=%llu rounds=%llu num_hashes=%llu start_idx = %llu, end_idx = %llu\n", MAX_NUM_HASHES, rounds, num_hashes, start_idx, end_idx);
 
             // Parallel region based on selected approach
-            if (strcmp(approach, "task") == 0)
+            if (strcmp(approach, "xtask") == 0)
+            {
+
+                srand((unsigned)time(NULL)); // Seed the random number generator
+#pragma omp parallel
+                {
+#pragma omp single
+                    {
+                        // could implement BATCH_SIZE here too
+                        generateHashes(start_idx, end_idx);
+                    }
+                }
+            }
+            else if (strcmp(approach, "task") == 0)
             {
 // Tasking Model Approach
 #pragma omp parallel
                 {
-#pragma omp single nowait
+// #pragma omp single nowait
+#pragma omp single
                     {
                         for (unsigned long long i = start_idx; i < end_idx; i += BATCH_SIZE)
                         {
-#pragma omp task
+#pragma omp task untied
                             {
                                 MemoRecord record;
                                 uint8_t record_hash[HASH_SIZE];
@@ -1053,10 +973,15 @@ int main(int argc, char *argv[])
             }
             else if (strcmp(approach, "for") == 0)
             {
+                volatile int cancel_flag = 0; // Shared flag
+                full_buckets_global = 0;
 // Parallel For Loop Approach
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) shared(cancel_flag)
                 for (unsigned long long i = start_idx; i < end_idx; i += BATCH_SIZE)
                 {
+                    if (cancel_flag)
+                        continue;
+
                     MemoRecord record;
                     uint8_t record_hash[HASH_SIZE];
 
@@ -1074,6 +999,15 @@ int main(int argc, char *argv[])
                             off_t bucketIndex = getBucketIndex(record_hash, PREFIX_SIZE);
                             insert_record(buckets, &record, bucketIndex);
                         }
+                    }
+
+                    // Set the flag if the termination condition is met.
+                    // if (i > end_idx/2 && full_buckets_global == num_buckets) {
+                    if (full_buckets_global >= num_buckets)
+                    {
+                        cancel_flag = 1;
+                        if (i > nonce_max)
+                            nonce_max = i;
                     }
                 }
             }
@@ -1143,15 +1077,39 @@ int main(int argc, char *argv[])
                 }
 
                 size_t bytesWritten = 0;
-                // Write buckets to disk
+                // Set the number of threads if specified
+                if (num_threads_io > 0)
+                {
+                    omp_set_num_threads(num_threads_io);
+                }
+
+// Write buckets to disk
+#pragma omp parallel for schedule(static)
                 for (unsigned long long i = 0; i < num_buckets; i++)
                 {
                     bytesWritten += writeBucketToDiskSequential(&buckets[i], fd);
                 }
+
                 // End I/O time measurement
                 end_time_io = omp_get_wtime();
                 elapsed_time_io = end_time_io - start_time_io;
                 elapsed_time_io_total += elapsed_time_io;
+
+                // count how many full buckets , this works for rounds == 1
+                // if (rounds == 1)
+                //{
+                unsigned long long full_buckets = 0;
+                unsigned long long record_counts = 0;
+                unsigned long long record_counts_waste = 0;
+                for (unsigned long long i = 0; i < num_buckets; i++)
+                {
+                    if (buckets[i].count == num_records_in_bucket)
+                        full_buckets++;
+                    record_counts += buckets[i].count;
+                    record_counts_waste += buckets[i].count_waste;
+                }
+
+                printf("record_counts=%llu storage_efficiency=%.2f full_buckets=%llu bucket_efficiency=%.2f nonce_max=%llu record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / num_buckets, nonce_max, record_counts_waste, num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + num_buckets * num_records_in_bucket));
             }
 
             // Calculate throughput (hashes per second)
@@ -1241,6 +1199,7 @@ int main(int argc, char *argv[])
             size_t records_per_batch = num_records_in_bucket * num_buckets_to_read;
             // Calculate the size of the buffer needed
             size_t buffer_size = records_per_batch * rounds;
+
             // Allocate the buffer
             if (DEBUG)
                 printf("allocating %lu bytes for buffer\n", buffer_size * sizeof(MemoRecord));
@@ -1275,8 +1234,6 @@ int main(int argc, char *argv[])
                 {
                     //  Calculate the source offset
                     off_t offset_src = ((r * num_buckets + i) * num_records_in_bucket) * sizeof(MemoRecord);
-                    // printf("read data: offset_src_old=%llu offset_src=%llu\n",offset_src_old,offset_src);
-                    // if (DEBUG) printf("read data: offset_src_old=%llu bytes=%llu\n",offset_src_old,num_records_in_bucket*NONCE_SIZE*num_buckets_to_read);
                     if (DEBUG)
                         printf("read data: offset_src=%lu bytes=%lu\n",
                                offset_src, records_per_batch * sizeof(MemoRecord));
@@ -1297,10 +1254,7 @@ int main(int argc, char *argv[])
                                                sizeof(MemoRecord),
                                                records_per_batch,
                                                fd);
-                    // size_t recordsRead = fread(buffer + r * records_per_batch,
-                    //                        sizeof(MemoRecord),
-                    //                        records_per_batch,
-                    //                        fd);
+
                     if (recordsRead != records_per_batch)
                     {
                         fprintf(stderr, "Error reading file, records read %zu instead of %zu\n",
@@ -1456,6 +1410,24 @@ int main(int argc, char *argv[])
         elapsed_time_io = end_time_io - start_time_io;
         elapsed_time_io_total += elapsed_time_io;
 
+        if (writeDataTable2 && rounds > 1)
+        {
+            printf("writing table 2 not implemented with rounds > 1, exiting...\n");
+            return -1;
+        }
+        else if (writeDataTable2 && rounds == 1)
+        {
+            printf("generating table 2...\n");
+            if (generate_table2(FILENAME_FINAL, FILENAME_TABLE2, num_threads, num_threads_io) == 0)
+            {
+                printf("success in generate_table2\n");
+            }
+            else
+            {
+                printf("error in generate_table2\n");
+            }
+        }
+
         // End total time measurement
         double end_time = omp_get_wtime();
         double elapsed_time = end_time - start_time;
@@ -1475,13 +1447,104 @@ int main(int argc, char *argv[])
     }
     // end of HASHGEN
 
-    if (TABLE2)
-    {
-        if (!BENCHMARK)
-            printf("TABLE2 has not been implemented yet...\n");
-        // Find matches in Table1, those hashes that are matched will be stored in Table2
-        // Table2 will be used to store the final hashes
-    }
+    //     if (TABLE2)
+    //     {
+    //         if (!BENCHMARK)
+    //             printf("TABLE2 phase has started...\n");
+
+    //         // read data
+    //         int fd = open(FILENAME_FINAL, O_RDONLY);
+    //         if (fd < 0)
+    //         {
+    //             perror("Error opening file");
+    //             return EXIT_FAILURE;
+    //         }
+
+    //         size_t num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * NONCE_SIZE)) / 2);
+    //         size_t records_per_batch = num_records_in_bucket * num_buckets_to_read;
+    //         size_t buffer_size = records_per_batch * rounds; // total number of records in all rounds
+
+    //         MemoRecord *buffer = malloc(buffer_size * sizeof(MemoRecord));
+    //         if (buffer == NULL)
+    //         {
+    //             fprintf(stderr, "Error allocating memory for buffer.\n");
+    //             exit(EXIT_FAILURE);
+    //         }
+
+    //         if (num_threads_io > 0)
+    //         {
+    //             omp_set_num_threads(num_threads_io);
+    //         }
+
+    //         double elapsed_time_io = 0.0;
+    //         double elapsed_time_sort = 0.0;
+
+    //         int read_error = 0;
+
+    //         for (unsigned long long r = 0; r < rounds; r++)
+    //         {
+    // #pragma omp parallel shared(read_error, buffer)
+    //             {
+    //                 double local_elapsed_io = 0.0;
+    //                 double local_elapsed_sort = 0.0;
+
+    // #pragma omp for schedule(static)
+    //                 for (unsigned long long i = 0; i < num_buckets_to_read; i++)
+    //                 {
+    //                     if (read_error)
+    //                         continue;
+
+    //                     off_t offset_src = (r * num_buckets_to_read + i) * num_records_in_bucket * sizeof(MemoRecord);
+    //                     size_t buffer_index = i * num_records_in_bucket;
+
+    //                     double start_time_io = omp_get_wtime();
+    //                     ssize_t bytes_read = pread(fd, buffer + buffer_index, num_records_in_bucket * sizeof(MemoRecord), offset_src);
+    //                     double end_time_io = omp_get_wtime();
+    //                     local_elapsed_io += end_time_io - start_time_io;
+
+    //                     if ((long unsigned int)bytes_read != num_records_in_bucket * sizeof(MemoRecord))
+    //                     {
+    // #pragma omp critical
+    //                         {
+    //                             fprintf(stderr, "pread failed for bucket %llu (read %zd bytes)\n", i, bytes_read);
+    //                             read_error = 1; // Set read_error to indicate failure
+    //                         }
+    // #pragma omp cancel for
+    //                     }
+
+    // #pragma omp cancellation point for
+
+    //                     double start_time_sort = omp_get_wtime();
+    //                     // sort data within each bucket
+    //                     qsort(buffer + buffer_index, num_records_in_bucket, sizeof(MemoRecord), compare_by_hash);
+    //                     double end_time_sort = omp_get_wtime();
+    //                     local_elapsed_sort += end_time_sort - start_time_sort;
+    //                 }
+    // #pragma omp atomic
+    //                 elapsed_time_io += local_elapsed_io;
+    // #pragma omp atomic
+    //                 elapsed_time_sort += local_elapsed_sort;
+    //             }
+
+    //             if (read_error)
+    //             {
+    //                 free(buffer);
+    //                 close(fd);
+    //                 return EXIT_FAILURE;
+    //             }
+    //         }
+
+    //         if (!BENCHMARK)
+    //         {
+    //             printf("[TABLE2]Total I/O Time: %.6f seconds\n", elapsed_time_io);
+    //             printf("[TABLE2]Total Sort Time: %.6f seconds\n", elapsed_time_sort);
+    //         }
+
+    //         close(fd);
+    //         free(buffer);
+
+    //         // write matched records into new file
+    //     }
 
     omp_set_num_threads(num_threads);
 
@@ -1492,7 +1555,7 @@ int main(int argc, char *argv[])
 
     if (SEARCH_BATCH)
     {
-        search_memo_records_batch(FILENAME_FINAL, BATCH_SIZE, PREFIX_SEARCH_SIZE, num_threads);
+        search_memo_records_batch(FILENAME_FINAL, BATCH_SIZE, PREFIX_SEARCH_SIZE);
     }
 
     // Call the function to count zero-value MemoRecords

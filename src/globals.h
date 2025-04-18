@@ -30,15 +30,18 @@
 #define HASH_SIZE (RECORD_SIZE - NONCE_SIZE)
 #define PREFIX_SIZE 3 // Example prefix size for getBucketIndex
 
+extern int K;
+
 extern unsigned long long num_records_in_bucket;
 extern unsigned long long rounds;
 extern unsigned long long num_buckets;
 extern unsigned long long num_buckets_to_read;
+extern unsigned long long full_buckets_global;
 
 extern bool DEBUG;
 extern bool writeData;
 extern bool writeDataFinal;
-extern bool TABLE2;
+extern bool writeDataTable2;
 extern bool SEARCH_BATCH;
 extern bool SEARCH;
 extern bool HASHGEN;
@@ -60,9 +63,9 @@ typedef struct
 
 typedef struct
 {
-    uint8_t hash[HASH_SIZE];    
-    uint8_t nonce1[NONCE_SIZE]; 
-    uint8_t nonce2[NONCE_SIZE]; 
+    uint8_t hash[HASH_SIZE];
+    uint8_t nonce1[NONCE_SIZE];
+    uint8_t nonce2[NONCE_SIZE];
 } MemoTable2Record;
 
 // Structure to hold a record with nonce
@@ -75,7 +78,33 @@ typedef struct
 {
     MemoRecord *records;
     size_t count; // Number of records in the bucket
+    size_t count_waste;
+    bool full;
     size_t flush; // Number of flushes of bucket
 } Bucket;
+
+typedef struct
+{
+    MemoTable2Record *records;
+    size_t count; // Number of records in the bucket
+    size_t count_waste;
+    bool full;
+    size_t flush; // Number of flushes of bucket
+} BucketTable2;
+
+typedef enum
+{
+    BUCKET_TYPE_MEMO,
+    BUCKET_TYPE_MEMO_TABLE2
+} BucketType;
+
+typedef enum
+{
+    RECORD_TYPE_MEMO,
+    RECORD_TYPE_MEMO_TABLE2
+} RecordType;
+
+extern Bucket *buckets;
+extern BucketTable2 *buckets2;
 
 #endif
