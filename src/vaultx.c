@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
         {"memory", required_argument, 0, 'm'},
         {"file", required_argument, 0, 'f'},
         {"file_final", required_argument, 0, 'g'},
-        {"file_table2", required_argument, 0, '2'},
+        {"file_table2", required_argument, 0, 'j'},
         {"batch_size", required_argument, 0, 'b'},
         {"memory_write", required_argument, 0, 'w'},
         {"circular_array", required_argument, 0, 'c'},
@@ -583,7 +583,7 @@ int main(int argc, char *argv[])
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:b:w:c:2:v:s:S:x:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:b:w:c:j:v:s:S:x:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -644,7 +644,7 @@ int main(int argc, char *argv[])
             FILENAME_FINAL = optarg;
             writeDataFinal = true;
             break;
-        case '2':
+        case 'j':
             FILENAME_TABLE2 = optarg;
             writeDataTable2 = true;
             break;
@@ -1410,23 +1410,23 @@ int main(int argc, char *argv[])
         elapsed_time_io = end_time_io - start_time_io;
         elapsed_time_io_total += elapsed_time_io;
 
-        if (writeDataTable2 && rounds > 1)
-        {
-            printf("writing table 2 not implemented with rounds > 1, exiting...\n");
-            return -1;
-        }
-        else if (writeDataTable2 && rounds == 1)
-        {
-            printf("generating table 2...\n");
-            if (generate_table2(FILENAME_FINAL, FILENAME_TABLE2, num_threads, num_threads_io) == 0)
-            {
-                printf("success in generate_table2\n");
-            }
-            else
-            {
-                printf("error in generate_table2\n");
-            }
-        }
+        // if (writeDataTable2 && rounds > 1)
+        // {
+        //     printf("writing table 2 not implemented with rounds > 1, exiting...\n");
+        //     return -1;
+        // }
+        // else if (writeDataTable2 && rounds == 1)
+        // {
+        //     printf("generating table 2...\n");
+        //     if (generate_table2(FILENAME_FINAL, FILENAME_TABLE2, num_threads, num_threads_io) == 0)
+        //     {
+        //         printf("success in generate_table2\n");
+        //     }
+        //     else
+        //     {
+        //         printf("error in generate_table2\n");
+        //     }
+        // }
 
         // End total time measurement
         double end_time = omp_get_wtime();
@@ -1567,7 +1567,8 @@ int main(int argc, char *argv[])
     {
         if (!BENCHMARK)
             printf("verifying sorted order by bucketIndex of final stored file...\n");
-        process_memo_records(FILENAME_FINAL, MEMORY_SIZE_bytes / sizeof(MemoRecord));
+        // process_memo_records(FILENAME_FINAL, MEMORY_SIZE_bytes / sizeof(MemoRecord));
+        process_memo_records_table2(FILENAME_FINAL, num_records_in_bucket * rounds, num_threads);
     }
 
     if (DEBUG)
