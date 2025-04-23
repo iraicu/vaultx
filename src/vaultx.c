@@ -1366,17 +1366,17 @@ int main(int argc, char *argv[])
 
             free(buffer);
         }
-        else if (writeDataFinal && rounds == 1)
+        else if (writeDataTable2 && rounds == 1)
         {
             // Call the rename_file function
-            if (move_file_overwrite(FILENAME, FILENAME_FINAL) == 0)
+            if (move_file_overwrite(FILENAME, FILENAME_TABLE2) == 0)
             {
                 if (!BENCHMARK)
-                    printf("File renamed/moved successfully from '%s' to '%s'.\n", FILENAME, FILENAME_FINAL);
+                    printf("File renamed/moved successfully from '%s' to '%s'.\n", FILENAME, FILENAME_TABLE2);
             }
             else
             {
-                printf("Error in moving file '%s' to '%s'.\n", FILENAME, FILENAME_FINAL);
+                printf("Error in moving file '%s' to '%s'.\n", FILENAME, FILENAME_TABLE2);
                 return EXIT_FAILURE;
                 // Error message already printed by rename_file via perror()
                 // Additional handling can be done here if necessary
@@ -1388,10 +1388,10 @@ int main(int argc, char *argv[])
 #ifdef __linux__
         if (DEBUG)
             printf("Final flush in progress...\n");
-        int fd2 = open(FILENAME_FINAL, O_RDWR);
+        int fd2 = open(FILENAME_TABLE2, O_RDWR);
         if (fd2 == -1)
         {
-            printf("Error opening file %s (#6)\n", FILENAME_FINAL);
+            printf("Error opening file %s (#6)\n", FILENAME_TABLE2);
 
             perror("Error opening file");
             return EXIT_FAILURE;
@@ -1447,115 +1447,16 @@ int main(int argc, char *argv[])
     }
     // end of HASHGEN
 
-    //     if (TABLE2)
-    //     {
-    //         if (!BENCHMARK)
-    //             printf("TABLE2 phase has started...\n");
-
-    //         // read data
-    //         int fd = open(FILENAME_FINAL, O_RDONLY);
-    //         if (fd < 0)
-    //         {
-    //             perror("Error opening file");
-    //             return EXIT_FAILURE;
-    //         }
-
-    //         size_t num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * NONCE_SIZE)) / 2);
-    //         size_t records_per_batch = num_records_in_bucket * num_buckets_to_read;
-    //         size_t buffer_size = records_per_batch * rounds; // total number of records in all rounds
-
-    //         MemoRecord *buffer = malloc(buffer_size * sizeof(MemoRecord));
-    //         if (buffer == NULL)
-    //         {
-    //             fprintf(stderr, "Error allocating memory for buffer.\n");
-    //             exit(EXIT_FAILURE);
-    //         }
-
-    //         if (num_threads_io > 0)
-    //         {
-    //             omp_set_num_threads(num_threads_io);
-    //         }
-
-    //         double elapsed_time_io = 0.0;
-    //         double elapsed_time_sort = 0.0;
-
-    //         int read_error = 0;
-
-    //         for (unsigned long long r = 0; r < rounds; r++)
-    //         {
-    // #pragma omp parallel shared(read_error, buffer)
-    //             {
-    //                 double local_elapsed_io = 0.0;
-    //                 double local_elapsed_sort = 0.0;
-
-    // #pragma omp for schedule(static)
-    //                 for (unsigned long long i = 0; i < num_buckets_to_read; i++)
-    //                 {
-    //                     if (read_error)
-    //                         continue;
-
-    //                     off_t offset_src = (r * num_buckets_to_read + i) * num_records_in_bucket * sizeof(MemoRecord);
-    //                     size_t buffer_index = i * num_records_in_bucket;
-
-    //                     double start_time_io = omp_get_wtime();
-    //                     ssize_t bytes_read = pread(fd, buffer + buffer_index, num_records_in_bucket * sizeof(MemoRecord), offset_src);
-    //                     double end_time_io = omp_get_wtime();
-    //                     local_elapsed_io += end_time_io - start_time_io;
-
-    //                     if ((long unsigned int)bytes_read != num_records_in_bucket * sizeof(MemoRecord))
-    //                     {
-    // #pragma omp critical
-    //                         {
-    //                             fprintf(stderr, "pread failed for bucket %llu (read %zd bytes)\n", i, bytes_read);
-    //                             read_error = 1; // Set read_error to indicate failure
-    //                         }
-    // #pragma omp cancel for
-    //                     }
-
-    // #pragma omp cancellation point for
-
-    //                     double start_time_sort = omp_get_wtime();
-    //                     // sort data within each bucket
-    //                     qsort(buffer + buffer_index, num_records_in_bucket, sizeof(MemoRecord), compare_by_hash);
-    //                     double end_time_sort = omp_get_wtime();
-    //                     local_elapsed_sort += end_time_sort - start_time_sort;
-    //                 }
-    // #pragma omp atomic
-    //                 elapsed_time_io += local_elapsed_io;
-    // #pragma omp atomic
-    //                 elapsed_time_sort += local_elapsed_sort;
-    //             }
-
-    //             if (read_error)
-    //             {
-    //                 free(buffer);
-    //                 close(fd);
-    //                 return EXIT_FAILURE;
-    //             }
-    //         }
-
-    //         if (!BENCHMARK)
-    //         {
-    //             printf("[TABLE2]Total I/O Time: %.6f seconds\n", elapsed_time_io);
-    //             printf("[TABLE2]Total Sort Time: %.6f seconds\n", elapsed_time_sort);
-    //         }
-
-    //         close(fd);
-    //         free(buffer);
-
-    //         // write matched records into new file
-    //     }
-
-    omp_set_num_threads(num_threads);
+    // omp_set_num_threads(num_threads);
 
     if (SEARCH && !SEARCH_BATCH)
     {
-        search_memo_records(FILENAME_FINAL, SEARCH_STRING);
+        search_memo_records(FILENAME_TABLE2, SEARCH_STRING);
     }
 
     if (SEARCH_BATCH)
     {
-        search_memo_records_batch(FILENAME_FINAL, BATCH_SIZE, PREFIX_SEARCH_SIZE);
+        search_memo_records_batch(FILENAME_TABLE2, BATCH_SIZE, PREFIX_SEARCH_SIZE);
     }
 
     // Call the function to count zero-value MemoRecords
@@ -1568,7 +1469,7 @@ int main(int argc, char *argv[])
         if (!BENCHMARK)
             printf("verifying sorted order by bucketIndex of final stored file...\n");
         // process_memo_records(FILENAME_FINAL, MEMORY_SIZE_bytes / sizeof(MemoRecord));
-        process_memo_records_table2(FILENAME_FINAL, num_records_in_bucket * rounds, num_threads);
+        process_memo_records_table2(FILENAME_TABLE2, num_records_in_bucket * rounds, num_threads);
     }
 
     if (DEBUG)
