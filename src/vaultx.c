@@ -850,11 +850,11 @@ int main(int argc, char *argv[])
             }
             if (writeDataFinal)
             {
-                printf("Output File Table 1           : %s\n", FILENAME_FINAL);
+                printf("Output File Table 1         : %s\n", FILENAME_FINAL);
             }
             if (writeDataTable2)
             {
-                printf("Output File Table 2          : %s\n", FILENAME_TABLE2);
+                printf("Output File Table 2         : %s\n", FILENAME_TABLE2);
             }
         }
     }
