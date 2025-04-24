@@ -20,6 +20,7 @@ bool writeDataTable2 = false;
 bool SEARCH = false;
 bool SEARCH_BATCH = false;
 bool VERIFY = false;
+bool FULL_BUCKETS = false;
 
 size_t BATCH_SIZE = 1024; 
 size_t PREFIX_SEARCH_SIZE = 1;

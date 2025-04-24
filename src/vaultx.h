@@ -15,6 +15,7 @@
 #include "search.h"
 #include "io.h"
 #include "table2.h"
+#include "sort.h"
 
 void print_usage(char *prog_name);
 off_t getBucketIndex(const uint8_t *hash, size_t prefix_size);

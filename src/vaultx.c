@@ -575,6 +575,7 @@ int main(int argc, char *argv[])
         {"search", required_argument, 0, 's'},
         {"prefix_search_size", required_argument, 0, 'S'},
         {"benchmark", required_argument, 0, 'x'},
+        {"full_buckets", required_argument, 0, 'y'},
         {"debug", required_argument, 0, 'd'},
         {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0}};
@@ -583,7 +584,7 @@ int main(int argc, char *argv[])
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:b:w:c:j:v:s:S:x:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:j:b:w:c:v:s:S:x:y:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -714,6 +715,16 @@ int main(int argc, char *argv[])
                 BENCHMARK = false;
             }
             break;
+        case 'y':
+            if (strcmp(optarg, "true") == 0)
+            {
+                FULL_BUCKETS = true;
+            }
+            else
+            {
+                FULL_BUCKETS = false;
+            }
+            break;
         case 'd':
             if (strcmp(optarg, "true") == 0)
             {
@@ -839,11 +850,11 @@ int main(int argc, char *argv[])
             }
             if (writeDataFinal)
             {
-                printf("Output File Final           : %s\n", FILENAME_FINAL);
+                printf("Output File Table 1           : %s\n", FILENAME_FINAL);
             }
             if (writeDataTable2)
             {
-                printf("Output File Table2          : %s\n", FILENAME_TABLE2);
+                printf("Output File Table 2          : %s\n", FILENAME_TABLE2);
             }
         }
     }
@@ -886,6 +897,23 @@ int main(int argc, char *argv[])
             }
         }
 
+        buckets2 = (BucketTable2 *)calloc(num_buckets, sizeof(BucketTable2));
+        if (buckets2 == NULL)
+        {
+            fprintf(stderr, "Error: Unable to allocate memory for buckets2.\n");
+            exit(EXIT_FAILURE);
+        }
+        // Allocate memory for each bucket's records
+        for (unsigned long long i = 0; i < num_buckets; i++)
+        {
+            buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
+            if (buckets2[i].records == NULL)
+            {
+                fprintf(stderr, "Error: Unable to allocate memory for records2.\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
         double throughput_hash = 0.0;
         double throughput_io = 0.0;
 
@@ -915,7 +943,9 @@ int main(int argc, char *argv[])
             }
 
             unsigned long long MAX_NUM_HASHES = 1ULL << (NONCE_SIZE * 8);
-
+            // if we want to overgenerate hashes to fill all buckets
+            if (FULL_BUCKETS)
+                num_hashes = MAX_NUM_HASHES / rounds;
             unsigned long long start_idx = r * num_hashes;
             unsigned long long end_idx = start_idx + num_hashes;
             unsigned long long nonce_max = 0;
@@ -1087,7 +1117,22 @@ int main(int argc, char *argv[])
 #pragma omp parallel for schedule(static)
                 for (unsigned long long i = 0; i < num_buckets; i++)
                 {
-                    bytesWritten += writeBucketToDiskSequential(&buckets[i], fd);
+                    sort_bucket_records_inplace(buckets[i].records, num_records_in_bucket);
+                    generate_table2(buckets[i].records, num_records_in_bucket);
+                }
+
+                // write table2
+                for (unsigned long long i = 0; i < num_buckets; i++)
+                {
+                    size_t elements_written = fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd);
+                    if (elements_written != num_records_in_bucket)
+                    {
+                        fprintf(stderr, "Error writing bucket to file; elements written %zu when expected %llu\n",
+                                elements_written, num_records_in_bucket);
+                        fclose(fd);
+                        exit(EXIT_FAILURE);
+                    }
+                    bytesWritten += elements_written * sizeof(MemoTable2Record);
                 }
 
                 // End I/O time measurement
@@ -1103,10 +1148,10 @@ int main(int argc, char *argv[])
                 unsigned long long record_counts_waste = 0;
                 for (unsigned long long i = 0; i < num_buckets; i++)
                 {
-                    if (buckets[i].count == num_records_in_bucket)
+                    if (buckets2[i].count == num_records_in_bucket)
                         full_buckets++;
-                    record_counts += buckets[i].count;
-                    record_counts_waste += buckets[i].count_waste;
+                    record_counts += buckets2[i].count;
+                    record_counts_waste += buckets2[i].count_waste;
                 }
 
                 printf("record_counts=%llu storage_efficiency=%.2f full_buckets=%llu bucket_efficiency=%.2f nonce_max=%llu record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / num_buckets, nonce_max, record_counts_waste, num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + num_buckets * num_records_in_bucket));
@@ -1116,7 +1161,7 @@ int main(int argc, char *argv[])
             throughput_hash = (num_hashes / (elapsed_time_hash + elapsed_time_io)) / (1e6);
 
             // Calculate I/O throughput
-            throughput_io = (num_hashes * NONCE_SIZE) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
+            throughput_io = (num_hashes * NONCE_SIZE * 2) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
 
             if (!BENCHMARK)
                 printf("[%.2f] HashGen %.2f%%: %.2f MH/s : I/O %.2f MB/s\n", omp_get_wtime() - start_time, (r + 1) * 100.0 / rounds, throughput_hash, throughput_io);
@@ -1159,8 +1204,10 @@ int main(int argc, char *argv[])
         for (unsigned long long i = 0; i < num_buckets; i++)
         {
             free(buckets[i].records);
+            free(buckets2[i].records);
         }
         free(buckets);
+        free(buckets2);
 
         if (writeDataFinal && rounds > 1)
         {
@@ -1176,7 +1223,7 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * NONCE_SIZE)) / 2);
+            unsigned long long num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * NONCE_SIZE)) / 2);
             printf("num_buckets_to_read=%llu\n", num_buckets_to_read);
             if (DEBUG)
                 printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * NONCE_SIZE * num_buckets_to_read);
