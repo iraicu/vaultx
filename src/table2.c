@@ -346,9 +346,10 @@ void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 size_t process_memo_records_table2(
     const char *filename,
     const size_t BATCH_SIZE,
-    int num_threads)
+    int num_threads // still here for compatibility, but unused in one‑pass
+)
 {
-    // --- Open file & figure out total_records ---
+    // --- open file & figure out how many records are in it ---
     FILE *file = fopen(filename, "rb");
     if (!file)
     {
@@ -363,176 +364,138 @@ size_t process_memo_records_table2(
         fclose(file);
         return 0;
     }
-    size_t total_records = filesize / sizeof(MemoTable2Record);
+    size_t total_recs_in_file = filesize / sizeof(MemoTable2Record);
+    size_t num_buckets = (total_recs_in_file + BATCH_SIZE - 1) / BATCH_SIZE;
     rewind(file);
 
-    // --- Load all records into memory ---
-    MemoTable2Record *all = malloc(total_records * sizeof(MemoTable2Record));
-    if (!all)
+    // --- allocate one batch buffer ---
+    MemoTable2Record *buffer = malloc(BATCH_SIZE * sizeof(MemoTable2Record));
+    if (!buffer)
     {
-        fprintf(stderr, "OOM allocating %zu records\n", total_records);
+        fprintf(stderr, "Error: Unable to allocate buffer for %zu records\n", BATCH_SIZE);
         fclose(file);
         return 0;
     }
-    size_t got = fread(all, sizeof(MemoTable2Record), total_records, file);
-    fclose(file);
-    if (got != total_records)
-    {
-        fprintf(stderr, "Read only %zu of %zu records\n", got, total_records);
-        free(all);
-        return 0;
-    }
 
-    // --- Allocate buffers for parallel hash work ---
-    uint8_t (*hashes)[HASH_SIZE] = malloc(total_records * HASH_SIZE);
-    bool *valid = malloc(total_records * sizeof(bool));
-    if (!hashes || !valid)
-    {
-        fprintf(stderr, "OOM allocating temp buffers\n");
-        free(all);
-        free(hashes);
-        free(valid);
-        return 0;
-    }
-
-    // --- Phase 1: compute every record's hash in parallel, with progress ---
-    size_t hashed_count = 0;
-    double hash_start_time = omp_get_wtime();
-    double last_hash_print = hash_start_time;
-
-#pragma omp parallel for num_threads(num_threads) schedule(static)
-    for (size_t i = 0; i < total_records; i++)
-    {
-        if (is_nonce_nonzero(all[i].nonce1, NONCE_SIZE) && is_nonce_nonzero(all[i].nonce2, NONCE_SIZE))
-        {
-            valid[i] = true;
-            blake3_hasher hasher;
-            blake3_hasher_init(&hasher);
-            blake3_hasher_update(&hasher, all[i].nonce1, NONCE_SIZE);
-            blake3_hasher_update(&hasher, all[i].nonce2, NONCE_SIZE);
-            blake3_hasher_finalize(&hasher, hashes[i], HASH_SIZE);
-        }
-        else
-        {
-            valid[i] = false;
-        }
-
-        // progress update
-        size_t done;
-#pragma omp atomic capture
-        done = ++hashed_count;
-
-        double now = omp_get_wtime();
-        if (now - last_hash_print >= 1.0)
-        {
-#pragma omp critical
-            {
-                now = omp_get_wtime();
-                if (now - last_hash_print >= 1.0)
-                {
-                    last_hash_print = now;
-                    double pct = (double)done * 100.0 / (double)total_records;
-                    printf("Hashing: %.2f%% (%zu/%zu)\n",
-                           pct, done, total_records);
-                }
-            }
-        }
-    }
-    // ensure final 100% print
-    printf("Hashing: 100.00%% (%zu/%zu)\n", total_records, total_records);
-
-    // --- Phase 2: serial prefix‐compare logic, with progress ---
-    size_t count_condition_met = 0;
-    size_t count_condition_not_met = 0;
+    // --- state & counters ---
+    size_t total_records = 0;
     size_t zero_nonce_count = 0;
     size_t full_buckets = 0;
-    size_t total_seen = 0;
-    size_t num_buckets = (total_records + BATCH_SIZE - 1) / BATCH_SIZE;
+    size_t count_condition_met = 0;
+    size_t count_condition_not_met = 0;
 
     uint8_t prev_hash[HASH_SIZE] = {0};
-    // uint8_t prev_nonce1[NONCE_SIZE] = {0};
-    // uint8_t prev_nonce2[NONCE_SIZE] = {0};
+    uint8_t prev_nonce1[NONCE_SIZE] = {0};
+    uint8_t prev_nonce2[NONCE_SIZE] = {0};
 
-    size_t compared_count = 0;
-    double comp_start_time = omp_get_wtime();
-    double last_comp_print_time = comp_start_time;
+    // --- timing for progress updates ---
+    double start_time = omp_get_wtime();
+    double last_print_time = start_time;
 
+    // --- read & process in one pass, printing progress every second ---
     for (size_t bucket = 0; bucket < num_buckets; bucket++)
     {
         bool bucket_not_full = false;
-        size_t start = bucket * BATCH_SIZE;
-        size_t end = start + BATCH_SIZE;
-        if (end > total_records)
-            end = total_records;
+        size_t records_read = fread(buffer, sizeof(MemoTable2Record), BATCH_SIZE, file);
+        if (records_read == 0)
+            break;
 
-        for (size_t i = start; i < end; i++)
+        for (size_t i = 0; i < records_read; i++)
         {
-            total_seen++;
+            ++total_records;
 
-            if (valid[i])
+            if (is_nonce_nonzero(buffer[i].nonce1, NONCE_SIZE) &&
+                is_nonce_nonzero(buffer[i].nonce2, NONCE_SIZE))
             {
-                if (memcmp(hashes[i], prev_hash, PREFIX_SIZE) >= 0)
+
+                // compute the hash
+                uint8_t hash_output[HASH_SIZE];
+                blake3_hasher hasher;
+                blake3_hasher_init(&hasher);
+                blake3_hasher_update(&hasher, buffer[i].nonce1, NONCE_SIZE);
+                blake3_hasher_update(&hasher, buffer[i].nonce2, NONCE_SIZE);
+                blake3_hasher_finalize(&hasher, hash_output, HASH_SIZE);
+
+                // compare prefix to previous
+                if (memcmp(hash_output, prev_hash, PREFIX_SIZE) >= 0)
                 {
-                    count_condition_met++;
+                    ++count_condition_met;
                 }
                 else
                 {
-                    count_condition_not_met++;
+                    ++count_condition_not_met;
                     if (DEBUG)
                     {
-                        // debug printing omitted for brevity
+                        // your debug prints...
                     }
                 }
-                memcpy(prev_hash, hashes[i], HASH_SIZE);
-                // memcpy(prev_nonce1, all[i].nonce1, NONCE_SIZE);
-                // memcpy(prev_nonce2, all[i].nonce2, NONCE_SIZE);
+
+                // update previous
+                memcpy(prev_hash, hash_output, HASH_SIZE);
+                memcpy(prev_nonce1, buffer[i].nonce1, NONCE_SIZE);
+                memcpy(prev_nonce2, buffer[i].nonce2, NONCE_SIZE);
             }
             else
             {
-                zero_nonce_count++;
+                ++zero_nonce_count;
                 bucket_not_full = true;
             }
 
-            // progress update
-            compared_count++;
+            // --- progress update every second ---
             double now = omp_get_wtime();
-            if (now - last_comp_print_time >= 1.0)
+            if (now - last_print_time >= 1.0)
             {
-                last_comp_print_time = now;
-                double pct = (double)count_condition_met * 100.0 / (double)compared_count;
-                printf("Comparing: %.2f%% (%zu/%zu)\n",
-                       pct, count_condition_met, compared_count);
+                last_print_time = now;
+                double elapsed = now - start_time;
+                double pct = (double)total_records * 100.0 / (double)total_recs_in_file;
+                double pct_met = (double)count_condition_met * 100.0 /
+                                 (double)(count_condition_met + count_condition_not_met + zero_nonce_count);
+                double pct_sorted = (double)count_condition_met * 100.0 /
+                                    (double)(count_condition_met + count_condition_not_met);
+                printf("[%.2f] Verify %.2f%%: Sorted %.2f%% : Storage Efficiency %.2f%%\n",
+                       elapsed, pct, pct_sorted, pct_met);
             }
         }
 
         if (!bucket_not_full)
         {
-            full_buckets++;
+            ++full_buckets;
         }
     }
-    // ensure final 100% print
-    double pct = (double)count_condition_met * 100.0 / (double)compared_count;
-    printf("Comparing: %.2f%% (%zu/%zu)\n",
-           pct, count_condition_met, compared_count);
 
-    // --- Clean up ---
-    free(all);
-    free(hashes);
-    free(valid);
+    // ensure final 100% progress line
+    double now = omp_get_wtime();
+    double elapsed = now - start_time;
+    double pct = (double)total_records * 100.0 / (double)total_recs_in_file;
+    double pct_met = (double)count_condition_met * 100.0 /
+                     (double)(count_condition_met + count_condition_not_met + zero_nonce_count);
+    double pct_sorted = (double)count_condition_met * 100.0 /
+                        (double)(count_condition_met + count_condition_not_met);
 
-    // --- Final summary ---
-    double storage_eff = 100.0 * count_condition_met / total_seen;
-    double bucket_eff = 100.0 * full_buckets / num_buckets;
+    // printf("Progress: 100.00%% (%zu/%zu)\n", total_records, total_recs_in_file);
+    printf("[%.2f] Verify %.2f%%: Sorted %.2f%% : Storage Efficiency %.2f%%\n",
+           elapsed, pct, pct_sorted, pct_met);
+
+    // --- cleanup ---
+    free(buffer);
+    fclose(file);
+
+    // --- final summary ---
+    /*
+    double storage_eff  = 100.0 * count_condition_met     / (double)total_records;
+    double bucket_eff   = 100.0 * full_buckets            / (double)num_buckets;
     printf(
-        "sorted=%zu not_sorted=%zu zero_nonces=%zu total_records=%zu full_buckets=%zu "
-        "storage_efficiency=%.2f bucket_efficiency=%.2f\n",
-        count_condition_met,
-        count_condition_not_met,
-        zero_nonce_count,
-        total_seen,
-        full_buckets,
-        storage_eff,
-        bucket_eff);
+      "sorted=%zu not_sorted=%zu zero_nonces=%zu total_records=%zu full_buckets=%zu "
+      "storage_efficiency=%.2f bucket_efficiency=%.2f\n",
+      count_condition_met,
+      count_condition_not_met,
+      zero_nonce_count,
+      total_records,
+      full_buckets,
+      storage_eff,
+      bucket_eff
+    );
+    */
 
     return count_condition_met;
 }
