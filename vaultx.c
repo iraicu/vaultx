@@ -24,7 +24,7 @@
 #include <tbb/blocked_range.h>
 #endif
 
-#include "blake3.h" // Include Blake3 header
+#include "blake3/blake3.h" // Include Blake3 header
 
 #ifndef NONCE_SIZE
 #define NONCE_SIZE 5 // Default nonce size
@@ -108,15 +108,15 @@ void print_usage(char *prog_name)
 {
     printf("Usage: %s [OPTIONS]\n", prog_name);
     printf("\nOptions:\n");
-    printf("  -a [xtask|task|for|tbb]    Select parallelization approach (default: for)\n");
-    printf("  -t NUM            Number of threads to use (default: number of available cores)\n");
-    printf("  -K NUM           Exponent K to compute iterations as 2^K (default: 4)\n");
-    printf("  -m NUM             Memory size in MB (default: 1)\n");
-    printf("  -f NAME              Temporary file name raw\n");
-    printf("  -g NAME              Temporary file name table1\n");
-    printf("  -j NAME              Final file name table2\n");
-    printf("  -b NUM         Batch size (default: 1024)\n");
-    printf("  -h, --help                   Display this help message\n");
+    printf("  -a [xtask|task|for|tbb]   Select parallelization approach (default: for)\n");
+    printf("  -t NUM                    Number of threads to use (default: number of available cores)\n");
+    printf("  -K NUM                    Exponent K to compute iterations as 2^K (default: 4)\n");
+    printf("  -m NUM                    Memory size in MB (default: 1)\n");
+    printf("  -f NAME                   Temporary file name raw\n");
+    printf("  -g NAME                   Temporary file name table1\n");
+    printf("  -j NAME                   Final file name table2\n");
+    printf("  -b NUM                    Batch size (default: 1024)\n");
+    printf("  -h, --help                Display this help message\n");
     printf("\nExample:\n");
     printf("  %s -a task -t 8 -K 20 -m 1024 -f output.dat\n", prog_name);
 }
@@ -309,7 +309,7 @@ void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
 {
     if (bucketIndex >= num_buckets)
     {
-        fprintf(stderr, "Error: Bucket index %zu out of range (0 to %zu).\n", bucketIndex, num_buckets - 1);
+        fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, num_buckets - 1);
         return;
     }
 
@@ -348,7 +348,7 @@ void insert_record2(Bucket2 *buckets2, MemoRecord2 *record, size_t bucketIndex)
 {
     if (bucketIndex >= num_buckets)
     {
-        fprintf(stderr, "Error: Bucket index %zu out of range (0 to %zu).\n", bucketIndex, num_buckets - 1);
+        fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, num_buckets - 1);
         return;
     }
 
@@ -758,7 +758,7 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
     }
 
     printf("num_records_in_bucket=%llu\n", num_records_in_bucket);
-    printf("BATCH_SIZE=%llu\n", BATCH_SIZE);
+    printf("BATCH_SIZE=%lu\n", BATCH_SIZE);
     printf("filesize=%ld\n", filesize);
 
     // Open the file for reading in binary mode
@@ -782,7 +782,7 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
 
     // Start walltime measurement
     double start_time = omp_get_wtime();
-    double end_time = omp_get_wtime();
+    // double end_time = omp_get_wtime();
 
     // Read the file in batches
     while ((records_read = fread(buffer, sizeof(MemoRecord), BATCH_SIZE, file)) > 0)
@@ -790,19 +790,19 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
         double start_time_verify = omp_get_wtime();
         double end_time_verify = omp_get_wtime();
         bucket_not_full = false;
-        uint64_t distance = 0;
+        // uint64_t distance = 0;
         // uint64_t HASH_SPACE = 1 << K;
         // uint64_t M = 1 << 64;
         // uint64_t M = UINT64_MAX;
         // uint64_t expected_distance = M/(HASH_SPACE+1);
-        uint64_t expected_distance = 1 << (64 - K + 1);
+        // uint64_t expected_distance = 1 << (64 - K + 1);
         // printf("expected_distance=%llu\n",expected_distance);
-        uint64_t min_distance = UINT64_MAX;
-        uint64_t max_distance = 0;
-        uint64_t total_distance = 0;
+        // uint64_t min_distance = UINT64_MAX;
+        // uint64_t max_distance = 0;
+        // uint64_t total_distance = 0;
         uint64_t count = 0;
-        bool hash_pass = false;
-        uint64_t hash_pass_count = 0;
+        // bool hash_pass = false;
+        // uint64_t hash_pass_count = 0;
         // printf("records_read=%ld\n",records_read);
         //  Process each MemoRecord in the batch
         for (size_t i = 0; i < records_read; ++i)
@@ -952,7 +952,7 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
     return count_condition_met;
 }
 
-size_t process_memo_records_table2_old(const char *filename, const size_t BATCH_SIZE, int num_threads)
+size_t process_memo_records_table2_old(const char *filename, const size_t BATCH_SIZE)
 {
     // const size_t BATCH_SIZE = 1000000; // 1 million MemoRecords per batch
     MemoRecord2 *buffer = NULL;
@@ -977,7 +977,7 @@ size_t process_memo_records_table2_old(const char *filename, const size_t BATCH_
     }
 
     printf("num_records_in_bucket=%llu\n", num_records_in_bucket);
-    printf("BATCH_SIZE=%llu\n", BATCH_SIZE);
+    printf("BATCH_SIZE=%lu\n", BATCH_SIZE);
     printf("filesize=%ld\n", filesize);
 
     // Open the file for reading in binary mode
@@ -1001,7 +1001,7 @@ size_t process_memo_records_table2_old(const char *filename, const size_t BATCH_
 
     // Start walltime measurement
     double start_time = omp_get_wtime();
-    double end_time = omp_get_wtime();
+    // double end_time = omp_get_wtime();
 
     // Read the file in batches
     while ((records_read = fread(buffer, sizeof(MemoRecord2), BATCH_SIZE, file)) > 0)
@@ -1009,14 +1009,14 @@ size_t process_memo_records_table2_old(const char *filename, const size_t BATCH_
         double start_time_verify = omp_get_wtime();
         double end_time_verify = omp_get_wtime();
         bucket_not_full = false;
-        uint64_t distance = 0;
-        uint64_t expected_distance = 1 << (64 - K + 1);
-        uint64_t min_distance = UINT64_MAX;
-        uint64_t max_distance = 0;
-        uint64_t total_distance = 0;
+        // uint64_t distance = 0;
+        // uint64_t expected_distance = 1 << (64 - K + 1);
+        // uint64_t min_distance = UINT64_MAX;
+        // uint64_t max_distance = 0;
+        // uint64_t total_distance = 0;
         uint64_t count = 0;
-        bool hash_pass = false;
-        uint64_t hash_pass_count = 0;
+        // bool hash_pass = false;
+        // uint64_t hash_pass_count = 0;
 
         // Process each MemoRecord in the batch
         for (size_t i = 0; i < records_read; ++i)
@@ -1120,10 +1120,11 @@ size_t process_memo_records_table2_old(const char *filename, const size_t BATCH_
 
 size_t process_memo_records_table2(
     const char *filename,
-    const size_t BATCH_SIZE,
-    int num_threads)
+    const size_t BATCH_SIZE
+    // int num_threads // still here for compatibility, but unused in one‑pass
+)
 {
-    // --- Open file & figure out total_records ---
+    // --- open file & figure out how many records are in it ---
     FILE *file = fopen(filename, "rb");
     if (!file)
     {
@@ -1138,180 +1139,141 @@ size_t process_memo_records_table2(
         fclose(file);
         return 0;
     }
-    size_t total_records = filesize / sizeof(MemoRecord2);
+    size_t total_recs_in_file = filesize / sizeof(MemoRecord2);
+    size_t num_buckets = (total_recs_in_file + BATCH_SIZE - 1) / BATCH_SIZE;
     rewind(file);
 
-    // --- Load all records into memory ---
-    MemoRecord2 *all = malloc(total_records * sizeof(MemoRecord2));
-    if (!all)
+    // --- allocate one batch buffer ---
+    MemoRecord2 *buffer = malloc(BATCH_SIZE * sizeof(MemoRecord2));
+    if (!buffer)
     {
-        fprintf(stderr, "OOM allocating %zu records\n", total_records);
+        fprintf(stderr, "Error: Unable to allocate buffer for %zu records\n", BATCH_SIZE);
         fclose(file);
         return 0;
     }
-    size_t got = fread(all, sizeof(MemoRecord2), total_records, file);
-    fclose(file);
-    if (got != total_records)
-    {
-        fprintf(stderr, "Read only %zu of %zu records\n", got, total_records);
-        free(all);
-        return 0;
-    }
 
-    // --- Allocate buffers for parallel hash work ---
-    uint8_t (*hashes)[HASH_SIZE] = malloc(total_records * HASH_SIZE);
-    bool *valid = malloc(total_records * sizeof(bool));
-    if (!hashes || !valid)
-    {
-        fprintf(stderr, "OOM allocating temp buffers\n");
-        free(all);
-        free(hashes);
-        free(valid);
-        return 0;
-    }
-
-    // --- Phase 1: compute every record's hash in parallel, with progress ---
-    size_t hashed_count = 0;
-    double hash_start_time = omp_get_wtime();
-    double last_hash_print = hash_start_time;
-
-#pragma omp parallel for num_threads(num_threads) schedule(static)
-    for (size_t i = 0; i < total_records; i++)
-    {
-        if (is_nonce_nonzero(all[i].nonce1, NONCE_SIZE) && is_nonce_nonzero(all[i].nonce2, NONCE_SIZE))
-        {
-            valid[i] = true;
-            blake3_hasher hasher;
-            blake3_hasher_init(&hasher);
-            blake3_hasher_update(&hasher, all[i].nonce1, NONCE_SIZE);
-            blake3_hasher_update(&hasher, all[i].nonce2, NONCE_SIZE);
-            blake3_hasher_finalize(&hasher, hashes[i], HASH_SIZE);
-        }
-        else
-        {
-            valid[i] = false;
-        }
-
-        // progress update
-        size_t done;
-#pragma omp atomic capture
-        done = ++hashed_count;
-
-        double now = omp_get_wtime();
-        if (now - last_hash_print >= 1.0)
-        {
-#pragma omp critical
-            {
-                now = omp_get_wtime();
-                if (now - last_hash_print >= 1.0)
-                {
-                    last_hash_print = now;
-                    double pct = (double)done * 100.0 / (double)total_records;
-                    printf("Hashing: %.2f%% (%zu/%zu)\n",
-                           pct, done, total_records);
-                }
-            }
-        }
-    }
-    // ensure final 100% print
-    printf("Hashing: 100.00%% (%zu/%zu)\n", total_records, total_records);
-
-    // --- Phase 2: serial prefix‐compare logic, with progress ---
-    size_t count_condition_met = 0;
-    size_t count_condition_not_met = 0;
+    // --- state & counters ---
+    size_t total_records = 0;
     size_t zero_nonce_count = 0;
     size_t full_buckets = 0;
-    size_t total_seen = 0;
-    size_t num_buckets = (total_records + BATCH_SIZE - 1) / BATCH_SIZE;
+    size_t count_condition_met = 0;
+    size_t count_condition_not_met = 0;
 
     uint8_t prev_hash[HASH_SIZE] = {0};
     uint8_t prev_nonce1[NONCE_SIZE] = {0};
     uint8_t prev_nonce2[NONCE_SIZE] = {0};
 
-    size_t compared_count = 0;
-    double comp_start_time = omp_get_wtime();
-    double last_comp_print_time = comp_start_time;
+    // --- timing for progress updates ---
+    double start_time = omp_get_wtime();
+    double last_print_time = start_time;
 
+    // --- read & process in one pass, printing progress every second ---
     for (size_t bucket = 0; bucket < num_buckets; bucket++)
     {
         bool bucket_not_full = false;
-        size_t start = bucket * BATCH_SIZE;
-        size_t end = start + BATCH_SIZE;
-        if (end > total_records)
-            end = total_records;
+        size_t records_read = fread(buffer, sizeof(MemoRecord2), BATCH_SIZE, file);
+        if (records_read == 0)
+            break;
 
-        for (size_t i = start; i < end; i++)
+        for (size_t i = 0; i < records_read; i++)
         {
-            total_seen++;
+            ++total_records;
 
-            if (valid[i])
+            if (is_nonce_nonzero(buffer[i].nonce1, NONCE_SIZE) &&
+                is_nonce_nonzero(buffer[i].nonce2, NONCE_SIZE))
             {
-                if (memcmp(hashes[i], prev_hash, PREFIX_SIZE) >= 0)
+
+                // compute the hash
+                uint8_t hash_output[HASH_SIZE];
+                blake3_hasher hasher;
+                blake3_hasher_init(&hasher);
+                blake3_hasher_update(&hasher, buffer[i].nonce1, NONCE_SIZE);
+                blake3_hasher_update(&hasher, buffer[i].nonce2, NONCE_SIZE);
+                blake3_hasher_finalize(&hasher, hash_output, HASH_SIZE);
+
+                // compare prefix to previous
+                if (memcmp(hash_output, prev_hash, PREFIX_SIZE) >= 0)
                 {
-                    count_condition_met++;
+                    ++count_condition_met;
                 }
                 else
                 {
-                    count_condition_not_met++;
+                    ++count_condition_not_met;
                     if (DEBUG)
                     {
-                        // debug printing omitted for brevity
+                        // your debug prints...
                     }
                 }
-                memcpy(prev_hash, hashes[i], HASH_SIZE);
-                // memcpy(prev_nonce1, all[i].nonce1, NONCE_SIZE);
-                // memcpy(prev_nonce2, all[i].nonce2, NONCE_SIZE);
+
+                // update previous
+                memcpy(prev_hash, hash_output, HASH_SIZE);
+                memcpy(prev_nonce1, buffer[i].nonce1, NONCE_SIZE);
+                memcpy(prev_nonce2, buffer[i].nonce2, NONCE_SIZE);
             }
             else
             {
-                zero_nonce_count++;
+                ++zero_nonce_count;
                 bucket_not_full = true;
             }
 
-            // progress update
-            compared_count++;
+            // --- progress update every second ---
             double now = omp_get_wtime();
-            if (now - last_comp_print_time >= 1.0)
+            if (now - last_print_time >= 1.0)
             {
-                last_comp_print_time = now;
-                double pct = (double)count_condition_met * 100.0 / (double)compared_count;
-                printf("Comparing: %.2f%% (%zu/%zu)\n",
-                       pct, count_condition_met, compared_count);
+                last_print_time = now;
+                double elapsed = now - start_time;
+                double pct = (double)total_records * 100.0 / (double)total_recs_in_file;
+                double pct_met = (double)count_condition_met * 100.0 /
+                                 (double)(count_condition_met + count_condition_not_met + zero_nonce_count);
+                double pct_sorted = (double)count_condition_met * 100.0 /
+                                    (double)(count_condition_met + count_condition_not_met);
+                printf("[%.2f] Verify %.2f%%: Sorted %.2f%% : Storage Efficiency %.2f%%\n",
+                       elapsed, pct, pct_sorted, pct_met);
             }
         }
 
         if (!bucket_not_full)
         {
-            full_buckets++;
+            ++full_buckets;
         }
     }
-    // ensure final 100% print
-    double pct = (double)count_condition_met * 100.0 / (double)compared_count;
-    printf("Comparing: %.2f%% (%zu/%zu)\n",
-           pct, count_condition_met, compared_count);
 
-    // --- Clean up ---
-    free(all);
-    free(hashes);
-    free(valid);
+    // ensure final 100% progress line
+    double now = omp_get_wtime();
+    double elapsed = now - start_time;
+    double pct = (double)total_records * 100.0 / (double)total_recs_in_file;
+    double pct_met = (double)count_condition_met * 100.0 /
+                     (double)(count_condition_met + count_condition_not_met + zero_nonce_count);
+    double pct_sorted = (double)count_condition_met * 100.0 /
+                        (double)(count_condition_met + count_condition_not_met);
 
-    // --- Final summary ---
-    double storage_eff = 100.0 * count_condition_met / total_seen;
-    double bucket_eff = 100.0 * full_buckets / num_buckets;
+    // printf("Progress: 100.00%% (%zu/%zu)\n", total_records, total_recs_in_file);
+    printf("[%.2f] Verify %.2f%%: Sorted %.2f%% : Storage Efficiency %.2f%%\n",
+           elapsed, pct, pct_sorted, pct_met);
+
+    // --- cleanup ---
+    free(buffer);
+    fclose(file);
+
+    // --- final summary ---
+    /*
+    double storage_eff  = 100.0 * count_condition_met     / (double)total_records;
+    double bucket_eff   = 100.0 * full_buckets            / (double)num_buckets;
     printf(
-        "sorted=%zu not_sorted=%zu zero_nonces=%zu total_records=%zu full_buckets=%zu "
-        "storage_efficiency=%.2f bucket_efficiency=%.2f\n",
-        count_condition_met,
-        count_condition_not_met,
-        zero_nonce_count,
-        total_seen,
-        full_buckets,
-        storage_eff,
-        bucket_eff);
+      "sorted=%zu not_sorted=%zu zero_nonces=%zu total_records=%zu full_buckets=%zu "
+      "storage_efficiency=%.2f bucket_efficiency=%.2f\n",
+      count_condition_met,
+      count_condition_not_met,
+      zero_nonce_count,
+      total_records,
+      full_buckets,
+      storage_eff,
+      bucket_eff
+    );
+    */
 
     return count_condition_met;
 }
-
 size_t process_memo_records_debug(const char *filename, const size_t BATCH_SIZE)
 {
     MemoRecord *buffer = NULL;
@@ -1339,7 +1301,7 @@ size_t process_memo_records_debug(const char *filename, const size_t BATCH_SIZE)
     }
 
     printf("num_records_in_bucket=%llu\n", num_records_in_bucket);
-    printf("BATCH_SIZE=%llu\n", BATCH_SIZE);
+    printf("BATCH_SIZE=%lu\n", BATCH_SIZE);
     printf("filesize=%ld\n", filesize);
 
     file = fopen(filename, "rb");
@@ -1359,7 +1321,7 @@ size_t process_memo_records_debug(const char *filename, const size_t BATCH_SIZE)
     }
 
     double start_time = omp_get_wtime();
-    double end_time = omp_get_wtime();
+    // double end_time = omp_get_wtime();
 
     while ((records_read = fread(buffer, sizeof(MemoRecord), BATCH_SIZE, file)) > 0)
     {
@@ -1372,9 +1334,9 @@ size_t process_memo_records_debug(const char *filename, const size_t BATCH_SIZE)
         // uint64_t M = UINT64_MAX;
         // uint64_t expected_distance = M / (HASH_SPACE + 1);
         uint64_t expected_distance = 1ULL << (64 - K);
-        uint64_t min_distance = UINT64_MAX;
-        uint64_t max_distance = 0;
-        uint64_t total_distance = 0;
+        // uint64_t min_distance = UINT64_MAX;
+        // uint64_t max_distance = 0;
+        // uint64_t total_distance = 0;
         uint64_t count = 0;
         uint64_t hash_pass_count = 0;
 
@@ -1436,7 +1398,7 @@ size_t process_memo_records_debug(const char *filename, const size_t BATCH_SIZE)
                         // distance = compute_hash_distance_debug(prev_prev_hash, hash_output, HASH_SIZE);
 
                         // distance = compute_hash_distance_debug(prev_hash, hash_output, HASH_SIZE);
-                        printf("compute_hash_distance()): distance=%llu expected_distance=%llu match=%s leading_match=%llu\n",
+                        printf("compute_hash_distance()): distance=%lu expected_distance=%lu match=%s leading_match=%lu\n",
                                distance, expected_distance, (distance <= expected_distance) ? "true" : "false", leading_match);
                     }
 
@@ -1455,11 +1417,8 @@ size_t process_memo_records_debug(const char *filename, const size_t BATCH_SIZE)
                     memcpy(prev_prev_nonce, prev_nonce, NONCE_SIZE);
                 }
 
-                if (i >= 0)
-                {
-                    memcpy(prev_hash, hash_output, HASH_SIZE);
-                    memcpy(prev_nonce, buffer[i].nonce, NONCE_SIZE);
-                }
+                memcpy(prev_hash, hash_output, HASH_SIZE);
+                memcpy(prev_nonce, buffer[i].nonce, NONCE_SIZE);
             }
             else
             {
@@ -1474,7 +1433,7 @@ size_t process_memo_records_debug(const char *filename, const size_t BATCH_SIZE)
         hash_pass_count_global += hash_pass_count;
         if (total_records % (1024 * 1024) == 0)
         {
-            printf("Hashed passed: %llu out of %llu (%.2f%%)\n",
+            printf("Hashed passed: %lu out of %lu (%.2f%%)\n",
                    hash_pass_count_global, total_records, hash_pass_count_global * 100.0 / total_records);
         }
         double elapsed_time_verify = end_time_verify - start_time_verify;
@@ -1502,17 +1461,16 @@ size_t process_memo_records_debug(const char *filename, const size_t BATCH_SIZE)
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
-size_t generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
+void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 {
-
     // bucket_not_full = false;
-    uint64_t distance = 0;
-    uint64_t leading_match = 0;
+    // uint64_t distance = 0;
+    // uint64_t leading_match = 0;
     uint64_t expected_distance = 1ULL << (64 - K);
-    uint64_t min_distance = UINT64_MAX;
-    uint64_t max_distance = 0;
-    uint64_t total_distance = 0;
-    uint64_t count = 0;
+    // uint64_t min_distance = UINT64_MAX;
+    // uint64_t max_distance = 0;
+    // uint64_t total_distance = 0;
+    // uint64_t count = 0;
     uint64_t hash_pass_count = 0;
 
     for (size_t i = 0; i < num_records_in_bucket; ++i)
@@ -1814,8 +1772,8 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
     {
         printf("SEARCH: filename=%s\n", filename);
         printf("SEARCH: filesize=%zu\n", filesize);
-        printf("SEARCH: num_buckets=%zu\n", num_buckets_search);
-        printf("SEARCH: num_records_in_bucket=%zu\n", num_records_in_bucket_search);
+        printf("SEARCH: num_buckets=%llu\n", num_buckets_search);
+        printf("SEARCH: num_records_in_bucket=%llu\n", num_records_in_bucket_search);
         printf("SEARCH: SEARCH_STRING=%s\n", SEARCH_STRING);
     }
 
@@ -1840,7 +1798,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
 
     // Start walltime measurement
     double start_time = omp_get_wtime();
-    double end_time = omp_get_wtime();
+    // double end_time = omp_get_wtime();
 
     fRecord = search_memo_record(file, bucketIndex, SEARCH_UINT8, SEARCH_LENGTH, num_records_in_bucket_search, buffer);
     if (fRecord >= 0)
@@ -1862,7 +1820,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
 
     // Print the total number of times the condition was met
     if (foundRecord == true)
-        printf("NONCE found (%zu) for HASH prefix %s\n", fRecord, SEARCH_STRING);
+        printf("NONCE found (%llu) for HASH prefix %s\n", fRecord, SEARCH_STRING);
     else
         printf("no NONCE found for HASH prefix %s\n", SEARCH_STRING);
     printf("search time %.2f ms\n", elapsed_time);
@@ -1893,7 +1851,7 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     int foundRecords = 0;
     int notFoundRecords = 0;
     // MemoRecord fRecord;
-    long long fRecord = -1;
+    // long long fRecord = -1;
 
     long filesize = get_file_size(filename);
 
@@ -1909,8 +1867,8 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     {
         printf("SEARCH: filename=%s\n", filename);
         printf("SEARCH: filesize=%zu\n", filesize);
-        printf("SEARCH: num_buckets=%zu\n", num_buckets_search);
-        printf("SEARCH: num_records_in_bucket=%zu\n", num_records_in_bucket_search);
+        printf("SEARCH: num_buckets=%llu\n", num_buckets_search);
+        printf("SEARCH: num_records_in_bucket=%llu\n", num_records_in_bucket_search);
     }
     // printf("SEARCH: SEARCH_STRING=%s\n",SEARCH_STRING);
 
@@ -1935,14 +1893,14 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
 
     // Start walltime measurement
     double start_time = omp_get_wtime();
-    double end_time = omp_get_wtime();
+    // double end_time = omp_get_wtime();
 
     uint8_t SEARCH_UINT8[search_size];
 
     for (int i = 0; i < num_lookups; i++)
     {
 
-        for (size_t i = 0; i < search_size; ++i)
+        for (size_t i = 0; i < (size_t)search_size; ++i)
         {
             SEARCH_UINT8[i] = rand() % 256;
         }
@@ -1973,7 +1931,7 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     if (!BENCHMARK)
         printf("searched for %d lookups of %d bytes long, found %d, not found %d in %.2f seconds, %.2f ms per lookup\n", num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
     else
-        printf("%s %d %zu %zu %zu %d %d %d %d %.2f %.2f\n", filename, NUM_THREADS, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
+        printf("%s %d %zu %llu %llu %d %d %d %d %.2f %.2f\n", filename, NUM_THREADS, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
     // return NULL;
 }
 
@@ -2152,7 +2110,7 @@ int move_file_overwrite(const char *source_path, const char *destination_path)
 
 long long fib(int n);
 long long fib_seq(int n);
-static long long result;
+// static long long result;
 
 void handler(int sig)
 {
@@ -2197,15 +2155,15 @@ unsigned int random_with_time_seed()
 }
 
 // Function to generate a random number using rand_r() with clock_gettime() as the seed
-unsigned int random_with_high_res_seed()
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts); // Get current time with nanosecond resolution
+// unsigned int random_with_high_res_seed()
+// {
+//     struct timespec ts;
+//     clock_gettime(CLOCK_REALTIME, &ts); // Get current time with nanosecond resolution
 
-    // Use nanoseconds part of the timestamp as the seed
-    unsigned int seed = (unsigned int)(ts.tv_nsec);
-    return (unsigned int)rand_r(&seed);
-}
+//     // Use nanoseconds part of the timestamp as the seed
+//     unsigned int seed = (unsigned int)(ts.tv_nsec);
+//     return (unsigned int)rand_r(&seed);
+// }
 
 // using namespace std;
 
@@ -2316,7 +2274,7 @@ int main(int argc, char *argv[])
     unsigned long long num_iterations = 1ULL << K; // 2^K iterations
     unsigned long long num_hashes = num_iterations;
     unsigned long long MEMORY_SIZE_MB = 1;
-    unsigned long long MEMORY_SIZE_bytes_original = 0;
+    // unsigned long long MEMORY_SIZE_bytes_original = 0;
     char *FILENAME = NULL;        // Default output file name
     char *FILENAME_FINAL = NULL;  // Default output file name
     char *FILENAME_TABLE2 = NULL; // Default output file name
@@ -2396,7 +2354,7 @@ int main(int argc, char *argv[])
             break;
         case 'm':
             MEMORY_SIZE_MB = atoi(optarg);
-            MEMORY_SIZE_bytes_original = MEMORY_SIZE_MB * 1024 * 1024;
+            // MEMORY_SIZE_bytes_original = MEMORY_SIZE_MB * 1024 * 1024;
             if (MEMORY_SIZE_MB < 64)
             {
                 fprintf(stderr, "Memory size must be at least 64 MB.\n");
@@ -3085,7 +3043,7 @@ int main(int argc, char *argv[])
                 uint64_t ratio = num_buckets / num_buckets_to_read;
                 uint64_t result = largest_power_of_two_less_than(ratio);
                 if (DEBUG)
-                    printf("Largest power of 2 less than %llu is %llu\n", ratio, result);
+                    printf("Largest power of 2 less than %lu is %lu\n", ratio, result);
                 num_buckets_to_read = num_buckets / result;
                 if (DEBUG)
                     printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * NONCE_SIZE * num_buckets_to_read);
@@ -3099,7 +3057,7 @@ int main(int argc, char *argv[])
             size_t buffer_size = records_per_batch * rounds;
             // Allocate the buffer
             if (DEBUG)
-                printf("allocating %llu bytes for buffer\n", buffer_size * sizeof(MemoRecord));
+                printf("allocating %lu bytes for buffer\n", buffer_size * sizeof(MemoRecord));
             MemoRecord *buffer = (MemoRecord *)malloc(buffer_size * sizeof(MemoRecord));
             if (buffer == NULL)
             {
@@ -3108,7 +3066,7 @@ int main(int argc, char *argv[])
             }
 
             if (DEBUG)
-                printf("allocating %llu bytes for bufferShuffled\n", buffer_size * sizeof(MemoRecord));
+                printf("allocating %lu bytes for bufferShuffled\n", buffer_size * sizeof(MemoRecord));
             MemoRecord *bufferShuffled = (MemoRecord *)malloc(buffer_size * sizeof(MemoRecord));
             if (bufferShuffled == NULL)
             {
@@ -3135,7 +3093,7 @@ int main(int argc, char *argv[])
                     // printf("read data: offset_src_old=%llu offset_src=%llu\n",offset_src_old,offset_src);
                     // if (DEBUG) printf("read data: offset_src_old=%llu bytes=%llu\n",offset_src_old,num_records_in_bucket*NONCE_SIZE*num_buckets_to_read);
                     if (DEBUG)
-                        printf("read data: offset_src=%llu bytes=%llu\n",
+                        printf("read data: offset_src=%lu bytes=%lu\n",
                                offset_src, records_per_batch * sizeof(MemoRecord));
 
                     if (fseeko(fd, offset_src, SEEK_SET) < 0)
@@ -3150,7 +3108,7 @@ int main(int argc, char *argv[])
 
                     size_t index = r * records_per_batch;
                     if (DEBUG)
-                        printf("storing read data at index %llu\n", index);
+                        printf("storing read data at index %lu\n", index);
                     size_t recordsRead = fread(&buffer[index],
                                                sizeof(MemoRecord),
                                                records_per_batch,
@@ -3174,7 +3132,7 @@ int main(int argc, char *argv[])
 
                     off_t offset_dest = i * num_records_in_bucket * NONCE_SIZE * rounds;
                     if (DEBUG)
-                        printf("write data: offset_dest=%llu bytes=%llu\n", offset_dest, num_records_in_bucket * NONCE_SIZE * rounds * num_buckets_to_read);
+                        printf("write data: offset_dest=%lu bytes=%llu\n", offset_dest, num_records_in_bucket * NONCE_SIZE * rounds * num_buckets_to_read);
 
                     if (fseeko(fd_dest, offset_dest, SEEK_SET) < 0)
                     {
@@ -3398,7 +3356,7 @@ int main(int argc, char *argv[])
         // process_memo_records(FILENAME_FINAL,MEMORY_SIZE_bytes/sizeof(MemoRecord));
         // process_memo_records(FILENAME_FINAL,num_records_in_bucket*rounds);
         //  FILENAME_TABLE2
-        process_memo_records_table2(FILENAME_FINAL, num_records_in_bucket * rounds, num_threads);
+        process_memo_records_table2(FILENAME_FINAL, num_records_in_bucket * rounds);
     }
 
     if (DEBUG)
