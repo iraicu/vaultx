@@ -37,24 +37,32 @@ case $(hostname) in
         ;;
 esac
 
-echo "approach,K,nonce_size,num_threads,MEMORY_SIZE_MB,file_size_gb,BATCH_SIZE,total_throughput,total_throughput*NONCE_SIZE,elapsed_time_hash_total,elapsed_time_io_total,elapsed_time_io2_total,elapsed_time-elapsed_time_hash_total-elapsed_time_io_total-elapsed_time_io2_total,elapsed_time" > "$data_file"
+echo "APPROACH,K,NONCE_SIZE(B),NUM_THREADS,MEMORY_SIZE(MB),FILE_SIZE(GB),BATCH_SIZE,THROUGHPUT(MH/S),THROUGHPUT(MB/S),HASH_TIME,IO_TIME,IO2_TIME,REST_TIME,TOTAL_TIME,STORAGE_EFFICIENCY" > "$data_file"
 
-for k in $(seq 1 $max_k); do
-    if [ "$k -lt 32"]; then
-        nonce_size=4
-    else
-        nonce_size=5
-    fi
+run_tests() {
+    local nonce_size=$1
+    local k_start=$2
+    local k_end=$3
 
-    echo "Building vaultx with NONCE_SIZE=$nonce_size for K=$k ..."
     make clean
-    make $make_name RECORD_SIZE=16 NONCE_SIZE=$nonce_size
+    make $make_name NONCE_SIZE=$nonce_size RECORD_SIZE=16
 
-    for i in $(seq 1 5); do 
-        echo "Running vaultx with K=$k, run $i ..."
-        ./vaultx -a for -t $threads -K $k -m $memory -b 1024 -f memo.t -g memo.x -j memo.xx -x true >> "$data_file"
-
+    for k in $(seq $k_start $k_end)
+    do
+        for i in $(seq 1 3)
+        do
+            echo "Running vaultx with K=$k, run $i ..."
+            ./scripts/drop-all-caches.sh
+            ./vaultx -a for -t $threads -K $k -m $memory -b 1024 -f memo.t -g memo.x -j memo.xx -x true >> "$data_file"
+        done
+        
     done
-done
+}
+
+# Run tests for NONCE_SIZE=4
+run_tests 4 25 31
+
+# Run tests for NONCE_SIZE=5
+run_tests 5 32 35
 
 echo "Data collection complete. Results saved to $data_file."

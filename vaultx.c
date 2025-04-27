@@ -2597,6 +2597,7 @@ int main(int argc, char *argv[])
 
     if (HASHGEN)
     {
+        unsigned long long record_counts = 0;
         if (!BENCHMARK)
             printf("HASHGEN                     : true\n");
 
@@ -2692,7 +2693,8 @@ int main(int argc, char *argv[])
             unsigned long long nonce_max = 0;
             // end_idx = end_idx*2;
             // end_idx = 1ULL << (NONCE_SIZE * 8);
-            printf("MAX_NUM_HASHES=%llu rounds=%llu num_hashes=%llu start_idx = %llu, end_idx = %llu\n", MAX_NUM_HASHES, rounds, num_hashes, start_idx, end_idx);
+            if (!BENCHMARK)
+                printf("MAX_NUM_HASHES=%llu rounds=%llu num_hashes=%llu start_idx = %llu, end_idx = %llu\n", MAX_NUM_HASHES, rounds, num_hashes, start_idx, end_idx);
 
             // uses recursive task based parallelism
             if (strcmp(approach, "xtask") == 0)
@@ -2943,7 +2945,7 @@ int main(int argc, char *argv[])
                 // if (rounds == 1)
                 //{
                 unsigned long long full_buckets = 0;
-                unsigned long long record_counts = 0;
+                // unsigned long long record_counts = 0;
                 unsigned long long record_counts_waste = 0;
                 for (unsigned long long i = 0; i < num_buckets; i++)
                 {
@@ -2953,8 +2955,10 @@ int main(int argc, char *argv[])
                     record_counts_waste += buckets2[i].count_waste;
                 }
 
-                printf("record_counts=%llu storage_efficiency=%.2f full_buckets=%llu bucket_efficiency=%.2f nonce_max=%llu record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / num_buckets, nonce_max, record_counts_waste, num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + num_buckets * num_records_in_bucket));
-                //}
+                if (!BENCHMARK)
+                {
+                    printf("record_counts=%llu storage_efficiency=%.2f full_buckets=%llu bucket_efficiency=%.2f nonce_max=%llu record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / num_buckets, nonce_max, record_counts_waste, num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + num_buckets * num_records_in_bucket));
+                }
 
                 // printf("%.2f MB/s\n", throughput_io);
             }
@@ -3324,7 +3328,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("%s %d %lu %d %llu %.2f %zu %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
+            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time, record_counts * 100.0 / (num_buckets * num_records_in_bucket));
             return 0;
         }
     }
