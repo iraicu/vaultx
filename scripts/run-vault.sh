@@ -5,7 +5,7 @@ set -o pipefail
 
 mkdir -p data
 
-case $(hostname) in 
+case $(hostname) in
     "eightsocket")
         max_k=35
         memory=524288
