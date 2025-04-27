@@ -40,8 +40,6 @@ case $(hostname) in
         ;;
 esac
 
-echo "APPROACH,K,NONCE_SIZE(B),NUM_THREADS,MEMORY_SIZE(MB),FILE_SIZE(GB),BATCH_SIZE,THROUGHPUT(MH/S),THROUGHPUT(MB/S),HASH_TIME,IO_TIME,SHUFFLE_TIME,OTHER_TIME,TOTAL_TIME,STORAGE_EFFICIENCY" > "$data_file"
-
 run_tests() {
     local nonce_size=$1
     local k_start=$2
@@ -66,14 +64,41 @@ run_tests() {
 for disk in "${disks[@]}"; do 
     echo "Running benchmarks on $disk disk"
 
-    mount_path="$disk/varvara"
+    case $disk in
+        "/stor/substor1")
+            disk_name="ssd"
+            ;;
+        "/data-fast2")
+            disk_name="nvme"
+            ;;
+        "/ssd-raid")
+            disk_name="ssd"
+            ;;
+        "/data-fast")
+            disk_name="nvme"
+            ;;
+        "/data-a")
+            disk_name="hdd"
+            ;;
+        "data-l")
+            disk_name="hdd"
+            ;;
+        *)
+            echo "Unknown disk: $disk"
+            exit 1
+            ;;
+    esac
+
+    mount_path="$disk/varvara/vaultx"
 
     if [ ! -d "$mount_path" ]; then
         echo "Creating directory $mount_path"
         mkdir -p "$mount_path"
     fi
 
-    data_file="data/vaultx-$(hostname)-$disk.csv"
+    data_file="data/vaultx-$(hostname)-$disk_name.csv"
+
+    echo "APPROACH,K,NONCE_SIZE(B),NUM_THREADS,MEMORY_SIZE(MB),FILE_SIZE(GB),BATCH_SIZE,THROUGHPUT(MH/S),THROUGHPUT(MB/S),HASH_TIME,IO_TIME,SHUFFLE_TIME,OTHER_TIME,TOTAL_TIME,STORAGE_EFFICIENCY" > "$data_file"
 
     # Run tests for NONCE_SIZE=4
     run_tests 4 25 31 $mount_path

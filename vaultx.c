@@ -1460,17 +1460,16 @@ size_t process_memo_records_debug(const char *filename, const size_t BATCH_SIZE)
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
-size_t generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
+void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 {
-
     // bucket_not_full = false;
-    uint64_t distance = 0;
-    uint64_t leading_match = 0;
+    // uint64_t distance = 0;
+    // uint64_t leading_match = 0;
     uint64_t expected_distance = 1ULL << (64 - K);
-    uint64_t min_distance = UINT64_MAX;
-    uint64_t max_distance = 0;
-    uint64_t total_distance = 0;
-    uint64_t count = 0;
+    // uint64_t min_distance = UINT64_MAX;
+    // uint64_t max_distance = 0;
+    // uint64_t total_distance = 0;
+    // uint64_t count = 0;
     uint64_t hash_pass_count = 0;
 
     for (size_t i = 0; i < num_records_in_bucket; ++i)
@@ -3247,17 +3246,17 @@ int main(int argc, char *argv[])
 
             free(buffer);
         }
-        else if (writeDataFinal && rounds == 1)
+        else if (writeDataTable2 && rounds == 1)
         {
             // Call the rename_file function
-            if (move_file_overwrite(FILENAME, FILENAME_FINAL) == 0)
+            if (move_file_overwrite(FILENAME, FILENAME_TABLE2) == 0)
             {
                 if (!BENCHMARK)
-                    printf("File renamed/moved successfully from '%s' to '%s'.\n", FILENAME, FILENAME_FINAL);
+                    printf("File renamed/moved successfully from '%s' to '%s'.\n", FILENAME, FILENAME_TABLE2);
             }
             else
             {
-                printf("Error in moving file '%s' to '%s'.\n", FILENAME, FILENAME_FINAL);
+                printf("Error in moving file '%s' to '%s'.\n", FILENAME, FILENAME_TABLE2);
                 return EXIT_FAILURE;
                 // Error message already printed by rename_file via perror()
                 // Additional handling can be done here if necessary
@@ -3272,10 +3271,10 @@ int main(int argc, char *argv[])
         {
             if (DEBUG)
                 printf("Final flush in progress...\n");
-            int fd2 = open(FILENAME_FINAL, O_RDWR);
+            int fd2 = open(FILENAME_TABLE2, O_RDWR);
             if (fd2 == -1)
             {
-                printf("Error opening file %s (#6)\n", FILENAME_FINAL);
+                printf("Error opening file %s (#6)\n", FILENAME_TABLE2);
 
                 perror("Error opening file");
                 return EXIT_FAILURE;
