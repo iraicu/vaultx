@@ -54,6 +54,7 @@ run_tests() {
             echo "Running vaultx with K=$k, run $i ..."
             ./scripts/drop-all-caches.sh
             ./vaultx -a for -t $threads -K $k -m $memory -b 1024 -f memo.t -g memo.x -j memo.xx -x true >> "$data_file"
+            rm -f memo.t memo.x memo.xx
         done
         
     done
