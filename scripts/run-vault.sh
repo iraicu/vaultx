@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e 
+set -e
 set -o pipefail
 
 mkdir -p data
@@ -18,21 +18,21 @@ case $(hostname) in
         memory=262144
         threads=128
         make_name="vaultx_x86_c"
-        disks=("/data-fast2", "/ssd-raid", "data-l")
+        disks=("/data-fast2" "/ssd-raid" "data-l")
         ;;
     "orangepi5plus")
         max_k=31
         memory=32768
         threads=8
         make_name="vaultx_arm_c"
-        disks=("/data-fast", "/data-a")
+        disks=("/data-fast" "/data-a")
         ;;
     "raspberrypi5")
         max_k=28
         memory=4096
         threads=4
         make_name="vaultx_arm_c"
-        disks=("/data-fast", "/data-a")
+        disks=("/data-fast" "/data-a")
         ;;
     *)
         echo "Unknown hostname: $(hostname)"
