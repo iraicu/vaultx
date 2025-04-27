@@ -3,7 +3,6 @@
 set -e 
 set -o pipefail
 
-data_file="data/vaultx-$(hostname).csv"
 mkdir -p data
 
 case $(hostname) in 
@@ -12,24 +11,28 @@ case $(hostname) in
         memory=524288
         threads=256
         make_name="vaultx_x86_c"
+        disks=("/stor/substor1")
         ;;
     "epycbox")
         max_k=34
         memory=262144
         threads=128
         make_name="vaultx_x86_c"
+        disks=("/data-fast2", "/ssd-raid", "data-l")
         ;;
     "orangepi5plus")
         max_k=31
         memory=32768
         threads=8
         make_name="vaultx_arm_c"
+        disks=("/data-fast", "/data-a")
         ;;
     "raspberrypi5")
         max_k=28
         memory=4096
         threads=4
         make_name="vaultx_arm_c"
+        disks=("/data-fast", "/data-a")
         ;;
     *)
         echo "Unknown hostname: $(hostname)"
@@ -43,6 +46,7 @@ run_tests() {
     local nonce_size=$1
     local k_start=$2
     local k_end=$3
+    local mount_path=$4
 
     make clean
     make $make_name NONCE_SIZE=$nonce_size RECORD_SIZE=16
@@ -53,17 +57,27 @@ run_tests() {
         do
             echo "Running vaultx with K=$k, run $i ..."
             ./scripts/drop-all-caches.sh
-            ./vaultx -a for -t $threads -K $k -m $memory -b 1024 -f memo.t -g memo.x -j memo.xx -x true >> "$data_file"
+            ./vaultx -a for -t $threads -K $k -m $memory -b 1024 -f "$mount_path/memo.t" -g "$mount_path/memo.x" -j "$mount_path/memo.xx" -x true >> "$data_file"
             rm -f memo.t memo.x memo.xx
         done
-        
     done
 }
 
-# Run tests for NONCE_SIZE=4
-run_tests 4 25 31
+for disk in "${disks[@]}"; do 
+    echo "Running benchmarks on $disk disk"
 
-# Run tests for NONCE_SIZE=5
-run_tests 5 32 35
+    mount_path="$disk/varvara"
 
-echo "Data collection complete. Results saved to $data_file."
+    data_file="data/vaultx-$(hostname)-$disk.csv"
+
+    # Run tests for NONCE_SIZE=4
+    run_tests 4 25 31 $mount_path
+
+    # Run tests for NONCE_SIZE=5
+    run_tests 5 32 35 $mount_path
+
+    echo "Data collection on $disk disk complete. Results saved to $data_file."
+
+done
+
+
