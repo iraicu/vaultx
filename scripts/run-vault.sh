@@ -89,7 +89,7 @@ for disk in "${disks[@]}"; do
             ;;
     esac
 
-    mount_path="$disk/varvara/vaultx"
+    mount_path="$disk/varvara"
 
     if [ ! -d "$mount_path" ]; then
         echo "Creating directory $mount_path"
