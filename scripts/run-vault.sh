@@ -101,11 +101,17 @@ for disk in "${disks[@]}"; do
     echo "APPROACH,K,NONCE_SIZE(B),NUM_THREADS,MEMORY_SIZE(MB),FILE_SIZE(GB),BATCH_SIZE,THROUGHPUT(MH/S),THROUGHPUT(MB/S),HASH_TIME,IO_TIME,SHUFFLE_TIME,OTHER_TIME,TOTAL_TIME,STORAGE_EFFICIENCY" > "$data_file"
 
     # Run tests for NONCE_SIZE=4
-    run_tests 4 25 31 $mount_path
+    if [ $max_k -le 31 ]; then
+        run_tests 4 25 $max_k $mount_path
+    else
+        run_tests 4 25 31 $mount_path
+    fi
 
     # Run tests for NONCE_SIZE=5
-    run_tests 5 32 35 $mount_path
-
+    if [ $max_k -ge 32 ]; then
+        run_tests 5 32 $max_k $mount_path
+    fi 
+    
     echo "Data collection on $disk disk complete. Results saved to $data_file."
 
 done
