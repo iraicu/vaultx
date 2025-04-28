@@ -871,7 +871,7 @@ int main(int argc, char *argv[])
             // Allocate the buffer
             if (DEBUG)
                 printf("allocating %lu bytes for buffer\n", buffer_size * sizeof(MemoTable2Record));
-            MemoRecord *buffer = (MemoTable2Record *)malloc(buffer_size * sizeof(MemoTable2Record));
+            MemoTable2Record *buffer = (MemoTable2Record *)malloc(buffer_size * sizeof(MemoTable2Record));
             if (buffer == NULL)
             {
                 fprintf(stderr, "Error allocating memory for buffer.\n");
@@ -879,8 +879,8 @@ int main(int argc, char *argv[])
             }
 
             if (DEBUG)
-                printf("allocating %lu bytes for bufferShuffled\n", buffer_size * sizeof(MemoRecord));
-            MemoRecord *bufferShuffled = (MemoRecord *)malloc(buffer_size * sizeof(MemoRecord));
+                printf("allocating %lu bytes for bufferShuffled\n", buffer_size * sizeof(MemoTable2Record));
+            MemoTable2Record *bufferShuffled = (MemoTable2Record *)malloc(buffer_size * sizeof(MemoTable2Record));
             if (bufferShuffled == NULL)
             {
                 fprintf(stderr, "Error allocating memory for bufferShuffled.\n");
