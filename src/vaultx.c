@@ -731,7 +731,7 @@ int main(int argc, char *argv[])
                 // Set the number of threads if specified
                 if (num_threads_io > 0)
                 {
-                    omp_set_num_threads(num_threads_io);
+                    omp_set_num_threads(num_threads);
                 }
 
 // Write buckets to disk
