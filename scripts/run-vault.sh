@@ -18,7 +18,7 @@ case $(hostname) in
         memory=262144
         threads=128
         make_name="vaultx_x86_c"
-        disks=("/data-fast2" "/ssd-raid" "data-l")
+        disks=("/ssd-raid0" "data-l")
         ;;
     "orangepi5plus")
         max_k=31
@@ -71,7 +71,7 @@ for disk in "${disks[@]}"; do
         "/data-fast2")
             disk_name="nvme"
             ;;
-        "/ssd-raid")
+        "/ssd-raid0")
             disk_name="ssd"
             ;;
         "/data-fast")
