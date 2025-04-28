@@ -14,6 +14,7 @@
 #include "globals.h"
 #include "search.h"
 #include "io.h"
+#include "table1.h"
 #include "table2.h"
 #include "sort.h"
 

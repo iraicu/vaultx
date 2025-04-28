@@ -16,7 +16,6 @@ void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t buc
 void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket);
 size_t process_memo_records_table2(
     const char *filename,
-    const size_t BATCH_SIZE,
-    int num_threads);
+    const size_t BATCH_SIZE);
 
 #endif

@@ -345,8 +345,7 @@ void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 
 size_t process_memo_records_table2(
     const char *filename,
-    const size_t BATCH_SIZE,
-    int num_threads // still here for compatibility, but unused in one‑pass
+    const size_t BATCH_SIZE
 )
 {
     // --- open file & figure out how many records are in it ---
@@ -407,7 +406,6 @@ size_t process_memo_records_table2(
             if (is_nonce_nonzero(buffer[i].nonce1, NONCE_SIZE) &&
                 is_nonce_nonzero(buffer[i].nonce2, NONCE_SIZE))
             {
-
                 // compute the hash
                 uint8_t hash_output[HASH_SIZE];
                 blake3_hasher hasher;
