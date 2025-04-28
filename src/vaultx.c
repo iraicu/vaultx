@@ -5,20 +5,19 @@ void print_usage(char *prog_name)
 {
     printf("Usage: %s [OPTIONS]\n", prog_name);
     printf("\nOptions:\n");
-    printf("  -a, --approach [task|for]    Select parallelization approach (default: for)\n");
-    printf("  -t, --threads NUM            Number of threads to use (default: number of available cores)\n");
-    printf("  -i, --threads_io NUM         Number of I/O threads (default: number of available cores)\n");
-    printf("  -K, --exponent NUM           Exponent K to compute 2^K number of records (default: 4)\n");
-    printf("  -m, --memory NUM             Memory size in MB (default: 1)\n");
-    printf("  -f, --file NAME              Temporary file name\n");
-    printf("  -g, --final file NAME        Final file name\n");
-    printf("  -b, --batch-size NUM         Batch size (default: 1024)\n");
-    printf("  -2, --table2                 Use Table2 approach (should specify -f (table1 file), if table1 was created previously, turn off HASHGEN)\n");
-    printf("  -M, --match THRESHOLD        Specify the threshold to match hashes against in table2 creation (default: 3)\n");
-    printf("  -s, --search STRING          Search for a specific hash prefix in the file\n");
-    printf("  -S, --search-batch NUM       Search for a specific hash prefix in the file in batch mode\n");
-    printf("  -x, --benchmark              Enable benchmark mode (default: false)\n");
-    printf("  -h, --help                   Display this help message\n");
+    printf("  -a, --approach [xtask|task|for|tbb]   Select parallelization approach (default: for)\n");
+    printf("  -t, --threads NUM                     Number of threads to use (default: number of available cores)\n");
+    printf("  -i, --threads_io NUM                  Number of I/O threads (default: number of available cores)\n");
+    printf("  -K, --exponent NUM                    Exponent K to compute 2^K number of records (default: 4)\n");
+    printf("  -m, --memory NUM                      Memory size in MB (default: 1)\n");
+    printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
+    printf("  -f, --file NAME                       Temporary file name\n");
+    printf("  -g, --final file NAME                 Final file name\n");
+    printf("  -j, --table2 file NAME                Use Table2 approach (should specify -f (table1 file), if table1 was created previously, turn off HASHGEN)\n");
+    printf("  -s, --search STRING                   Search for a specific hash prefix in the file\n");
+    printf("  -S, --search-batch NUM                Search for a specific hash prefix in the file in batch mode\n");
+    printf("  -x, --benchmark                       Enable benchmark mode (default: false)\n");
+    printf("  -h, --help                            Display this help message\n");
     printf("\nExample:\n");
     printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo\n", prog_name);
     printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo -x true (Only prints time)\n", prog_name);
@@ -161,7 +160,6 @@ int main(int argc, char *argv[])
     const char *approach = "for"; // Default approach
     int num_threads = 0;          // 0 means OpenMP chooses
     int num_threads_io = 0;
-    int K = 4;                                     // Default exponent
     unsigned long long num_iterations = 1ULL << K; // 2^K iterations
     unsigned long long num_hashes = num_iterations;
     unsigned long long MEMORY_SIZE_MB = 1;
@@ -169,7 +167,7 @@ int main(int argc, char *argv[])
     char *FILENAME = NULL;       // Default output file name
     char *FILENAME_FINAL = NULL; // Default output file name
     char *FILENAME_TABLE2 = NULL;
-    char *SEARCH_STRING = NULL; // Default output file name
+    char *SEARCH_STRING = NULL;
 
     // Define long options
     static struct option long_options[] = {
@@ -355,6 +353,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    // change to filename_table2. does current implementation require filename_table2 to be specified?
     if ((SEARCH || SEARCH_BATCH) && !FILENAME_FINAL)
     {
         fprintf(stderr, "Error: Final file name (-g) is required for search operations.\n");
@@ -366,6 +365,11 @@ int main(int argc, char *argv[])
     if (num_threads > 0)
     {
         omp_set_num_threads(num_threads);
+    }
+
+    if (num_threads_io == 0)
+    {
+        num_threads_io = 1;
     }
 
     // Display selected configurations
@@ -457,6 +461,11 @@ int main(int argc, char *argv[])
             else
                 printf("CIRCULAR_ARRAY              : false\n");
 
+            if (FULL_BUCKETS)
+                printf("FULL_BUCKETS                : true\n");
+            else
+                printf("FULL_BUCKETS                : false\n");
+
             if (writeData)
             {
                 printf("Temporary File              : %s\n", FILENAME);
@@ -522,7 +531,7 @@ int main(int argc, char *argv[])
             buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
             if (buckets2[i].records == NULL)
             {
-                fprintf(stderr, "Error: Unable to allocate memory for records2.\n");
+                fprintf(stderr, "Error: Unable to allocate memory for records in table 2.\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -565,7 +574,7 @@ int main(int argc, char *argv[])
 
             printf("MAX_NUM_HASHES=%llu rounds=%llu num_hashes=%llu start_idx = %llu, end_idx = %llu\n", MAX_NUM_HASHES, rounds, num_hashes, start_idx, end_idx);
 
-            // Parallel region based on selected approach
+            // Recursive task based parallelism
             if (strcmp(approach, "xtask") == 0)
             {
 
@@ -616,9 +625,9 @@ int main(int argc, char *argv[])
             }
             else if (strcmp(approach, "for") == 0)
             {
+                // Parallel For Loop Approach
                 volatile int cancel_flag = 0; // Shared flag
                 full_buckets_global = 0;
-// Parallel For Loop Approach
 #pragma omp parallel for schedule(static) shared(cancel_flag)
                 for (unsigned long long i = start_idx; i < end_idx; i += BATCH_SIZE)
                 {
@@ -665,7 +674,6 @@ int main(int argc, char *argv[])
 
 #ifdef __cplusplus
             // Your C++-specific code here
-
             else if (strcmp(approach, "tbb") == 0)
             {
                 // Parallel For Loop Approach
@@ -822,14 +830,14 @@ int main(int argc, char *argv[])
         free(buckets);
         free(buckets2);
 
-        if (writeDataFinal && rounds > 1)
+        if (writeDataTable2 && rounds > 1)
         {
             // Open the file for writing in binary mode
             FILE *fd_dest = NULL;
-            fd_dest = fopen(FILENAME_FINAL, "wb+");
+            fd_dest = fopen(FILENAME_TABLE2, "wb+");
             if (fd_dest == NULL)
             {
-                printf("Error opening file %s (#5)\n", FILENAME_FINAL);
+                printf("Error opening file %s (#5)\n", FILENAME_TABLE2);
                 perror("Error opening file");
 
                 // perror("Error opening file");
@@ -862,8 +870,8 @@ int main(int argc, char *argv[])
 
             // Allocate the buffer
             if (DEBUG)
-                printf("allocating %lu bytes for buffer\n", buffer_size * sizeof(MemoRecord));
-            MemoRecord *buffer = (MemoRecord *)malloc(buffer_size * sizeof(MemoRecord));
+                printf("allocating %lu bytes for buffer\n", buffer_size * sizeof(MemoTable2Record));
+            MemoRecord *buffer = (MemoTable2Record *)malloc(buffer_size * sizeof(MemoTable2Record));
             if (buffer == NULL)
             {
                 fprintf(stderr, "Error allocating memory for buffer.\n");
@@ -1046,23 +1054,26 @@ int main(int argc, char *argv[])
 
 // will need to check on MacOS with a spinning hdd if we need to call sync() to flush all filesystems
 #ifdef __linux__
-        if (DEBUG)
-            printf("Final flush in progress...\n");
-        int fd2 = open(FILENAME_TABLE2, O_RDWR);
-        if (fd2 == -1)
+        if (writeData)
         {
-            printf("Error opening file %s (#6)\n", FILENAME_TABLE2);
+            if (DEBUG)
+                printf("Final flush in progress...\n");
+            int fd2 = open(FILENAME_TABLE2, O_RDWR);
+            if (fd2 == -1)
+            {
+                printf("Error opening file %s (#6)\n", FILENAME_TABLE2);
 
-            perror("Error opening file");
-            return EXIT_FAILURE;
-        }
+                perror("Error opening file");
+                return EXIT_FAILURE;
+            }
 
-        // Sync the entire filesystem
-        if (syncfs(fd2) == -1)
-        {
-            perror("Error syncing filesystem with syncfs");
-            close(fd2);
-            return EXIT_FAILURE;
+            // Sync the entire filesystem
+            if (syncfs(fd2) == -1)
+            {
+                perror("Error syncing filesystem with syncfs");
+                close(fd2);
+                return EXIT_FAILURE;
+            }
         }
 #endif
 

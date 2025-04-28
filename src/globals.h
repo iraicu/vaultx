@@ -53,7 +53,6 @@ extern bool FULL_BUCKETS;
 
 extern size_t BATCH_SIZE;
 extern size_t PREFIX_SEARCH_SIZE;
-extern size_t match_threshold;
 
 // Structure to hold a record with nonce and hash
 typedef struct
@@ -61,13 +60,6 @@ typedef struct
     uint8_t hash[HASH_SIZE];   // 32-byte Blake3 hash
     uint8_t nonce[NONCE_SIZE]; // Nonce to store the seed
 } MemoAllRecord;
-
-typedef struct
-{
-    uint8_t hash[HASH_SIZE];
-    uint8_t nonce1[NONCE_SIZE];
-    uint8_t nonce2[NONCE_SIZE];
-} MemoTable2Record;
 
 // Structure to hold a record with nonce
 typedef struct
@@ -77,33 +69,28 @@ typedef struct
 
 typedef struct
 {
+    uint8_t hash[HASH_SIZE];
+    uint8_t nonce1[NONCE_SIZE];
+    uint8_t nonce2[NONCE_SIZE];
+} MemoTable2Record;
+
+typedef struct
+{
     MemoRecord *records;
-    size_t count; // Number of records in the bucket
-    size_t count_waste;
-    bool full;
-    size_t flush; // Number of flushes of bucket
+    size_t count;       // Number of records in the bucket
+    size_t count_waste; // Number of records generated but not stored
+    bool full;          // Number of records in the bucket
+    size_t flush;       // Number of flushes of bucket
 } Bucket;
 
 typedef struct
 {
     MemoTable2Record *records;
-    size_t count; // Number of records in the bucket
+    size_t count;       // Number of records in the bucket
     size_t count_waste;
     bool full;
-    size_t flush; // Number of flushes of bucket
+    size_t flush;       // Number of flushes of bucket
 } BucketTable2;
-
-typedef enum
-{
-    BUCKET_TYPE_MEMO,
-    BUCKET_TYPE_MEMO_TABLE2
-} BucketType;
-
-typedef enum
-{
-    RECORD_TYPE_MEMO,
-    RECORD_TYPE_MEMO_TABLE2
-} RecordType;
 
 extern Bucket *buckets;
 extern BucketTable2 *buckets2;

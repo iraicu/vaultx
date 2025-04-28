@@ -24,7 +24,6 @@ bool FULL_BUCKETS = false;
 
 size_t BATCH_SIZE = 1024; 
 size_t PREFIX_SEARCH_SIZE = 1;
-size_t match_threshold = 3;
 
 Bucket *buckets;
 BucketTable2 *buckets2;

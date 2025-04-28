@@ -65,23 +65,6 @@
 //     return sorted_nonces;
 // }
 
-uint64_t compute_hash_distance(const uint8_t *hash_output, const uint8_t *prev_hash, size_t hash_size)
-{
-    // Ensure there are at least 8 bytes in the hash
-    if (hash_size < 8)
-    {
-        fprintf(stderr, "Error: hash_size must be at least 8 bytes.\n");
-        return 0;
-    }
-
-    // Convert the first 8 bytes of each hash to a uint64_t
-    uint64_t current = byteArrayToLongLong(hash_output, 8);
-    uint64_t previous = byteArrayToLongLong(prev_hash, 8);
-
-    // Subtract the previous hash value from the current one and return the result
-    return previous - current;
-}
-
 // int print_table2_entry(const uint8_t *nonce_output, const uint8_t *prev_nonce, const uint8_t *hash_output, const uint8_t *prev_hash, size_t hash_size)
 // {
 //     // Ensure there are at least 8 bytes in the hash
@@ -259,94 +242,26 @@ void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t buc
     }
 }
 
-void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
+uint64_t compute_hash_distance(const uint8_t *hash_output, const uint8_t *prev_hash, size_t hash_size)
 {
-    // bucket_not_full = false;
-    // uint64_t distance = 0;
-    // uint64_t leading_match = 0;
-    uint64_t expected_distance = 1ULL << (64 - K);
-    // uint64_t min_distance = UINT64_MAX;
-    // uint64_t max_distance = 0;
-    // uint64_t total_distance = 0;
-    // uint64_t count = 0;
-    uint64_t hash_pass_count = 0;
-
-    for (size_t i = 0; i < num_records_in_bucket; ++i)
+    // Ensure there are at least 8 bytes in the hash
+    if (hash_size < 8)
     {
-        if (is_nonce_nonzero(sorted_nonces[i].nonce, NONCE_SIZE))
-        {
-            // Compute Blake3 hash for record i
-            uint8_t hash_i[HASH_SIZE];
-            blake3_hasher hasher;
-            blake3_hasher_init(&hasher);
-            blake3_hasher_update(&hasher, sorted_nonces[i].nonce, NONCE_SIZE);
-            blake3_hasher_finalize(&hasher, hash_i, HASH_SIZE);
-
-            // Compare hash_i with all subsequent non-zero nonce records
-            // could change the upper bound here to be b+2 to span multiple buckets
-            for (size_t j = i + 1; j < num_records_in_bucket; ++j)
-            {
-                // Skip records with zero nonce
-                if (!is_nonce_nonzero(sorted_nonces[j].nonce, NONCE_SIZE))
-                {
-                    continue;
-                }
-
-                // Compute Blake3 hash for record j
-                uint8_t hash_j[HASH_SIZE];
-                // blake3_hasher hasher_j;
-                blake3_hasher_init(&hasher);
-                blake3_hasher_update(&hasher, sorted_nonces[j].nonce, NONCE_SIZE);
-                blake3_hasher_finalize(&hasher, hash_j, HASH_SIZE);
-
-                // Compute the distance between hash_i and hash_j
-                uint64_t distance = compute_hash_distance(hash_i, hash_j, HASH_SIZE);
-
-                // Because data is sorted, break out of the inner loop once the distance exceeds expected_distance
-                if (distance > expected_distance)
-                {
-                    break;
-                }
-
-                // The distance is within the expected threshold; count it.
-                hash_pass_count++;
-
-                MemoTable2Record record;
-                uint8_t hash_table2[HASH_SIZE];
-                generate2Blake3(hash_table2, &record, (unsigned long long)sorted_nonces[i].nonce, (unsigned long long)sorted_nonces[j].nonce);
-
-                if (MEMORY_WRITE)
-                {
-                    off_t bucketIndex = getBucketIndex(hash_table2, PREFIX_SIZE);
-                    insert_record2(buckets2, &record, bucketIndex);
-                }
-                // buckets2_count[bucketIndex]++;
-                // printf("bucketIndex=%ld\n",bucketIndex);
-
-                // print_table2_entry(sorted_nonces[i].nonce, sorted_nonces[j].nonce, hash_i, hash_j, HASH_SIZE);
-
-                // Optional: Print debug information every 1,048,576 records processed.
-                // if (total_records % (1024 * 1024) == 0)
-                //{
-                //	printf("compute_hash_distance(): distance=%llu, expected_distance=%llu, hash_pass_count=%llu\n",
-                //			distance, expected_distance,hash_pass_count);
-                //}
-            }
-            // Count this nonzero nonce as processed.
-            //	count++;
-        }
-        // else
-        //{
-        //	++zero_nonce_count;
-        //	bucket_not_full = true;
-        // }
+        fprintf(stderr, "Error: hash_size must be at least 8 bytes.\n");
+        return 0;
     }
+
+    // Convert the first 8 bytes of each hash to a uint64_t
+    uint64_t current = byteArrayToLongLong(hash_output, 8);
+    uint64_t previous = byteArrayToLongLong(prev_hash, 8);
+
+    // Subtract the previous hash value from the current one and return the result
+    return previous - current;
 }
 
 size_t process_memo_records_table2(
     const char *filename,
-    const size_t BATCH_SIZE
-)
+    const size_t BATCH_SIZE)
 {
     // --- open file & figure out how many records are in it ---
     FILE *file = fopen(filename, "rb");
@@ -496,4 +411,88 @@ size_t process_memo_records_table2(
     */
 
     return count_condition_met;
+}
+
+void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
+{
+    // bucket_not_full = false;
+    // uint64_t distance = 0;
+    // uint64_t leading_match = 0;
+    uint64_t expected_distance = 1ULL << (64 - K);
+    // uint64_t min_distance = UINT64_MAX;
+    // uint64_t max_distance = 0;
+    // uint64_t total_distance = 0;
+    // uint64_t count = 0;
+    uint64_t hash_pass_count = 0;
+
+    for (size_t i = 0; i < num_records_in_bucket; ++i)
+    {
+        if (is_nonce_nonzero(sorted_nonces[i].nonce, NONCE_SIZE))
+        {
+            // Compute Blake3 hash for record i
+            uint8_t hash_i[HASH_SIZE];
+            blake3_hasher hasher;
+            blake3_hasher_init(&hasher);
+            blake3_hasher_update(&hasher, sorted_nonces[i].nonce, NONCE_SIZE);
+            blake3_hasher_finalize(&hasher, hash_i, HASH_SIZE);
+
+            // Compare hash_i with all subsequent non-zero nonce records
+            // could change the upper bound here to be b+2 to span multiple buckets
+            for (size_t j = i + 1; j < num_records_in_bucket; ++j)
+            {
+                // Skip records with zero nonce
+                if (!is_nonce_nonzero(sorted_nonces[j].nonce, NONCE_SIZE))
+                {
+                    continue;
+                }
+
+                // Compute Blake3 hash for record j
+                uint8_t hash_j[HASH_SIZE];
+                // blake3_hasher hasher_j;
+                blake3_hasher_init(&hasher);
+                blake3_hasher_update(&hasher, sorted_nonces[j].nonce, NONCE_SIZE);
+                blake3_hasher_finalize(&hasher, hash_j, HASH_SIZE);
+
+                // Compute the distance between hash_i and hash_j
+                uint64_t distance = compute_hash_distance(hash_i, hash_j, HASH_SIZE);
+
+                // Because data is sorted, break out of the inner loop once the distance exceeds expected_distance
+                if (distance > expected_distance)
+                {
+                    break;
+                }
+
+                // The distance is within the expected threshold; count it.
+                hash_pass_count++;
+
+                MemoTable2Record record;
+                uint8_t hash_table2[HASH_SIZE];
+                generate2Blake3(hash_table2, &record, (unsigned long long)sorted_nonces[i].nonce, (unsigned long long)sorted_nonces[j].nonce);
+
+                if (MEMORY_WRITE)
+                {
+                    off_t bucketIndex = getBucketIndex(hash_table2, PREFIX_SIZE);
+                    insert_record2(buckets2, &record, bucketIndex);
+                }
+                // buckets2_count[bucketIndex]++;
+                // printf("bucketIndex=%ld\n",bucketIndex);
+
+                // print_table2_entry(sorted_nonces[i].nonce, sorted_nonces[j].nonce, hash_i, hash_j, HASH_SIZE);
+
+                // Optional: Print debug information every 1,048,576 records processed.
+                // if (total_records % (1024 * 1024) == 0)
+                //{
+                //	printf("compute_hash_distance(): distance=%llu, expected_distance=%llu, hash_pass_count=%llu\n",
+                //			distance, expected_distance,hash_pass_count);
+                //}
+            }
+            // Count this nonzero nonce as processed.
+            //	count++;
+        }
+        // else
+        //{
+        //	++zero_nonce_count;
+        //	bucket_not_full = true;
+        // }
+    }
 }

@@ -4,7 +4,7 @@
 void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long seed)
 {
     // Ensure that the pointers are valid
-    if (record_hash == NULL)
+    if (record_hash == NULL || record->nonce == NULL)
     {
         fprintf(stderr, "Error: NULL pointer passed to generateBlake3.\n");
         return;
@@ -32,6 +32,7 @@ void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
     Bucket *bucket = &buckets[bucketIndex];
     size_t idx;
 
+// Atomically capture the current count and increment it
 #pragma omp atomic capture
     {
         idx = bucket->count;
@@ -45,8 +46,7 @@ void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
     }
     else
     {
-        // Bucket is full; handle overflow if necessary
-        // For now, we ignore overflow
+        // Ensure count doesn't exceed the maximum allowed
         bucket->count = num_records_in_bucket;
         if (!bucket->full)
         {
@@ -55,6 +55,7 @@ void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
             bucket->full = true;
         }
         bucket->count_waste++;
+        // Overflow handling can be added here if necessary.
     }
 }
 
@@ -103,9 +104,11 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
     MemoRecord *buffer = NULL;
     size_t total_records = 0;
     size_t zero_nonce_count = 0;
+    size_t full_buckets = 0;
+    bool bucket_not_full = false;
     size_t records_read;
     FILE *file = NULL;
-    uint8_t prev_hash[PREFIX_SIZE] = {0}; // Initialize previous hash prefix to zero
+    uint8_t prev_hash[HASH_SIZE] = {0};   // Initialize previous hash prefix to zero
     uint8_t prev_nonce[NONCE_SIZE] = {0}; // Initialize previous nonce to zero
     size_t count_condition_met = 0;       // Counter for records meeting the condition
     size_t count_condition_not_met = 0;
@@ -139,13 +142,14 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
 
     // Start walltime measurement
     double start_time = omp_get_wtime();
-    // double end_time = omp_get_wtime();
 
     // Read the file in batches
     while ((records_read = fread(buffer, sizeof(MemoRecord), BATCH_SIZE, file)) > 0)
     {
         double start_time_verify = omp_get_wtime();
         double end_time_verify = omp_get_wtime();
+        bucket_not_full = false;
+        uint64_t distance = 0;
 
         // Process each MemoRecord in the batch
         for (size_t i = 0; i < records_read; ++i)
@@ -197,22 +201,26 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
                 }
 
                 // Update the previous hash prefix and nonce
-                memcpy(prev_hash, hash_output, PREFIX_SIZE);
+                memcpy(prev_hash, hash_output, HASH_SIZE);
                 memcpy(prev_nonce, buffer[i].nonce, NONCE_SIZE);
             }
             else
             {
                 ++zero_nonce_count;
+                bucket_not_full = true;
                 // Optionally, handle zero nonces here
             }
         }
+        if (bucket_not_full == false)
+            full_buckets++;
         end_time_verify = omp_get_wtime();
         double elapsed_time_verify = end_time_verify - start_time_verify;
         double elapsed_time = omp_get_wtime() - start_time;
 
         // Calculate throughput (hashes per second)
         double throughput = (BATCH_SIZE * sizeof(MemoRecord) / elapsed_time_verify) / (1024 * 1024);
-        printf("[%.2f] Verify %.2f%%: %.2f MB/s\n", elapsed_time, total_records * sizeof(MemoRecord) * 100.0 / filesize, throughput);
+        if (total_records % (1024 * 1024) == 0)
+            printf("[%.2f] Verify %.2f%%: %.2f MB/s\n", elapsed_time, total_records * sizeof(MemoRecord) * 100.0 / filesize, throughput);
     }
 
     // Check for reading errors
@@ -226,8 +234,8 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
     free(buffer);
 
     // Print the total number of times the condition was met
-    printf("sorted=%zu not_sorted=%zu zero_nonces=%zu total_records=%zu storage_efficiency=%.2f%%\n",
-           count_condition_met, count_condition_not_met, zero_nonce_count, total_records, count_condition_met * 100.0 / total_records);
+    printf("sorted=%zu not_sorted=%zu zero_nonces=%zu total_records=%zu full_buckets=%zu storage_efficiency=%.2f bucket_efficiency=%.2f\n",
+           count_condition_met, count_condition_not_met, zero_nonce_count, total_records, full_buckets, count_condition_met * 100.0 / total_records, full_buckets * 100.0 / (num_buckets));
 
     return count_condition_met;
 }
