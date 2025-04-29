@@ -27,3 +27,4 @@ size_t PREFIX_SEARCH_SIZE = 1;
 
 Bucket *buckets;
 BucketTable2 *buckets2;
+Bucket2 *buckets2_2;

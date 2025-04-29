@@ -51,7 +51,6 @@ MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEA
                         for (size_t n = 0; n < PREFIX_SIZE; ++n)
                             printf("%02X", SEARCH_UINT8[n]);
                         printf("][%zu] = ", i);
-
                         for (size_t n = 0; n < NONCE_SIZE; ++n)
                             printf("%02X", buffer[i].nonce1[n]);
                         printf(" & ");

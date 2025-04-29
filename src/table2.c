@@ -65,62 +65,62 @@
 //     return sorted_nonces;
 // }
 
-// int print_table2_entry(const uint8_t *nonce_output, const uint8_t *prev_nonce, const uint8_t *hash_output, const uint8_t *prev_hash, size_t hash_size)
-// {
-//     // Ensure there are at least 8 bytes in the hash
-//     if (hash_size < 8)
-//     {
-//         fprintf(stderr, "Error: hash_size must be at least 8 bytes.\n");
-//         return -1;
-//     }
+int print_table2_entry(const uint8_t *nonce_output, const uint8_t *prev_nonce, const uint8_t *hash_output, const uint8_t *prev_hash, size_t hash_size)
+{
+    // Ensure there are at least 8 bytes in the hash
+    if (hash_size < 8)
+    {
+        fprintf(stderr, "Error: hash_size must be at least 8 bytes.\n");
+        return -1;
+    }
 
-//     // Convert the first 8 bytes of each hash to a uint64_t
-//     // uint64_t current = byteArrayToLongLong(hash_output, 8);
-//     // uint64_t previous = byteArrayToLongLong(prev_hash, 8);
-//     // uint64_t distance = previous - current;
+    // Convert the first 8 bytes of each hash to a uint64_t
+    // uint64_t current = byteArrayToLongLong(hash_output, 8);
+    // uint64_t previous = byteArrayToLongLong(prev_hash, 8);
+    // uint64_t distance = previous - current;
 
-//     // Print debugging information
-//     fprintf(stderr, "Debug Info:\n");
+    // Print debugging information
+    fprintf(stderr, "Debug Info:\n");
 
-//     // Print the first 8 bytes of hash_output
-//     fprintf(stderr, "hash_output (first 8 bytes): ");
-//     for (size_t i = 0; i < 8; i++)
-//     {
-//         fprintf(stderr, "%02X ", hash_output[i]);
-//     }
-//     fprintf(stderr, "\n");
+    // Print the first 8 bytes of hash_output
+    fprintf(stderr, "hash_output (first 8 bytes): ");
+    for (size_t i = 0; i < 8; i++)
+    {
+        fprintf(stderr, "%02X ", hash_output[i]);
+    }
+    fprintf(stderr, "\n");
 
-//     // Print the first 8 bytes of prev_hash
-//     fprintf(stderr, "prev_hash (first 8 bytes): ");
-//     for (size_t i = 0; i < 8; i++)
-//     {
-//         fprintf(stderr, "%02X ", prev_hash[i]);
-//     }
-//     fprintf(stderr, "\n");
+    // Print the first 8 bytes of prev_hash
+    fprintf(stderr, "prev_hash (first 8 bytes): ");
+    for (size_t i = 0; i < 8; i++)
+    {
+        fprintf(stderr, "%02X ", prev_hash[i]);
+    }
+    fprintf(stderr, "\n");
 
-//     // Print the computed 64-bit values and the difference
-//     // fprintf(stderr, "current: %" PRIu64 "\n", current);
-//     // fprintf(stderr, "previous: %" PRIu64 "\n", previous);
-//     // fprintf(stderr, "current - previous: %" PRIu64 "\n", distance);
+    // Print the computed 64-bit values and the difference
+    // fprintf(stderr, "current: %" PRIu64 "\n", current);
+    // fprintf(stderr, "previous: %" PRIu64 "\n", previous);
+    // fprintf(stderr, "current - previous: %" PRIu64 "\n", distance);
 
-//     uint8_t hash_table2[hash_size];
-//     blake3_hasher hasher;
-//     blake3_hasher_init(&hasher);
-//     blake3_hasher_update(&hasher, prev_nonce, NONCE_SIZE);
-//     blake3_hasher_update(&hasher, nonce_output, NONCE_SIZE);
+    uint8_t hash_table2[hash_size];
+    blake3_hasher hasher;
+    blake3_hasher_init(&hasher);
+    blake3_hasher_update(&hasher, prev_nonce, NONCE_SIZE);
+    blake3_hasher_update(&hasher, nonce_output, NONCE_SIZE);
 
-//     blake3_hasher_finalize(&hasher, hash_table2, HASH_SIZE);
+    blake3_hasher_finalize(&hasher, hash_table2, HASH_SIZE);
 
-//     // Print the first 8 bytes of hash_table2
-//     fprintf(stderr, "hash_table2 (first 8 bytes): ");
-//     for (size_t i = 0; i < 8; i++)
-//     {
-//         fprintf(stderr, "%02X ", hash_table2[i]);
-//     }
-//     fprintf(stderr, "\n");
+    // Print the first 8 bytes of hash_table2
+    fprintf(stderr, "hash_table2 (first 8 bytes): ");
+    for (size_t i = 0; i < 8; i++)
+    {
+        fprintf(stderr, "%02X ", hash_table2[i]);
+    }
+    fprintf(stderr, "\n");
 
-//     return 0;
-// }
+    return 0;
+}
 
 // void insert_record_table2(BucketTable2 *buckets2, uint8_t nonce1[NONCE_SIZE], uint8_t nonce2[NONCE_SIZE], size_t bucket_index)
 // {
@@ -477,7 +477,7 @@ void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
                 // buckets2_count[bucketIndex]++;
                 // printf("bucketIndex=%ld\n",bucketIndex);
 
-                // print_table2_entry(sorted_nonces[i].nonce, sorted_nonces[j].nonce, hash_i, hash_j, HASH_SIZE);
+                // print_table2_entry(record.nonce1, record.nonce2, hash_i, hash_j, HASH_SIZE);
 
                 // Optional: Print debug information every 1,048,576 records processed.
                 // if (total_records % (1024 * 1024) == 0)

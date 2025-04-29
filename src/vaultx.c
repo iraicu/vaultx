@@ -156,6 +156,8 @@ uint64_t largest_power_of_two_less_than(uint64_t number)
 
 int main(int argc, char *argv[])
 {
+    // printf("size of MemoTable2Record: %zu\n", sizeof(MemoTable2Record));
+    // printf("size of MemoRecord2: %zu\n", sizeof(MemoRecord2));
     // Default values
     const char *approach = "for"; // Default approach
     int num_threads = 0;          // 0 means OpenMP chooses
@@ -353,8 +355,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    // change to filename_table2. does current implementation require filename_table2 to be specified?
-    if ((SEARCH || SEARCH_BATCH) && !FILENAME_FINAL)
+    if ((SEARCH || SEARCH_BATCH) && !FILENAME_TABLE2)
     {
         fprintf(stderr, "Error: Final file name (-g) is required for search operations.\n");
         print_usage(argv[0]);
@@ -528,13 +529,36 @@ int main(int argc, char *argv[])
         // Allocate memory for each bucket's records
         for (unsigned long long i = 0; i < num_buckets; i++)
         {
+            // printf("size of bucket2[%llu]: %zu\n", i, sizeof(buckets2[i]));
             buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
             if (buckets2[i].records == NULL)
             {
                 fprintf(stderr, "Error: Unable to allocate memory for records in table 2.\n");
                 exit(EXIT_FAILURE);
             }
+            // printf("size of bucket2[i].records: %zu\n", sizeof(buckets2[i].records));
         }
+        // printf("size of bucket2 after allocating memory for records: %zu\n", sizeof(buckets2));
+
+        // buckets2_2 = (Bucket2 *)calloc(num_buckets, sizeof(Bucket2));
+        // printf("size of bucket2_2: %zu\n", sizeof(buckets2_2));
+        // if (buckets2 == NULL)
+        // {
+        //     fprintf(stderr, "Error: Unable to allocate memory for buckets2.\n");
+        //     exit(EXIT_FAILURE);
+        // }
+        // // Allocate memory for each bucket's records
+        // for (unsigned long long i = 0; i < num_buckets; i++)
+        // {
+        //     // printf("size of bucket2_2[%llu]: %zu\n", i, sizeof(buckets2_2[i]));
+        //     buckets2_2[i].records = (MemoRecord2 *)calloc(num_records_in_bucket, sizeof(MemoRecord2));
+        //     if (buckets2_2[i].records == NULL)
+        //     {
+        //         fprintf(stderr, "Error: Unable to allocate memory for records in table 2.\n");
+        //         exit(EXIT_FAILURE);
+        //     }
+        //     printf("size of bucket2_2[i].records: %zu\n", sizeof(buckets2_2[i].records));
+        // }
 
         double throughput_hash = 0.0;
         double throughput_io = 0.0;
