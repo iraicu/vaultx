@@ -78,7 +78,7 @@ typedef struct
 // Structure to hold a record with nonce
 typedef struct
 {
-    uint8_t dummy[HASH_SIZE];   // Dummy hash
+    uint8_t dummy[HASH_SIZE];   // 32-byte Blake3 hash
     uint8_t nonce1[NONCE_SIZE]; // Nonce to store the seed
     uint8_t nonce2[NONCE_SIZE]; // Nonce to store the seed
 } MemoRecord2;
@@ -1822,7 +1822,15 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
 
     // Print the total number of times the condition was met
     if (foundRecord == true)
-        printf("NONCE found (%s, %s) for HASH prefix %s\n", fRecord->nonce1, fRecord->nonce2, SEARCH_STRING);
+    {
+        printf("NONCE found (");
+        for (int i = 0; i < NONCE_SIZE; i++)
+            printf("%02X", fRecord->nonce1[i]);
+        printf(", ");
+        for (int i = 0; i < NONCE_SIZE; i++)
+            printf("%02X", fRecord->nonce2[i]);
+        printf(") for HASH prefix %s\n", SEARCH_STRING);
+    }
     else
         printf("no NONCE found for HASH prefix %s\n", SEARCH_STRING);
     printf("search time %.2f ms\n", elapsed_time);
@@ -1927,15 +1935,10 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     free(buffer);
 
     // Print the total number of times the condition was met
-    // if (foundRecord == true)
-    //	printf("NONCE found (%zu) for HASH prefix %s\n",fRecord,SEARCH_STRING);
-    // else
-    //	printf("no NONCE found for HASH prefix %s\n",SEARCH_STRING);
     if (!BENCHMARK)
         printf("searched for %d lookups of %d bytes long, found %d, not found %d in %.2f seconds, %.2f ms per lookup\n", num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
     else
         printf("%s %d %zu %llu %llu %d %d %d %d %.2f %.2f\n", filename, NUM_THREADS, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
-    // return NULL;
 }
 
 uint64_t largest_power_of_two_less_than(uint64_t number)
