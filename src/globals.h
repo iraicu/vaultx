@@ -69,7 +69,7 @@ typedef struct
 
 typedef struct
 {
-    uint8_t hash[HASH_SIZE];
+    // uint8_t hash[HASH_SIZE];
     uint8_t nonce1[NONCE_SIZE];
     uint8_t nonce2[NONCE_SIZE];
 } MemoTable2Record;

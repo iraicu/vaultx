@@ -184,7 +184,15 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
 
     // Print the total number of times the condition was met
     if (foundRecord == true)
-        printf("NONCE found (%s, %s) for HASH prefix %s\n", fRecord->nonce1, fRecord->nonce2, SEARCH_STRING);
+    {
+        printf("NONCE found (");
+        for (size_t n = 0; n < NONCE_SIZE; ++n)
+            printf("%02X", fRecord->nonce1[n]);
+        printf(", ");
+        for (size_t n = 0; n < NONCE_SIZE; ++n)
+            printf("%02X", fRecord->nonce2[n]);
+        printf(") for HASH prefix %s\n", SEARCH_STRING);
+    }
     else
         printf("no NONCE found for HASH prefix %s\n", SEARCH_STRING);
     printf("search time %.2f ms\n", elapsed_time);
