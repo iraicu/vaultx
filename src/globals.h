@@ -76,12 +76,6 @@ typedef struct
 
 typedef struct
 {
-    uint8_t nonce1[NONCE_SIZE];
-    uint8_t nonce2[NONCE_SIZE];
-} MemoRecord2;
-
-typedef struct
-{
     MemoRecord *records;
     size_t count;       // Number of records in the bucket
     size_t count_waste; // Number of records generated but not stored
@@ -98,17 +92,7 @@ typedef struct
     size_t flush;       // Number of flushes of bucket
 } BucketTable2;
 
-typedef struct
-{
-    MemoRecord2 *records;
-    size_t count;       // Number of records in the bucket
-    size_t count_waste;
-    bool full;
-    size_t flush;       // Number of flushes of bucket
-} Bucket2;
-
 extern Bucket *buckets;
 extern BucketTable2 *buckets2;
-extern Bucket2 *buckets2_2;
 
 #endif
