@@ -149,7 +149,7 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
         double start_time_verify = omp_get_wtime();
         double end_time_verify = omp_get_wtime();
         bucket_not_full = false;
-        uint64_t distance = 0;
+        // uint64_t distance = 0;
 
         // Process each MemoRecord in the batch
         for (size_t i = 0; i < records_read; ++i)
