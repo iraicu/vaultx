@@ -835,7 +835,6 @@ int main(int argc, char *argv[])
 
         if (writeDataTable2 && rounds > 1)
         {
-            size_t rounds_table2 = rounds * 2;
             // Open the file for writing in binary mode
             FILE *fd_dest = NULL;
             fd_dest = fopen(FILENAME_TABLE2, "wb+");
@@ -849,10 +848,10 @@ int main(int argc, char *argv[])
             }
 
             // should NONCE_SIZE be multiplied by 2 for the two nonces that we store?
-            unsigned long long num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds_table2 * sizeof(MemoTable2Record))) / 2);
+            unsigned long long num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * sizeof(MemoTable2Record))) / 2);
             printf("num_buckets_to_read=%llu\n", num_buckets_to_read);
             if (DEBUG)
-                printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds_table2 * NONCE_SIZE * 2 * num_buckets_to_read);
+                printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * NONCE_SIZE * 2 * num_buckets_to_read);
             // need to fix this for 5 byte NONCE_SIZE
             if (num_buckets % num_buckets_to_read != 0)
             {
@@ -863,13 +862,13 @@ int main(int argc, char *argv[])
                 num_buckets_to_read = num_buckets / result;
                 printf("num_buckets_to_read (if num_buckets mod num_buckets_to_read != 0)=%llu\n", num_buckets_to_read);
                 if (DEBUG)
-                    printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds_table2 * NONCE_SIZE * 2 * num_buckets_to_read);
+                    printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * NONCE_SIZE * 2 * num_buckets_to_read);
             }
 
             // Calculate the total number of records to read per batch
             size_t records_per_batch = num_records_in_bucket * num_buckets_to_read;
             // Calculate the size of the buffer needed
-            size_t buffer_size = records_per_batch * rounds_table2;
+            size_t buffer_size = records_per_batch * rounds;
 
             // Allocate the buffer
             if (DEBUG)
@@ -901,7 +900,7 @@ int main(int argc, char *argv[])
                 double start_time_io2 = omp_get_wtime();
 
 #pragma omp parallel for schedule(static)
-                for (unsigned long long r = 0; r < rounds_table2; r++)
+                for (unsigned long long r = 0; r < rounds; r++)
                 {
                     //  Calculate the source offset
                     off_t offset_src = ((r * num_buckets + i) * num_records_in_bucket) * sizeof(MemoTable2Record);
@@ -940,9 +939,9 @@ int main(int argc, char *argv[])
                     }
 
                     // multiply nonce_size by 2 for the two nonces that we store
-                    off_t offset_dest = i * num_records_in_bucket * NONCE_SIZE * 2 * rounds_table2;
+                    off_t offset_dest = i * num_records_in_bucket * NONCE_SIZE * 2 * rounds;
                     if (DEBUG)
-                        printf("write data: offset_dest=%lu bytes=%llu\n", offset_dest, num_records_in_bucket * NONCE_SIZE * 2 * rounds_table2 * num_buckets_to_read);
+                        printf("write data: offset_dest=%lu bytes=%llu\n", offset_dest, num_records_in_bucket * NONCE_SIZE * 2 * rounds * num_buckets_to_read);
 
                     if (fseeko(fd_dest, offset_dest, SEEK_SET) < 0)
                     {
@@ -956,14 +955,14 @@ int main(int argc, char *argv[])
                 // end of for loop rounds
 
                 if (DEBUG)
-                    printf("shuffling %llu buckets with %llu bytes each...\n", num_buckets_to_read * rounds_table2, num_records_in_bucket * NONCE_SIZE * 2);
+                    printf("shuffling %llu buckets with %llu bytes each...\n", num_buckets_to_read * rounds, num_records_in_bucket * NONCE_SIZE * 2);
 #pragma omp parallel for schedule(static)
                 for (unsigned long long s = 0; s < num_buckets_to_read; s++)
                 {
-                    for (unsigned long long r = 0; r < rounds_table2; r++)
+                    for (unsigned long long r = 0; r < rounds; r++)
                     {
                         off_t index_src = ((r * num_buckets_to_read + s) * num_records_in_bucket);
-                        off_t index_dest = (s * rounds_table2 + r) * num_records_in_bucket;
+                        off_t index_dest = (s * rounds + r) * num_records_in_bucket;
 
                         memcpy(&bufferShuffled[index_dest], &buffer[index_src], num_records_in_bucket * sizeof(MemoTable2Record));
                     }
@@ -971,11 +970,11 @@ int main(int argc, char *argv[])
                 // end of for loop num_buckets_to_read
 
                 // should write in parallel if possible
-                size_t elementsWritten = fwrite(bufferShuffled, sizeof(MemoTable2Record), num_records_in_bucket * num_buckets_to_read * rounds_table2, fd_dest);
-                if (elementsWritten != num_records_in_bucket * num_buckets_to_read * rounds_table2)
+                size_t elementsWritten = fwrite(bufferShuffled, sizeof(MemoTable2Record), num_records_in_bucket * num_buckets_to_read * rounds, fd_dest);
+                if (elementsWritten != num_records_in_bucket * num_buckets_to_read * rounds)
                 {
                     fprintf(stderr, "Error writing bucket to file; elements written %zu when expected %llu\n",
-                            elementsWritten, num_records_in_bucket * num_buckets_to_read * rounds_table2);
+                            elementsWritten, num_records_in_bucket * num_buckets_to_read * rounds);
                     fclose(fd_dest);
                     exit(EXIT_FAILURE);
                 }
@@ -989,7 +988,7 @@ int main(int argc, char *argv[])
                 double end_time_io2 = omp_get_wtime();
                 elapsed_time_io2 = end_time_io2 - start_time_io2;
                 elapsed_time_io2_total += elapsed_time_io2;
-                double throughput_io2 = (num_records_in_bucket * num_buckets_to_read * rounds_table2 * sizeof(MemoTable2Record)) / (elapsed_time_io2 * 1024 * 1024);
+                double throughput_io2 = (num_records_in_bucket * num_buckets_to_read * rounds * sizeof(MemoTable2Record)) / (elapsed_time_io2 * 1024 * 1024);
                 if (!BENCHMARK)
                     printf("[%.2f] Shuffle %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / num_buckets, throughput_io2);
             }
