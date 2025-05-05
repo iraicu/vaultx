@@ -767,7 +767,7 @@ int main(int argc, char *argv[])
                 // if (rounds == 1)
                 //{
                 unsigned long long full_buckets = 0;
-                unsigned long long record_counts = 0;
+                record_counts = 0;
                 unsigned long long record_counts_waste = 0;
                 for (unsigned long long i = 0; i < num_buckets; i++)
                 {
@@ -1116,7 +1116,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("%s %d %lu %d %llu %.2f %zu %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
+            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time, record_counts * 100.0 / (num_buckets * num_records_in_bucket));
             return 0;
         }
     }
