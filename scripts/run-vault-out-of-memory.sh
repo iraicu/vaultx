@@ -51,12 +51,29 @@ run_tests() {
 
     for k in $(seq $k_start $k_end)
     do
-        for i in $(seq 1 3)
+        total_records=$((1 << k))
+        table1_Mbytes=$((total_records * 4 / 1024 / 1024))
+        table2_Mbytes=$((total_records * 8 / 1024 / 1024))
+        total_Mbytes=$((table1_Mbytes + table2_Mbytes))
+
+        echo "K=$k will need ~${total_Mbytes}MB to store all hashes."
+
+        for memory_mb in 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288
         do
-            echo "Running vaultx with K=$k, run $i ..."
+            # if [[ $k -ne 25 && $memory_mb -eq 256 ]]; then 
+            #     continue
+            # fi
+
+            if [ $memory_mb -gt $total_Mbytes ]; then
+                echo "Memory size $memory_mb MB fits all records for K=$k. Skipping..."
+                continue
+            fi
+
+            echo "Running vaultx with K=$k, NONCE_SIZE=$nonce_size, MEMORY_SIZE=${memory_mb}MB..."
+
             ./scripts/drop-all-caches.sh
-            ./vaultx -a for -t $threads -K $k -m $memory -b 1024 -f "$mount_path/memo.t" -g "$mount_path/memo.x" -j "$mount_path/memo.xx" -x true >> "$data_file"
-            rm -f memo.t memo.x memo.xx
+            ./vaultx -a for -t $threads -K $k -m $memory_mb -b 1024 -f "$mount_path/memo.t" -j "$mount_path/memo.xx" -x true >> "$data_file"
+            rm -f $mount_path/memo.t $mount_path/memo.xx
         done
     done
 }
@@ -80,7 +97,7 @@ for disk in "${disks[@]}"; do
         "/data-a")
             disk_name="hdd"
             ;;
-        "data-l")
+        "/data-l")
             disk_name="hdd"
             ;;
         *)
