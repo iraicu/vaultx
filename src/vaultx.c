@@ -484,6 +484,7 @@ int main(int argc, char *argv[])
 
     if (HASHGEN)
     {
+        unsigned long long record_counts = 0;
         // Open the file for writing in binary mode
         FILE *fd = NULL;
         if (writeData)
