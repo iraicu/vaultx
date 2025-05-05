@@ -573,7 +573,8 @@ int main(int argc, char *argv[])
             unsigned long long end_idx = start_idx + num_hashes;
             unsigned long long nonce_max = 0;
 
-            printf("MAX_NUM_HASHES=%llu rounds=%llu num_hashes=%llu start_idx = %llu, end_idx = %llu\n", MAX_NUM_HASHES, rounds, num_hashes, start_idx, end_idx);
+            if (!BENCHMARK)
+                printf("MAX_NUM_HASHES=%llu rounds=%llu num_hashes=%llu start_idx = %llu, end_idx = %llu\n", MAX_NUM_HASHES, rounds, num_hashes, start_idx, end_idx);
 
             // Recursive task based parallelism
             if (strcmp(approach, "xtask") == 0)
@@ -846,7 +847,7 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            // should NONCE_SIZE be multiplied by 2 for the two nonces that we store? 
+            // should NONCE_SIZE be multiplied by 2 for the two nonces that we store?
             unsigned long long num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds_table2 * sizeof(MemoTable2Record))) / 2);
             printf("num_buckets_to_read=%llu\n", num_buckets_to_read);
             if (DEBUG)
