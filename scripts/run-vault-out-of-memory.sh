@@ -5,7 +5,9 @@ set -o pipefail
 
 mkdir -p data
 
-case $(hostname) in
+HOSTNAME=$(hostname)
+
+case "$HOSTNAME" in
     "eightsocket")
         max_k=35
         memory=524288
@@ -35,7 +37,7 @@ case $(hostname) in
         disks=("/data-fast" "/data-a")
         ;;
     *)
-        echo "Unknown hostname: $(hostname)"
+        echo "Unknown hostname: $HOSTNAME"
         exit 1
         ;;
 esac
@@ -73,8 +75,8 @@ run_tests() {
 
             ./scripts/drop-all-caches.sh
             ./vaultx -a for -t $threads -K $k -m $memory_mb -b 1024 -f "$mount_path/memo.t" -j "$mount_path/memo.xx" -x true >> "$data_file"
-            $memory_mb >> "$data_file"
-            rm -f $mount_path/memo.t $mount_path/memo.xx
+            echo "$memory_mb" >> "$data_file"
+            rm -f "$mount_path/memo.t" "$mount_path/memo.xx"
         done
     done
 }
@@ -114,7 +116,7 @@ for disk in "${disks[@]}"; do
         mkdir -p "$mount_path"
     fi
 
-    data_file="data/vaultx-$(hostname)-$disk_name-out-of-memory.csv"
+    data_file="data/vaultx-$HOSTNAME-$disk_name-out-of-memory.csv"
 
     echo "APPROACH,K,NONCE_SIZE(B),NUM_THREADS,MEMORY_SIZE(MB),FILE_SIZE(GB),BATCH_SIZE,THROUGHPUT(MH/S),THROUGHPUT(MB/S),HASH_TIME,IO_TIME,SHUFFLE_TIME,OTHER_TIME,TOTAL_TIME,STORAGE_EFFICIENCY,MEMORY_LIMIT(MB)" > "$data_file"
 
