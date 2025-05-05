@@ -66,13 +66,13 @@ for disk in "${disks[@]}"; do
 
     case $disk in
         "/stor/substor1")
-            disk_name="ssd"
+            disk_name="nvme"
             ;;
         "/data-fast2")
             disk_name="nvme"
             ;;
         "/ssd-raid0")
-            disk_name="ssd"
+            disk_name="sata"
             ;;
         "/data-fast")
             disk_name="nvme"

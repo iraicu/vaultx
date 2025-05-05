@@ -1613,7 +1613,6 @@ uint8_t *hexStringToByteArray(const char *hexString)
 MemoRecord2 *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH, unsigned long long num_records_in_bucket_search, MemoRecord2 *buffer)
 {
     const int HASH_SIZE_SEARCH = 8;
-    // unsigned long long fRecord = -1;
     size_t records_read;
     // Define the offset you want to seek to
     MemoRecord2 *foundRecord = NULL;
@@ -1640,8 +1639,6 @@ MemoRecord2 *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_U
 #pragma omp for
             for (size_t i = 0; i < records_read; ++i)
             {
-                //++total_records;
-
                 // Check for cancellation
 #pragma omp cancellation point for
                 if (!found && is_nonce_nonzero(buffer[i].nonce1, NONCE_SIZE) && is_nonce_nonzero(buffer[i].nonce2, NONCE_SIZE))
@@ -1658,7 +1655,6 @@ MemoRecord2 *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_U
                     // print bucket contents
                     if (DEBUG)
                     {
-
                         printf("bucket[");
 
                         // printf("Search hash prefix (UINT8): ");
@@ -1679,6 +1675,16 @@ MemoRecord2 *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_U
                         printf("\n");
                     }
 
+                    printf("hash_output: ");
+                    for (size_t n = 0; n < HASH_SIZE_SEARCH; ++n)
+                        printf("%02X", hash_output[n]);
+                    printf("\n");
+                    printf("SEARCH_UINT8: ");
+                    for (size_t n = 0; n < SEARCH_LENGTH; ++n)
+                        printf("%02X", SEARCH_UINT8[n]);
+                    printf("\n");
+                    printf("search_length: %2.ld\n", SEARCH_LENGTH);
+
                     // Compare the first PREFIX_SIZE bytes of the current hash to the previous hash prefix
                     if (memcmp(hash_output, SEARCH_UINT8, SEARCH_LENGTH) == 0)
                     {
@@ -1691,14 +1697,9 @@ MemoRecord2 *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_U
 
                         foundRecord = &buffer[i];
 #pragma omp atomic write
-
-                        // if (!DEBUG)
-                        //{
-
                         found = 1;
 
 #pragma omp cancel for
-                        //}
                     }
                     else
                     {
@@ -1741,7 +1742,6 @@ MemoRecord2 *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_U
 // not sure if the search of more than PREFIX_LENGTH works
 void search_memo_records(const char *filename, const char *SEARCH_STRING)
 {
-
     uint8_t *SEARCH_UINT8 = hexStringToByteArray(SEARCH_STRING);
     size_t SEARCH_LENGTH = strlen(SEARCH_STRING) / 2;
     off_t bucketIndex = getBucketIndex(SEARCH_UINT8, PREFIX_SIZE);
@@ -1841,7 +1841,6 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
 // not sure if the search of more than PREFIX_LENGTH works
 void search_memo_records_batch(const char *filename, int num_lookups, int search_size)
 {
-
     // Seed the random number generator with the current time
     srand((unsigned int)time(NULL));
 
@@ -1879,7 +1878,6 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
         printf("SEARCH: num_buckets=%llu\n", num_buckets_search);
         printf("SEARCH: num_records_in_bucket=%llu\n", num_records_in_bucket_search);
     }
-    // printf("SEARCH: SEARCH_STRING=%s\n",SEARCH_STRING);
 
     // Open the file for reading in binary mode
     file = fopen(filename, "rb");
@@ -1902,13 +1900,11 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
 
     // Start walltime measurement
     double start_time = omp_get_wtime();
-    // double end_time = omp_get_wtime();
 
     uint8_t SEARCH_UINT8[search_size];
 
     for (int i = 0; i < num_lookups; i++)
     {
-
         for (size_t i = 0; i < (size_t)search_size; ++i)
         {
             SEARCH_UINT8[i] = rand() % 256;
@@ -2520,8 +2516,6 @@ int main(int argc, char *argv[])
     file_size_bytes = MEMORY_SIZE_bytes * rounds;
     file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
 
-    // MEMORY_SIZE_bytes
-
     MEMORY_SIZE_MB = (unsigned long long)(MEMORY_SIZE_bytes / (1024 * 1024));
 
     num_hashes = MEMORY_SIZE_bytes / NONCE_SIZE;
@@ -2539,7 +2533,6 @@ int main(int argc, char *argv[])
 
     if (!BENCHMARK)
     {
-
         if (SEARCH)
         {
             printf("SEARCH                      : true\n");
@@ -2705,7 +2698,6 @@ int main(int argc, char *argv[])
             // uses recursive task based parallelism
             if (strcmp(approach, "xtask") == 0)
             {
-
                 srand((unsigned)time(NULL)); // Seed the random number generator
 #pragma omp parallel
                 {
@@ -2882,7 +2874,6 @@ int main(int argc, char *argv[])
 #pragma omp parallel for schedule(static)
                 for (unsigned long long i = 0; i < num_buckets; i++)
                 {
-
                     // printf("num_records_in_bucket=%llu sizeof(MemoRecord)=%d\n",num_records_in_bucket,sizeof(MemoRecord));
                     // need to store this better
                     // MemoRecord *sorted_nonces = sort_bucket_records(buckets[i].records, num_records_in_bucket);
@@ -3024,8 +3015,6 @@ int main(int argc, char *argv[])
         }
         free(buckets);
         free(buckets2);
-
-        // if (writeData)
 
         if (writeDataFinal && rounds > 1)
         {
