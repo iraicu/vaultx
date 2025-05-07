@@ -1675,15 +1675,15 @@ MemoRecord2 *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_U
                         printf("\n");
                     }
 
-                    printf("hash_output: ");
-                    for (size_t n = 0; n < HASH_SIZE_SEARCH; ++n)
-                        printf("%02X", hash_output[n]);
-                    printf("\n");
-                    printf("SEARCH_UINT8: ");
-                    for (size_t n = 0; n < SEARCH_LENGTH; ++n)
-                        printf("%02X", SEARCH_UINT8[n]);
-                    printf("\n");
-                    printf("search_length: %2.ld\n", SEARCH_LENGTH);
+                    // printf("hash_output: ");
+                    // for (size_t n = 0; n < HASH_SIZE_SEARCH; ++n)
+                    //     printf("%02X", hash_output[n]);
+                    // printf("\n");
+                    // printf("SEARCH_UINT8: ");
+                    // for (size_t n = 0; n < SEARCH_LENGTH; ++n)
+                    //     printf("%02X", SEARCH_UINT8[n]);
+                    // printf("\n");
+                    // printf("search_length: %2.ld\n", SEARCH_LENGTH);
 
                     // Compare the first PREFIX_SIZE bytes of the current hash to the previous hash prefix
                     if (memcmp(hash_output, SEARCH_UINT8, SEARCH_LENGTH) == 0)
