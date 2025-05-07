@@ -42,8 +42,8 @@ run_tests() {
     local nonce_size=$1
     local k_start=$2
     local k_end=$3
-    local file_path=$4
-    local join_path=$5
+    local file_path=$4  # e.g. for caching, /data-a/varvara
+    local join_path=$5  # e.g. for caching, /data-fast/varvara
     local output_file=$6
     local lookup_data_file=$7
     local file_size_log_file="${file_path}/file_sizes.csv"
@@ -61,7 +61,7 @@ run_tests() {
         k_start_time=$(date +%s)
 
         ./scripts/drop-all-caches.sh
-        ./vaultx -a for -t "$threads" -K "$k" -m "$memory" -b 1024 -f "$file_path/memo.t" -g "$file_path/memo.x" -j "$join_path/memo.xx" -x true >>"$output_file"
+        ./vaultx -a for -t "$threads" -K "$k" -m "$memory" -b 1024 -f "$join_path/memo.t" -g "$join_path/memo.x" -j "$file_path/memo.xx" -x true >>"$output_file"
 
         if [ -f "$file_path/memo.xx" ]; then
             size_output=$(du -BG "$file_path/memo.x" | cut -f1)
@@ -76,7 +76,7 @@ run_tests() {
         for search_size in 3 4 8 16 32; do
             echo "Running vaultx with K=$k, search size $search_size ..."
             ./scripts/drop-all-caches.sh
-            ./vaultx -a for -t $threads -K $k -m $memory -j "$join_path/memo.xx" -p $search_size -x true >>"$lookup_data_file"
+            ./vaultx -a for -t $threads -K $k -m $memory -j "$file_path/memo.xx" -p $search_size -x true >>"$lookup_data_file"
         done
 
         rm -f memo.t memo.x memo.xx
@@ -117,7 +117,6 @@ for disk in "${disks[@]}"; do
         ;;
     esac
 
-    mount_path="$disk/varvara"
     data_file="data/vaultx-$HOSTNAME-$disk_name-extra-run.csv"
     cached_gen_data_file="data/vaultx-$HOSTNAME-caching.csv"
     lookup_data_file="data/vaultx-$HOSTNAME-$disk_name-lookup.csv"
@@ -133,19 +132,19 @@ for disk in "${disks[@]}"; do
         fi
 
         echo "Using HDD ($disk) for file generation and NVMe ($nvme_disk) for caching"
-        run_tests 4 25 $((max_k < 31 ? max_k : 31)) "$mount_path" "$nvme_disk/varvara" "$cached_gen_data_file" "$lookup_data_file"
+        run_tests 4 25 $((max_k < 31 ? max_k : 31)) "$disk/varvara" "$nvme_disk/varvara" "$cached_gen_data_file" "$lookup_data_file"
 
         if [ $max_k -ge 32 ]; then
-            run_tests 5 32 $max_k "$mount_path" "$nvme_disk/varvara" "$cached_gen_data_file" "$lookup_data_file"
+            run_tests 5 32 $max_k "$disk/varvara" "$nvme_disk/varvara" "$cached_gen_data_file" "$lookup_data_file"
         fi
 
         echo "Data collection on $disk disk complete. Results saved to $cached_gen_data_file and $lookup_data_file."
     else
         # Regular run — same mount path used for -f and -j
-        run_tests 4 25 $((max_k < 31 ? max_k : 31)) "$mount_path" "$mount_path" "$data_file" "$lookup_data_file"
+        run_tests 4 25 $((max_k < 31 ? max_k : 31)) "$disk/varvara" "$disk/varvara" "$data_file" "$lookup_data_file"
 
         if [ $max_k -ge 32 ]; then
-            run_tests 5 32 $max_k "$mount_path" "$mount_path" "$data_file" "$lookup_data_file"
+            run_tests 5 32 $max_k "$disk/varvara" "$disk/varvara" "$data_file" "$lookup_data_file"
         fi
 
         echo "Data collection on $disk disk complete. Results saved to $data_file and $lookup_data_file."
