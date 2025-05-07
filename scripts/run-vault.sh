@@ -18,7 +18,7 @@ case $(hostname) in
         memory=262144
         threads=128
         make_name="vaultx_x86_c"
-        disks=("/ssd-raid0" "data-l")
+        disks=("/ssd-raid0" "/data-l" "/data-fast2")
         ;;
     "orangepi5plus")
         max_k=31
