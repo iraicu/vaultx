@@ -63,7 +63,7 @@ run_tests() {
         ./scripts/drop-all-caches.sh
         ./vaultx -a for -t "$threads" -K "$k" -m "$memory" -b 1024 -f "$file_path/memo.t" -g "$file_path/memo.x" -j "$join_path/memo.xx" -x true >>"$output_file"
 
-        if [ -f "$file_path/memo.x" ]; then
+        if [ -f "$file_path/memo.xx" ]; then
             size_output=$(du -BG "$file_path/memo.x" | cut -f1)
             file_size_gb="${size_output%G}"  # Remove 'G' suffix
         else
