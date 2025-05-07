@@ -80,7 +80,7 @@ for disk in "${disks[@]}"; do
         "/data-a")
             disk_name="hdd"
             ;;
-        "data-l")
+        "/data-l")
             disk_name="hdd"
             ;;
         *)
@@ -96,7 +96,7 @@ for disk in "${disks[@]}"; do
         mkdir -p "$mount_path"
     fi
 
-    data_file="data/vaultx-$(hostname)-$disk_name.csv"
+    data_file="data/vaultx-$(hostname)-$disk_name2.csv"
 
     echo "APPROACH,K,NONCE_SIZE(B),NUM_THREADS,MEMORY_SIZE(MB),FILE_SIZE(GB),BATCH_SIZE,THROUGHPUT(MH/S),THROUGHPUT(MB/S),HASH_TIME,IO_TIME,SHUFFLE_TIME,OTHER_TIME,TOTAL_TIME,STORAGE_EFFICIENCY" > "$data_file"
 
