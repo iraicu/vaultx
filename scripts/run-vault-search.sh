@@ -64,14 +64,14 @@ run_tests() {
         ./vaultx -a for -t "$threads" -K "$k" -m "$memory" -b 1024 -f "$join_path/memo.t" -g "$join_path/memo.x" -j "$file_path/memo.xx" -x true >>"$output_file"
 
         if [ -f "$file_path/memo.xx" ]; then
-            size_output=$(du -BG "$file_path/memo.x" | cut -f1)
+            size_output=$(du -BG "$file_path/memo.xx" | cut -f1)
             file_size_gb="${size_output%G}"  # Remove 'G' suffix
         else
             file_size_gb=0
         fi
 
         echo "$k,$file_size_gb" >> "$file_size_log_file"
-        echo "File size of memo.x after K=$k: ${file_size_gb} GB"
+        echo "File size of memo.xx after K=$k: ${file_size_gb} GB"
 
         for search_size in 3 4 8 16 32; do
             echo "Running vaultx with K=$k, search size $search_size ..."
