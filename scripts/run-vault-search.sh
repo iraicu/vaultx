@@ -46,9 +46,15 @@ run_tests() {
     local join_path=$5
     local output_file=$6
     local lookup_data_file=$7
+    local file_size_log_file="${file_path}/file_sizes.csv"
 
     make clean
     make $make_name NONCE_SIZE=$nonce_size RECORD_SIZE=16
+
+    # Create file size CSV with headers if it doesn't exist
+    if [ ! -f "$file_size_log_file" ]; then
+        echo "K_value,file_size_GB" > "$file_size_log_file"
+    fi
 
     for k in $(seq $k_start $k_end); do
         echo "=== Running vaultx with K=$k ==="
@@ -56,6 +62,16 @@ run_tests() {
 
         ./scripts/drop-all-caches.sh
         ./vaultx -a for -t "$threads" -K "$k" -m "$memory" -b 1024 -f "$file_path/memo.t" -g "$file_path/memo.x" -j "$join_path/memo.xx" -x true >>"$output_file"
+
+        if [ -f "$file_path/memo.x" ]; then
+            size_output=$(du -BG "$file_path/memo.x" | cut -f1)
+            file_size_gb="${size_output%G}"  # Remove 'G' suffix
+        else
+            file_size_gb=0
+        fi
+
+        echo "$k,$file_size_gb" >> "$file_size_log_file"
+        echo "File size of memo.x after K=$k: ${file_size_gb} GB"
 
         for search_size in 3 4 8 16 32; do
             echo "Running vaultx with K=$k, search size $search_size ..."
