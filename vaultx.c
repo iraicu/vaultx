@@ -78,7 +78,6 @@ typedef struct
 // Structure to hold a record with nonce
 typedef struct
 {
-    uint8_t dummy[HASH_SIZE];   // 32-byte Blake3 hash
     uint8_t nonce1[NONCE_SIZE]; // Nonce to store the seed
     uint8_t nonce2[NONCE_SIZE]; // Nonce to store the seed
 } MemoRecord2;
