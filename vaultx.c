@@ -1934,7 +1934,7 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     if (!BENCHMARK)
         printf("searched for %d lookups of %d bytes long, found %d, not found %d in %.2f seconds, %.2f ms per lookup\n", num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
     else
-        printf("%s %d %zu %llu %llu %d %d %d %d %.2f %.2f\n", filename, NUM_THREADS, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
+        printf("%s,%d,%zu,%llu,%llu,%d,%d,%d,%d,%.2f,%.2f\n", filename, NUM_THREADS, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
 }
 
 uint64_t largest_power_of_two_less_than(uint64_t number)
