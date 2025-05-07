@@ -5,14 +5,15 @@ import matplotlib.colors as mcolors
 
 # Constants
 input_folder = "data/"
-output_folder = "plots/"
+output_folder = "figures/"
 os.makedirs(output_folder, exist_ok=True)
 
-drive_types = ["hdd", "sata", "nvme"] 
+drive_types = ["hdd", "sata", "nvme", "caching"] 
 drive_colors = {
     "hdd": "#ea9999ff",  # Light Red
     "sata": "#b6d7a8ff",  # Light Green
     "nvme": "#a4c2f4ff",  # Light Blue
+    "caching": "#ffe599ff"  # Light Yellow
 }
 
 # New colors for latency lines
@@ -20,6 +21,7 @@ latency_colors = {
     "hdd": "#e06666ff",   # Red
     "sata": "#6aa84fff",   # Green
     "nvme": "#3c78d8ff",   # Blue
+    "caching": "#ffd966ff" # Yellow
 }
 
 bar_width = 0.2
