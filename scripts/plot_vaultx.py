@@ -10,15 +10,15 @@ os.makedirs(output_folder, exist_ok=True)
 
 drive_types = ["hdd", "sata", "nvme"]
 drive_colors = {
-    "hdd": "#ea9999ff",  # Light Red
-    "sata": "#b6d7a8ff",  # Light Green
-    "nvme": "#a4c2f4ff",  # Light Blue
+    "hdd": "#ea9999ff",     # Light Red
+    "sata": "#ffe599ff",    # Light Yellow
+    "nvme": "#a4c2f4ff",    # Light Blue
 }
 
 latency_colors = {
-    "hdd": "#e06666ff",   # Red
-    "sata": "#6aa84fff",   # Green
-    "nvme": "#3c78d8ff",   # Blue
+    "hdd": "#e06666ff",     # Red
+    "sata": "#ffd966ff",    # Yellow
+    "nvme": "#3c78d8ff",    # Blue
 }
 
 bar_width = 0.2
@@ -92,14 +92,14 @@ for machine in machines:
 
         if latency_x_vals and latency_y_vals:
             if not latency_legend_added:
-                ax2.plot(latency_x_vals, latency_y_vals, marker="o", label="Latency",
+                ax2.plot(latency_x_vals, latency_y_vals, marker="o", label="Runtime",
                          color="black", linestyle="--")
                 latency_legend_added = True
             ax2.plot(latency_x_vals, latency_y_vals, marker="o", color=latency_colors[dtype], linestyle="--")
 
     ax1.set_xlabel("K value")
     ax1.set_ylabel("Throughput (MH/s)")
-    ax2.set_ylabel("Latency (s)")
+    ax2.set_ylabel("Runtime (s)")
 
     # Set x-ticks at center of each K group
     xtick_positions = [k_values.index(k) for k in k_values]

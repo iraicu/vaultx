@@ -1,0 +1,10 @@
+PLOTTER,DISK,K,THREADS,TOTAL_TIME(S),THROUGHPUT(MH/S)
+vaultx,hdd,32,64,453.24,9.50
+vaultx,nvme,32,64,406.14,10.60
+vaultx,sata,32,64,395.82,10.86
+bladebit-ramplot,hdd,32,64,937.80,4.580
+bladebit-ramplot,nvme,32,64,610.25,7.038
+bladebit-ramplot,sata,32,64,823.49,5.216
+madmax-ramplot,hdd,32,64,2,867.00,1.498
+madmax-ramplot,nvme,32,64,1760.35,2.39
+madmax-ramplot,sata,32,64,2.705.417,1.588

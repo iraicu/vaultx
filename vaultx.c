@@ -2174,7 +2174,6 @@ long long fib(int n)
     long long x, y;
     if (n < 2)
     {
-
         unsigned long long nonce = random_ull();
         // unsigned int nonce = random_with_time_seed();
         // unsigned long long nonce = (unsigned long long)random_with_high_res_seed();
