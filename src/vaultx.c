@@ -972,6 +972,10 @@ int main(int argc, char *argv[])
             // fclose(fd_dest);
             remove_file(FILENAME);
 
+            end_time_io = omp_get_wtime();
+            elapsed_time_io = end_time_io - start_time_io;
+            elapsed_time_io_total += elapsed_time_io;
+
             // fd_dest still opened
             // Open the file for writing unshuffled table2
             FILE *fd_table2_tmp = NULL;
@@ -1037,22 +1041,28 @@ int main(int argc, char *argv[])
 
                     records_per_batch = num_records_in_bucket * rounds;
 
+                    // Seek in the file to read from
+                    off_t offset_src = r * num_buckets_to_read * num_records_in_bucket * rounds * sizeof(MemoRecord);
+                    if (fseeko(fd_dest, offset_src, SEEK_SET) < 0)
+                    {
+                        perror("Error seeking in file");
+                        fclose(fd_dest);
+                        exit(EXIT_FAILURE);
+                    }
+
+                    // is it correct offset_dest?
+                    // Seek in the file to write to
+                    off_t offset_dest = r * num_records_in_bucket * num_buckets * sizeof(MemoTable2Record); // num_buckets that fit in memory
+                    if (fseeko(fd_table2_tmp, offset_dest, SEEK_SET) < 0)
+                    {
+                        perror("Error seeking in file");
+                        fclose(fd_table2_tmp);
+                        exit(EXIT_FAILURE);
+                    }
+
                     for (unsigned long long i = 0; i < num_buckets_to_read; i++)
                     {
-                        // if (DEBUG)
-                        //     printf("read data: offset_src=%llu bytes=%llu\n",
-                        //            i * num_records_in_bucket * sizeof(MemoRecord), num_records_in_bucket * sizeof(MemoRecord));
-
-                        // seek first
-                        off_t offset_src = r * num_buckets_to_read * num_records_in_bucket * rounds * sizeof(MemoRecord);
-                        if (fseeko(fd_dest, offset_src, SEEK_SET) < 0)
-                        {
-                            perror("Error seeking in file");
-                            fclose(fd_dest);
-                            exit(EXIT_FAILURE);
-                        }
-
-                        // read the data
+                        // Read the data
                         size_t elements_read = fread(buckets[i].records, sizeof(MemoRecord), num_records_in_bucket * rounds, fd_dest);
                         if (elements_read != num_records_in_bucket * rounds)
                         {
@@ -1065,17 +1075,24 @@ int main(int argc, char *argv[])
                         buckets[i].count = elements_read;
                     }
 
+                    // Set the number of threads if specified
+                    if (num_threads > 0)
+                    {
+                        omp_set_num_threads(num_threads);
+                    }
+
 #pragma omp parallel for schedule(static)
                     // Sort Table1 buckets and find matches for Table2
                     for (unsigned long long i = 0; i < num_buckets_to_read; i++)
                     {
                         // sort the records in the bucket
-                        sort_bucket_records_inplace(buckets[i].records, num_records_in_bucket);
-                        generate_table2(buckets[i].records, num_records_in_bucket);
+                        sort_bucket_records_inplace(buckets[i].records, num_records_in_bucket * rounds);
+                        generate_table2(buckets[i].records, num_records_in_bucket * rounds);
                     }
 
+                    // should we write num_records_in_bucket elements or num_records_in_bucket * rounds?
                     // Write table2 to disk (fd_table2_tmp)
-                    for (unsigned long long i = 0; i < num_buckets; i++)
+                    for (unsigned long long i = 0; i < num_buckets_to_read; i++)
                     {
                         size_t elements_written = fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
                         if (elements_written != num_records_in_bucket)
@@ -1108,10 +1125,10 @@ int main(int argc, char *argv[])
                     return EXIT_FAILURE;
                 }
 
-                num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * sizeof(MemoTable2Record))) / 2);
+                num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * sizeof(MemoTable2Record))) / 2);
                 printf("num_buckets_to_read=%llu\n", num_buckets_to_read);
                 if (DEBUG)
-                    printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * sizeof(MemoTable2Record) * num_buckets_to_read);
+                    printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * sizeof(MemoTable2Record) * num_buckets_to_read);
                 // need to fix this for 5 byte NONCE_SIZE
                 if (num_buckets % num_buckets_to_read != 0)
                 {
@@ -1122,7 +1139,7 @@ int main(int argc, char *argv[])
                     num_buckets_to_read = num_buckets / result;
                     printf("num_buckets_to_read (if num_buckets mod num_buckets_to_read != 0)=%llu\n", num_buckets_to_read);
                     if (DEBUG)
-                        printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * sizeof(MemoTable2Record) * num_buckets_to_read);
+                        printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * sizeof(MemoTable2Record) * num_buckets_to_read);
                     // printf("error, num_buckets_to_read is not a multiple of num_buckets, exiting: num_buckets=%llu num_buckets_to_read=%llu...\n",num_buckets,num_buckets_to_read);
                     // return EXIT_FAILURE;
                 }
@@ -1175,69 +1192,68 @@ int main(int argc, char *argv[])
                 fclose(fd_table2);
                 remove_file(FILENAME_TABLE2_tmp);
             }
-            else if (writeDataTable2 && rounds == 1)
+        }
+        else if (writeDataTable2 && rounds == 1)
+        {
+            // Call the rename_file function
+            if (move_file_overwrite(FILENAME, FILENAME_TABLE2) == 0)
             {
-                // Call the rename_file function
-                if (move_file_overwrite(FILENAME, FILENAME_TABLE2) == 0)
-                {
-                    if (!BENCHMARK)
-                        printf("File renamed/moved successfully from '%s' to '%s'.\n", FILENAME, FILENAME_TABLE2);
-                }
-                else
-                {
-                    printf("Error in moving file '%s' to '%s'.\n", FILENAME, FILENAME_TABLE2);
-                    return EXIT_FAILURE;
-                    // Error message already printed by rename_file via perror()
-                    // Additional handling can be done here if necessary
-                    // return 1;
-                }
-            }
-
-// will need to check on MacOS with a spinning hdd if we need to call sync() to flush all filesystems
-#ifdef __linux__
-            if (writeData)
-            {
-                if (DEBUG)
-                    printf("Final flush in progress...\n");
-                int fd2 = open(FILENAME_TABLE2, O_RDWR);
-                if (fd2 == -1)
-                {
-                    printf("Error opening file %s (#6)\n", FILENAME_TABLE2);
-
-                    perror("Error opening file");
-                    return EXIT_FAILURE;
-                }
-
-                // Sync the entire filesystem
-                if (syncfs(fd2) == -1)
-                {
-                    perror("Error syncing filesystem with syncfs");
-                    close(fd2);
-                    return EXIT_FAILURE;
-                }
-            }
-#endif
-
-            end_time_io = omp_get_wtime();
-            elapsed_time_io = end_time_io - start_time_io;
-            elapsed_time_io_total += elapsed_time_io;
-
-            // End total time measurement
-            double end_time = omp_get_wtime();
-            double elapsed_time = end_time - start_time;
-
-            // Calculate total throughput
-            double total_throughput = (num_iterations / elapsed_time) / 1e6;
-            if (!BENCHMARK)
-            {
-                printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput, total_throughput * NONCE_SIZE);
-                printf("Total Time: %.6f seconds\n", elapsed_time);
+                if (!BENCHMARK)
+                    printf("File renamed/moved successfully from '%s' to '%s'.\n", FILENAME, FILENAME_TABLE2);
             }
             else
             {
-                printf("%s %d %lu %d %llu %.2f %zu %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
-                return 0;
+                printf("Error in moving file '%s' to '%s'.\n", FILENAME, FILENAME_TABLE2);
+                return EXIT_FAILURE;
+                // Error message already printed by rename_file via perror()
+                // Additional handling can be done here if necessary
+                // return 1;
             }
+        }
+
+        // will need to check on MacOS with a spinning hdd if we need to call sync() to flush all filesystems
+#ifdef __linux__
+        if (writeData)
+        {
+            if (DEBUG)
+                printf("Final flush in progress...\n");
+            int fd2 = open(FILENAME_TABLE2, O_RDWR);
+            if (fd2 == -1)
+            {
+                printf("Error opening file %s (#6)\n", FILENAME_TABLE2);
+
+                perror("Error opening file");
+                return EXIT_FAILURE;
+            }
+
+            // Sync the entire filesystem
+            if (syncfs(fd2) == -1)
+            {
+                perror("Error syncing filesystem with syncfs");
+                close(fd2);
+                return EXIT_FAILURE;
+            }
+        }
+#endif
+        end_time_io = omp_get_wtime();
+        elapsed_time_io = end_time_io - start_time_io;
+        elapsed_time_io_total += elapsed_time_io;
+
+        // End total time measurement
+        double end_time = omp_get_wtime();
+        double elapsed_time = end_time - start_time;
+
+        // Calculate total throughput
+        double total_throughput = (num_iterations / elapsed_time) / 1e6;
+        if (!BENCHMARK)
+        {
+            printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput, total_throughput * NONCE_SIZE);
+            printf("Total Time: %.6f seconds\n", elapsed_time);
+        }
+        else
+        {
+            printf("%s %d %lu %d %llu %.2f %zu %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
+            return 0;
         }
         // end of HASHGEN
 
