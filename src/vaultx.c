@@ -534,7 +534,6 @@ int main(int argc, char *argv[])
         // Allocate memory for each bucket's records
         for (unsigned long long i = 0; i < num_buckets; i++)
         {
-            // printf("size of bucket2[%llu]: %zu\n", i, sizeof(buckets2[i]));
             buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
             if (buckets2[i].records == NULL)
             {
@@ -900,10 +899,10 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            unsigned long long num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * NONCE_SIZE)) / 2);
+            unsigned long long num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * sizeof(MemoTable2Record))) / 2);
             printf("num_buckets_to_read=%llu\n", num_buckets_to_read);
             if (DEBUG)
-                printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * NONCE_SIZE * num_buckets_to_read);
+                printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * sizeof(MemoTable2Record) * num_buckets_to_read);
             // need to fix this for 5 byte NONCE_SIZE
             if (num_buckets % num_buckets_to_read != 0)
             {
@@ -957,10 +956,10 @@ int main(int argc, char *argv[])
                 for (unsigned long long r = 0; r < rounds; r++)
                 {
                     //  Calculate the source offset
-                    off_t offset_src = ((r * num_buckets + i) * num_records_in_bucket) * sizeof(MemoRecord);
+                    off_t offset_src = ((r * num_buckets + i) * num_records_in_bucket) * sizeof(MemoTable2Record);
                     if (DEBUG)
                         printf("read data: offset_src=%lu bytes=%lu\n",
-                               offset_src, records_per_batch * sizeof(MemoRecord));
+                               offset_src, records_per_batch * sizeof(MemoTable2Record));
 
                     if (fseeko(fd, offset_src, SEEK_SET) < 0)
                     {
@@ -974,7 +973,7 @@ int main(int argc, char *argv[])
                     if (DEBUG)
                         printf("storing read data at index %lu\n", index);
                     size_t recordsRead = fread(&buffer[index],
-                                               sizeof(MemoRecord),
+                                               sizeof(MemoTable2Record),
                                                records_per_batch,
                                                fd);
 
@@ -990,24 +989,13 @@ int main(int argc, char *argv[])
                         if (DEBUG)
                             printf("read %zu records from disk...\n", recordsRead);
                     }
-
-                    off_t offset_dest = i * num_records_in_bucket * NONCE_SIZE * rounds;
-                    if (DEBUG)
-                        printf("write data: offset_dest=%lu bytes=%llu\n", offset_dest, num_records_in_bucket * NONCE_SIZE * rounds * num_buckets_to_read);
-
-                    if (fseeko(fd_dest, offset_dest, SEEK_SET) < 0)
-                    {
-                        perror("Error seeking in file");
-                        fclose(fd_dest);
-                        exit(EXIT_FAILURE);
-                    }
                     // needs to make sure its ok, fix things....
                     // printf("buffer_size=%llu my_buffer_size=%llu\n",buffer_size,num_records_in_bucket*num_buckets_to_read*rounds);
                 }
                 // end of for loop rounds
 
                 if (DEBUG)
-                    printf("shuffling %llu buckets with %llu bytes each...\n", num_buckets_to_read * rounds, num_records_in_bucket * NONCE_SIZE);
+                    printf("shuffling %llu buckets with %llu bytes each...\n", num_buckets_to_read * rounds, num_records_in_bucket * sizeof(MemoTable2Record));
 #pragma omp parallel for schedule(static)
                 for (unsigned long long s = 0; s < num_buckets_to_read; s++)
                 {
@@ -1016,13 +1004,24 @@ int main(int argc, char *argv[])
                         off_t index_src = ((r * num_buckets_to_read + s) * num_records_in_bucket);
                         off_t index_dest = (s * rounds + r) * num_records_in_bucket;
 
-                        memcpy(&bufferShuffled[index_dest], &buffer[index_src], num_records_in_bucket * sizeof(MemoRecord));
+                        memcpy(&bufferShuffled[index_dest], &buffer[index_src], num_records_in_bucket * sizeof(MemoTable2Record));
                     }
                 }
                 // end of for loop num_buckets_to_read
 
+                off_t offset_dest = i * num_records_in_bucket * sizeof(MemoTable2Record) * rounds;
+                if (DEBUG)
+                    printf("write data: offset_dest=%lu bytes=%llu\n", offset_dest, num_records_in_bucket * sizeof(MemoTable2Record) * rounds * num_buckets_to_read);
+
+                if (fseeko(fd_dest, offset_dest, SEEK_SET) < 0)
+                {
+                    perror("Error seeking in file");
+                    fclose(fd_dest);
+                    exit(EXIT_FAILURE);
+                }
+
                 // should write in parallel if possible
-                size_t elementsWritten = fwrite(bufferShuffled, sizeof(MemoRecord), num_records_in_bucket * num_buckets_to_read * rounds, fd_dest);
+                size_t elementsWritten = fwrite(bufferShuffled, sizeof(MemoTable2Record), num_records_in_bucket * num_buckets_to_read * rounds, fd_dest);
                 if (elementsWritten != num_records_in_bucket * num_buckets_to_read * rounds)
                 {
                     fprintf(stderr, "Error writing bucket to file; elements written %zu when expected %llu\n",
