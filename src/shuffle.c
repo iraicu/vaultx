@@ -1,6 +1,6 @@
 #include "shuffle.h"
 
-void shuffle_table1(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t records_per_batch, double start_time, double elapsed_time_io2, double elapsed_time_io2_total)
+void shuffle_table1(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t records_per_batch, unsigned long long num_buckets_to_read, double start_time, double elapsed_time_io2, double elapsed_time_io2_total)
 {
     // Allocate the buffer
     if (DEBUG)
@@ -62,6 +62,17 @@ void shuffle_table1(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
                 if (DEBUG)
                     printf("read %zu records from disk...\n", recordsRead);
             }
+
+            off_t offset_dest = i * num_records_in_bucket * sizeof(MemoRecord) * rounds;
+            if (DEBUG)
+                printf("write data: offset_dest=%lu bytes=%llu\n", offset_dest, num_records_in_bucket * sizeof(MemoRecord) * rounds * num_buckets_to_read);
+
+            if (fseeko(fd_dest, offset_dest, SEEK_SET) < 0)
+            {
+                perror("Error seeking in file");
+                fclose(fd_dest);
+                exit(EXIT_FAILURE);
+            }
             // needs to make sure its ok, fix things....
             // printf("buffer_size=%llu my_buffer_size=%llu\n",buffer_size,num_records_in_bucket*num_buckets_to_read*rounds);
         }
@@ -81,17 +92,6 @@ void shuffle_table1(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
             }
         }
         // end of for loop num_buckets_to_read
-
-        off_t offset_dest = i * num_records_in_bucket * sizeof(MemoRecord) * rounds;
-        if (DEBUG)
-            printf("write data: offset_dest=%lu bytes=%llu\n", offset_dest, num_records_in_bucket * sizeof(MemoRecord) * rounds * num_buckets_to_read);
-
-        if (fseeko(fd_dest, offset_dest, SEEK_SET) < 0)
-        {
-            perror("Error seeking in file");
-            fclose(fd_dest);
-            exit(EXIT_FAILURE);
-        }
 
         // should write in parallel if possible
         size_t elementsWritten = fwrite(bufferShuffled, sizeof(MemoRecord), num_records_in_bucket * num_buckets_to_read * rounds, fd_dest);
@@ -113,16 +113,17 @@ void shuffle_table1(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         elapsed_time_io2 = end_time_io2 - start_time_io2;
         elapsed_time_io2_total += elapsed_time_io2;
         double throughput_io2 = (num_records_in_bucket * num_buckets_to_read * rounds * sizeof(MemoRecord)) / (elapsed_time_io2 * 1024 * 1024);
+        // printf("num_buckets=%llu num_records_in_bucket=%llu num_buckets_to_read=%llu, rounds=%llu, i=%llu\n", num_buckets, num_records_in_bucket, num_buckets_to_read, rounds, i);
         // Last Shuffle print shows at 75% completion. why?
         if (!BENCHMARK)
-            printf("[%.2f] Shuffle %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / num_buckets, throughput_io2);
+            printf("[%.2f] Shuffle Table1 %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / num_buckets, throughput_io2);
     }
 
     free(buffer);
     free(bufferShuffled);
 }
 
-void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t records_per_batch, double start_time, double elapsed_time_io2, double elapsed_time_io2_total)
+void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t records_per_batch, unsigned long long num_buckets_to_read, double start_time, double elapsed_time_io2, double elapsed_time_io2_total)
 {
     // Allocate the buffer
     if (DEBUG)
@@ -237,7 +238,7 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         double throughput_io2 = (num_records_in_bucket * num_buckets_to_read * rounds * sizeof(MemoTable2Record)) / (elapsed_time_io2 * 1024 * 1024);
         // Last Shuffle print shows at 75% completion. why?
         if (!BENCHMARK)
-            printf("[%.2f] Shuffle %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / num_buckets, throughput_io2);
+            printf("[%.2f] Shuffle Table2 %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / num_buckets, throughput_io2);
     }
 
     free(buffer_table2);
