@@ -94,6 +94,8 @@ typedef struct
 } BucketTable2;
 
 extern Bucket *buckets;
+extern Bucket *buckets_phase2;
 extern BucketTable2 *buckets2;
+extern BucketTable2 *buckets2_phase2;
 
 #endif

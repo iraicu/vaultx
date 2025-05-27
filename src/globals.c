@@ -27,4 +27,6 @@ size_t BATCH_SIZE = 1024;
 size_t PREFIX_SEARCH_SIZE = 1;
 
 Bucket *buckets;
+Bucket *buckets_phase2;
 BucketTable2 *buckets2;
+BucketTable2 *buckets2_phase2;

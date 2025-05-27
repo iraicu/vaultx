@@ -2,5 +2,6 @@ vaultx
 vaultx*.memo
 .vscode/
 memo.t
+memo2.t
 memo.x
 memo.xx

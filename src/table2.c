@@ -214,7 +214,7 @@ void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t buc
     BucketTable2 *bucket = &buckets2[bucketIndex];
     size_t idx;
 
-// Atomically capture the current count and increment it
+    // Atomically capture the current count and increment it
 #pragma omp atomic capture
     {
         idx = bucket->count;
@@ -495,4 +495,5 @@ void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
         //	bucket_not_full = true;
         // }
     }
+    // printf("hash_pass_count=%lu\ncompared to num_records_in_bucket(unshuffled bucket)=%llu\n\n", hash_pass_count, num_records_in_bucket / rounds);
 }
