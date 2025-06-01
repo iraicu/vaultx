@@ -415,14 +415,7 @@ size_t process_memo_records_table2(
 
 void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 {
-    // bucket_not_full = false;
-    // uint64_t distance = 0;
-    // uint64_t leading_match = 0;
     uint64_t expected_distance = 1ULL << (64 - K);
-    // uint64_t min_distance = UINT64_MAX;
-    // uint64_t max_distance = 0;
-    // uint64_t total_distance = 0;
-    // uint64_t count = 0;
     uint64_t hash_pass_count = 0;
 
     for (size_t i = 0; i < num_records_in_bucket; ++i)
