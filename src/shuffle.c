@@ -144,6 +144,11 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         exit(EXIT_FAILURE);
     }
 
+    unsigned long long total_records_unshuffled = 0;
+    unsigned long long zero_nonce_count_unshuffled = 0;
+    unsigned long long total_records_processed = 0;
+    unsigned long long zero_nonce_count = 0;
+
     for (unsigned long long i = 0; i < num_buckets; i = i + num_buckets_to_read)
     {
         double start_time_io2 = omp_get_wtime();
@@ -168,22 +173,22 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
             size_t index = r * records_per_batch;
             if (DEBUG)
                 printf("storing read data at index %lu\n", index);
-            size_t recordsRead = fread(&buffer_table2[index],
-                                       sizeof(MemoTable2Record),
-                                       records_per_batch,
-                                       fd_src);
+            size_t records_read = fread(&buffer_table2[index],
+                                        sizeof(MemoTable2Record),
+                                        records_per_batch,
+                                        fd_src);
 
-            if (recordsRead != records_per_batch)
+            if (records_read != records_per_batch)
             {
                 fprintf(stderr, "Error reading file, records read %zu instead of %zu\n",
-                        recordsRead, records_per_batch);
+                        records_read, records_per_batch);
                 fclose(fd_src);
                 exit(EXIT_FAILURE);
             }
             else
             {
                 if (DEBUG)
-                    printf("read %zu records from disk...\n", recordsRead);
+                    printf("read %zu records from disk...\n", records_read);
             }
 
             off_t offset_dest = i * num_records_in_bucket * sizeof(MemoTable2Record) * rounds;
@@ -201,6 +206,30 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         }
         // end of for loop rounds
 
+        // Validate shuffling - check for all-zero nonces
+        for (size_t k = 0; k < num_buckets_to_read * rounds * num_records_in_bucket; k++)
+        {
+            total_records_unshuffled++;
+
+            if (!is_nonce_nonzero(buffer_table2[k].nonce1, NONCE_SIZE) &&
+                !is_nonce_nonzero(buffer_table2[k].nonce2, NONCE_SIZE))
+            {
+                zero_nonce_count_unshuffled++;
+            }
+            else if (!is_nonce_nonzero(buffer_table2[k].nonce1, NONCE_SIZE) ||
+                     !is_nonce_nonzero(buffer_table2[k].nonce2, NONCE_SIZE))
+            {
+                fprintf(stderr, "Warning: Record with one zero nonce at index %zu\n", k);
+                fprintf(stderr, "nonce1: ");
+                for (int b = 0; b < NONCE_SIZE; b++)
+                    fprintf(stderr, "%02x", buffer_table2[k].nonce1[b]);
+                fprintf(stderr, "\nnonce2: ");
+                for (int b = 0; b < NONCE_SIZE; b++)
+                    fprintf(stderr, "%02x", buffer_table2[k].nonce2[b]);
+                fprintf(stderr, "\n");
+            }
+        }
+
         if (DEBUG)
             printf("shuffling %llu buckets with %llu bytes each...\n", num_buckets_to_read * rounds, num_records_in_bucket * sizeof(MemoTable2Record));
 #pragma omp parallel for schedule(static)
@@ -215,6 +244,30 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
             }
         }
         // end of for loop num_buckets_to_read
+
+        // Validate shuffling - check for all-zero nonces
+        for (size_t k = 0; k < num_buckets_to_read * rounds * num_records_in_bucket; k++)
+        {
+            total_records_processed++;
+
+            if (!is_nonce_nonzero(buffer_table2_shuffled[k].nonce1, NONCE_SIZE) &&
+                !is_nonce_nonzero(buffer_table2_shuffled[k].nonce2, NONCE_SIZE))
+            {
+                zero_nonce_count++;
+            }
+            else if (!is_nonce_nonzero(buffer_table2_shuffled[k].nonce1, NONCE_SIZE) ||
+                     !is_nonce_nonzero(buffer_table2_shuffled[k].nonce2, NONCE_SIZE))
+            {
+                fprintf(stderr, "Warning: Record with one zero nonce at index %zu\n", k);
+                fprintf(stderr, "nonce1: ");
+                for (int b = 0; b < NONCE_SIZE; b++)
+                    fprintf(stderr, "%02x", buffer_table2_shuffled[k].nonce1[b]);
+                fprintf(stderr, "\nnonce2: ");
+                for (int b = 0; b < NONCE_SIZE; b++)
+                    fprintf(stderr, "%02x", buffer_table2_shuffled[k].nonce2[b]);
+                fprintf(stderr, "\n");
+            }
+        }
 
         // should write in parallel if possible
         size_t elementsWritten = fwrite(buffer_table2_shuffled, sizeof(MemoTable2Record), num_records_in_bucket * num_buckets_to_read * rounds, fd_dest);
@@ -243,4 +296,9 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
 
     free(buffer_table2);
     free(buffer_table2_shuffled);
+
+    printf("Zero unshuffled nonces found: %llu out of %llu total records processed.\n",
+           zero_nonce_count_unshuffled, total_records_unshuffled);
+    printf("Zero nonces found: %llu out of %llu total records processed.\n",
+           zero_nonce_count, total_records_processed);
 }

@@ -1021,7 +1021,6 @@ int main(int argc, char *argv[])
             num_buckets_to_read = MEMORY_SIZE_bytes / (num_records_in_shuffled_bucket * sizeof(MemoRecord));
 
             printf("Allocating buckets: %llu buckets, total size: %llu bytes, size of Bucket structure: %ld\n", num_buckets_to_read, num_buckets_to_read * sizeof(Bucket), sizeof(BucketTable2));
-            printf("buckets before calloc: %p\n", (void *)buckets);
 
             buckets = (Bucket *)calloc(num_buckets_to_read, sizeof(Bucket));
             if (buckets == NULL)
@@ -1060,11 +1059,16 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "Error: Unable to allocate memory for records in table 2.\n");
                     exit(EXIT_FAILURE);
                 }
+                buckets2[i].count = 0;
+                buckets2[i].count_waste = 0;
+                buckets2[i].full = false;
+                buckets2[i].flush = 0;
             }
 
             unsigned long long total_num_buckets = num_buckets;
             unsigned long long buckets_per_batch = num_buckets_to_read;
             unsigned long long num_batches = (total_num_buckets + buckets_per_batch - 1) / buckets_per_batch;
+            int hash_pass_count = 0;
 
             for (unsigned long long batch = 0; batch < num_batches; batch++)
             {
@@ -1106,7 +1110,7 @@ int main(int argc, char *argv[])
                 for (unsigned long long i = 0; i < this_batch_size; i++)
                 {
                     sort_bucket_records_inplace(buckets[i].records, num_records_in_shuffled_bucket);
-                    generate_table2(buckets[i].records, num_records_in_shuffled_bucket);
+                    hash_pass_count += generate_table2(buckets[i].records, num_records_in_shuffled_bucket);
                 }
 
                 for (unsigned long long i = 0; i < this_batch_size; i++)
@@ -1118,10 +1122,13 @@ int main(int argc, char *argv[])
                         fclose(fd_table2_tmp);
                         exit(EXIT_FAILURE);
                     }
-                    
+
                     fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
                 }
+
+                printf("[%.2f] Table2Gen %.2f%% \n", omp_get_wtime() - start_time, (batch + 1) * 100.0 / num_batches);
             }
+            printf("Table2 generation completed with %d hashes stored on disk.\n", hash_pass_count);
 
             printf("Freeing buckets...\n");
             // Free allocated memory

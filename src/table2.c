@@ -413,7 +413,7 @@ size_t process_memo_records_table2(
     return count_condition_met;
 }
 
-void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
+int generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 {
     uint64_t expected_distance = 1ULL << (64 - K);
     uint64_t hash_pass_count = 0;
@@ -488,5 +488,6 @@ void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
         //	bucket_not_full = true;
         // }
     }
+    return hash_pass_count;
     // printf("hash_pass_count=%lu\ncompared to num_records_in_bucket(unshuffled bucket)=%llu\n\n", hash_pass_count, num_records_in_bucket / rounds);
 }
