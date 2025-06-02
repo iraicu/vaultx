@@ -4,7 +4,7 @@
 int K = 24; // Default exponent
 
 unsigned long long num_records_in_bucket = 1;
-unsigned long long num_buckets = 1;
+unsigned long long total_num_buckets = 1;
 unsigned long long rounds = 1; // filesize : memorysize 
 unsigned long long num_buckets_to_read = 1;
 unsigned long long full_buckets_global = 0;

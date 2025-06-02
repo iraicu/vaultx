@@ -205,9 +205,9 @@ void generate2Blake3(uint8_t *record_hash, MemoTable2Record *record, unsigned lo
 // Function to insert a record into a bucket
 void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t bucketIndex)
 {
-    if (bucketIndex >= num_buckets)
+    if (bucketIndex >= total_num_buckets)
     {
-        fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, num_buckets - 1);
+        fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, total_num_buckets - 1);
         return;
     }
 
@@ -418,6 +418,7 @@ int generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
     uint64_t expected_distance = 1ULL << (64 - K);
     uint64_t hash_pass_count = 0;
 
+    // num_records_in_bucket = num_records_in_shuffled_bucket = num_records_in_bucket * rounds
     for (size_t i = 0; i < num_records_in_bucket; ++i)
     {
         if (is_nonce_nonzero(sorted_nonces[i].nonce, NONCE_SIZE))

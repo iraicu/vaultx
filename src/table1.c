@@ -23,9 +23,9 @@ void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long
 // Function to insert a record into a bucket
 void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
 {
-    if (bucketIndex >= num_buckets)
+    if (bucketIndex >= total_num_buckets)
     {
-        fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, num_buckets - 1);
+        fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, total_num_buckets - 1);
         return;
     }
 
@@ -235,7 +235,7 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
 
     // Print the total number of times the condition was met
     printf("sorted=%zu not_sorted=%zu zero_nonces=%zu total_records=%zu full_buckets=%zu storage_efficiency=%.2f bucket_efficiency=%.2f\n",
-           count_condition_met, count_condition_not_met, zero_nonce_count, total_records, full_buckets, count_condition_met * 100.0 / total_records, full_buckets * 100.0 / (num_buckets));
+           count_condition_met, count_condition_not_met, zero_nonce_count, total_records, full_buckets, count_condition_met * 100.0 / total_records, full_buckets * 100.0 / (total_num_buckets));
 
     return count_condition_met;
 }
