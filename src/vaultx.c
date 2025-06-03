@@ -802,11 +802,11 @@ int main(int argc, char *argv[])
             // Calculate I/O throughput
             if (rounds > 1)
             {
-                throughput_io = (num_records_per_round * sizeof(MemoTable2Record) * 2) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
+                throughput_io = (num_records_per_round * sizeof(MemoRecord)) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
             }
             else
             {
-                throughput_io = (num_records_per_round * sizeof(MemoRecord) * 2) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
+                throughput_io = (num_records_per_round * sizeof(MemoTable2Record)) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
             }
 
             if (!BENCHMARK)
