@@ -26,10 +26,10 @@ void print_usage(char *prog_name)
 }
 
 // Function to compute the bucket index based on hash prefix
-off_t getBucketIndex(const uint8_t *hash, size_t prefix_size)
+off_t getBucketIndex(const uint8_t *hash)
 {
     off_t index = 0;
-    for (size_t i = 0; i < prefix_size && i < HASH_SIZE; i++)
+    for (size_t i = 0; i < PREFIX_SIZE && i < HASH_SIZE; i++)
     {
         index = (index << 8) | hash[i];
     }
@@ -592,7 +592,7 @@ int main(int argc, char *argv[])
                                     generateBlake3(record_hash, &record, j);
                                     if (MEMORY_WRITE)
                                     {
-                                        off_t bucketIndex = getBucketIndex(record_hash, PREFIX_SIZE);
+                                        off_t bucketIndex = getBucketIndex(record_hash);
                                         insert_record(buckets, &record, bucketIndex);
                                     }
                                 }
@@ -626,7 +626,7 @@ int main(int argc, char *argv[])
                         generateBlake3(record_hash, &record, j);
                         if (MEMORY_WRITE)
                         {
-                            off_t bucketIndex = getBucketIndex(record_hash, PREFIX_SIZE);
+                            off_t bucketIndex = getBucketIndex(record_hash);
                             insert_record(buckets, &record, bucketIndex);
                         }
                     }
@@ -985,19 +985,19 @@ int main(int argc, char *argv[])
             }
 
             // Allocate memory
-            unsigned long long buckets_per_batch = MEMORY_SIZE_bytes / (num_records_in_shuffled_bucket * sizeof(MemoRecord));
-            unsigned long long num_batches = (total_num_buckets + buckets_per_batch - 1) / buckets_per_batch; // ceil
-            printf("num_batches=%llu, buckets_per_batch=%llu, num_records_in_shuffled_bucket=%llu\n", num_batches, buckets_per_batch, num_records_in_shuffled_bucket);
+            num_buckets_to_read = MEMORY_SIZE_bytes / (num_records_in_shuffled_bucket * sizeof(MemoRecord));
+            // unsigned long long num_batches = (total_num_buckets + num_buckets_to_read - 1) / buckets_per_batch; // ceil
+            // printf("num_batches=%llu, buckets_per_batch=%llu, num_records_in_shuffled_bucket=%llu\n", num_batches, buckets_per_batch, num_records_in_shuffled_bucket);
             int hash_pass_count = 0;
             int zero_nonce_count = 0;
 
-            buckets = (Bucket *)calloc(buckets_per_batch, sizeof(Bucket));
+            buckets = (Bucket *)calloc(num_buckets_to_read, sizeof(Bucket));
             if (buckets == NULL)
             {
                 fprintf(stderr, "Error: Unable to allocate memory for buckets.\n");
                 exit(EXIT_FAILURE);
             }
-            for (unsigned long long i = 0; i < buckets_per_batch; i++)
+            for (unsigned long long i = 0; i < num_buckets_to_read; i++)
             {
                 buckets[i].records = (MemoRecord *)calloc(num_records_in_shuffled_bucket, sizeof(MemoRecord));
                 if (buckets[i].records == NULL)
@@ -1023,44 +1023,28 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // count how many full buckets , this works for rounds == 1
             unsigned long long full_buckets = 0;
             unsigned long long record_counts = 0;
             unsigned long long record_counts_waste = 0;
 
-            for (unsigned long long batch = 0; batch < num_batches; batch++)
+            for (unsigned long long r = 0; r < rounds; r++)
             {
-                unsigned long long start_bucket = batch * buckets_per_batch;
-                unsigned long long end_bucket = (start_bucket + buckets_per_batch > total_num_buckets) ? total_num_buckets : start_bucket + buckets_per_batch;
-                unsigned long long this_batch_size = end_bucket - start_bucket;
-                printf("Processing batch %llu/%llu, start_bucket=%llu, end_bucket=%llu, this_batch_size=%llu\n", batch + 1, num_batches, start_bucket, end_bucket, this_batch_size);
-
-                for (unsigned long long i = 0; i < total_num_buckets; i++)
-                {
-                    memset(buckets2[i].records, 0, num_records_in_bucket * sizeof(MemoTable2Record));
-                    buckets2[i].count = 0;
-                    buckets2[i].count_waste = 0;
-                    buckets2[i].full = false;
-                    buckets2[i].flush = 0;
-                }
-
 #pragma omp parallel for schedule(static)
-                for (unsigned long long i = 0; i < this_batch_size; i++)
+                for (unsigned long long b = 0; b < num_buckets_to_read; b++)
                 {
-                    unsigned long long bucket_index = start_bucket + i;
-                    off_t offset_src = bucket_index * num_records_in_shuffled_bucket * sizeof(MemoRecord);
-
+                    off_t offset_src = (r * num_buckets_to_read + b) * num_records_in_shuffled_bucket * sizeof(MemoRecord); // total_num_buckets that fit in memory
                     if (fseeko(fd_dest, offset_src, SEEK_SET) < 0)
                     {
-                        perror("Error seeking in file");
+                        perror("Error seeking in file for reading table1");
                         fclose(fd_dest);
                         exit(EXIT_FAILURE);
                     }
 
-                    size_t elements_read = fread(buckets[i].records, sizeof(MemoRecord), num_records_in_shuffled_bucket, fd_dest);
+                    size_t elements_read = fread(buckets[b].records, sizeof(MemoRecord), num_records_in_shuffled_bucket, fd_dest);
+
                     if (elements_read != num_records_in_shuffled_bucket)
                     {
-                        fprintf(stderr, "TABLE2: Error reading bucket %llu from file; elements read %zu when expected %llu\n", bucket_index,
+                        fprintf(stderr, "TABLE2: Error reading bucket %llu from file; elements read %zu when expected %llu\n", b,
                                 elements_read, num_records_in_shuffled_bucket);
                         if (feof(fd_dest))
                             printf("Reached EOF\n");
@@ -1069,33 +1053,18 @@ int main(int argc, char *argv[])
                         fclose(fd_dest);
                         exit(EXIT_FAILURE);
                     }
-
-                    // Optional: buckets[i].count = elements_read;
                 }
 
 #pragma omp parallel for schedule(static) reduction(+ : hash_pass_count)
-                for (unsigned long long i = 0; i < this_batch_size; i++)
+                for (unsigned long long b = 0; b < num_buckets_to_read; b++)
                 {
-                    sort_bucket_records_inplace(buckets[i].records, num_records_in_shuffled_bucket);
-                    hash_pass_count += generate_table2(buckets[i].records, num_records_in_shuffled_bucket);
+                    sort_bucket_records_inplace(buckets[b].records, num_records_in_shuffled_bucket);
+                    hash_pass_count += generate_table2(buckets[b].records, num_records_in_shuffled_bucket);
                 }
 
-                // for (unsigned long long i = 0; i < this_batch_size; i++)
-                // {
-                //     unsigned long long bucket_index = start_bucket + i;
-
-                //     for (unsigned long long j = 0; j < num_records_in_bucket; j++)
-                //     {
-                //         if (!is_nonce_nonzero(buckets2[bucket_index].records[j].nonce1, NONCE_SIZE) && !is_nonce_nonzero(buckets2[bucket_index].records[j].nonce2, NONCE_SIZE))
-                //         {
-                //             zero_nonce_count++;
-                //         }
-                //     }
-                // }
-
-                for (unsigned long long i = 0; i < this_batch_size; i++)
+                for (unsigned long long b = 0; b < total_num_buckets; b++)
                 {
-                    off_t offset_dest = (start_bucket + i) * num_records_in_bucket * sizeof(MemoTable2Record);
+                    off_t offset_dest = (r * total_num_buckets + b) * num_records_in_bucket * sizeof(MemoTable2Record);
                     if (fseeko(fd_table2_tmp, offset_dest, SEEK_SET) < 0)
                     {
                         perror("Error seeking in file for writing table2");
@@ -1103,28 +1072,102 @@ int main(int argc, char *argv[])
                         exit(EXIT_FAILURE);
                     }
 
-                    size_t elements_written = fwrite(buckets2[start_bucket + i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
+                    size_t elements_written = fwrite(buckets2[b].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
                     if (elements_written != num_records_in_bucket)
                     {
                         fprintf(stderr, "TABLE2: Error writing bucket %llu to file; elements written %zu when expected %llu\n",
-                                start_bucket + i, elements_written, num_records_in_bucket);
+                                b, elements_written, num_records_in_bucket);
                         fclose(fd_table2_tmp);
                         exit(EXIT_FAILURE);
                     }
                 }
-
-                // for (unsigned long long i = 0; i < this_batch_size; i++)
-                // {
-                //     if (buckets2[i].count == num_records_in_bucket)
-                //         buckets2[i].full = true;
-                //     record_counts += buckets2[i].count;
-                //     record_counts_waste += buckets2[i].count_waste;
-                // }
-
-                // printf("record_counts=%llu storage_efficiency=%.2f full_buckets=%llu bucket_efficiency=%.2f record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (total_num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / total_num_buckets, record_counts_waste, total_num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + total_num_buckets * num_records_in_bucket));
-
-                printf("[%.2f] Table2Gen %.2f%% \n", omp_get_wtime() - start_time, (batch + 1) * 100.0 / num_batches);
+                printf("[%.2f] Table2Gen %.2f%% \n", omp_get_wtime() - start_time, (r + 1) * 100.0 / rounds);
             }
+
+            //             for (unsigned long long batch = 0; batch < num_batches; batch++)
+            //             {
+            //                 unsigned long long start_bucket = batch * buckets_per_batch;
+            //                 unsigned long long end_bucket = (start_bucket + buckets_per_batch > total_num_buckets) ? total_num_buckets : start_bucket + buckets_per_batch;
+            //                 unsigned long long this_batch_size = end_bucket - start_bucket; // ~ buckets_per_batch, but can be less for the last batch (shouldn't happen)
+            //                 printf("Processing batch %llu/%llu, start_bucket=%llu, end_bucket=%llu, this_batch_size=%llu\n", batch + 1, num_batches, start_bucket, end_bucket, this_batch_size);
+
+            //                 for (unsigned long long i = 0; i < total_num_buckets; i++)
+            //                 {
+            //                     memset(buckets2[i].records, 0, num_records_in_bucket * sizeof(MemoTable2Record));
+            //                     buckets2[i].count = 0;
+            //                     buckets2[i].count_waste = 0;
+            //                     buckets2[i].full = false;
+            //                     buckets2[i].flush = 0;
+            //                 }
+
+            // #pragma omp parallel for schedule(static)
+            //                 for (unsigned long long i = 0; i < this_batch_size; i++)
+            //                 {
+            //                     unsigned long long bucket_index = start_bucket + i;
+            //                     off_t offset_src = bucket_index * num_records_in_shuffled_bucket * sizeof(MemoRecord);
+
+            //                     if (fseeko(fd_dest, offset_src, SEEK_SET) < 0)
+            //                     {
+            //                         perror("Error seeking in file");
+            //                         fclose(fd_dest);
+            //                         exit(EXIT_FAILURE);
+            //                     }
+
+            //                     size_t elements_read = fread(buckets[i].records, sizeof(MemoRecord), num_records_in_shuffled_bucket, fd_dest);
+            //                     if (elements_read != num_records_in_shuffled_bucket)
+            //                     {
+            //                         fprintf(stderr, "TABLE2: Error reading bucket %llu from file; elements read %zu when expected %llu\n", bucket_index,
+            //                                 elements_read, num_records_in_shuffled_bucket);
+            //                         if (feof(fd_dest))
+            //                             printf("Reached EOF\n");
+            //                         if (ferror(fd_dest))
+            //                             printf("Read error\n");
+            //                         fclose(fd_dest);
+            //                         exit(EXIT_FAILURE);
+            //                     }
+
+            //                     // Optional: buckets[i].count = elements_read;
+            //                 }
+
+            // #pragma omp parallel for schedule(static) reduction(+ : hash_pass_count)
+            //                 for (unsigned long long i = 0; i < this_batch_size; i++)
+            //                 {
+            //                     sort_bucket_records_inplace(buckets[i].records, num_records_in_shuffled_bucket);
+            //                     hash_pass_count += generate_table2(buckets[i].records, num_records_in_shuffled_bucket);
+            //                 }
+
+            //                 for (unsigned long long bucket_idx = 0; bucket_idx < this_batch_size; bucket_idx++)
+            //                 {
+            //                     off_t offset_dest = (start_bucket + bucket_idx) * num_records_in_bucket * sizeof(MemoTable2Record);
+            //                     if (fseeko(fd_table2_tmp, offset_dest, SEEK_SET) < 0)
+            //                     {
+            //                         perror("Error seeking in file for writing table2");
+            //                         fclose(fd_table2_tmp);
+            //                         exit(EXIT_FAILURE);
+            //                     }
+
+            //                     size_t elements_written = fwrite(buckets2[bucket_idx].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
+            //                     if (elements_written != num_records_in_bucket)
+            //                     {
+            //                         fprintf(stderr, "TABLE2: Error writing bucket %llu to file; elements written %zu when expected %llu\n",
+            //                                 start_bucket + bucket_idx, elements_written, num_records_in_bucket);
+            //                         fclose(fd_table2_tmp);
+            //                         exit(EXIT_FAILURE);
+            //                     }
+            //                 }
+
+            //                 // for (unsigned long long i = 0; i < this_batch_size; i++)
+            //                 // {
+            //                 //     if (buckets2[i].count == num_records_in_bucket)
+            //                 //         buckets2[i].full = true;
+            //                 //     record_counts += buckets2[i].count;
+            //                 //     record_counts_waste += buckets2[i].count_waste;
+            //                 // }
+
+            //                 // printf("record_counts=%llu storage_efficiency=%.2f full_buckets=%llu bucket_efficiency=%.2f record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (total_num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / total_num_buckets, record_counts_waste, total_num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + total_num_buckets * num_records_in_bucket));
+
+            //                 printf("[%.2f] Table2Gen %.2f%% \n", omp_get_wtime() - start_time, (batch + 1) * 100.0 / num_batches);
+            // }
             // printf("Zero nonces found: %d\n", zero_nonce_count);
             printf("Table2 generation completed with %d / %llu records stored on disk.\n", hash_pass_count, num_records_total);
 

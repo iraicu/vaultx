@@ -79,7 +79,7 @@ void generateHashes(unsigned long long start, unsigned long long end)
             generateBlake3(record_hash, &record, j);
             if (MEMORY_WRITE)
             {
-                off_t bucketIndex = getBucketIndex(record_hash, PREFIX_SIZE);
+                off_t bucketIndex = getBucketIndex(record_hash);
                 insert_record(buckets, &record, bucketIndex);
             }
         }

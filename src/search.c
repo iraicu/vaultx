@@ -115,7 +115,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
 {
     uint8_t *SEARCH_UINT8 = hexStringToByteArray(SEARCH_STRING);
     size_t SEARCH_LENGTH = strlen(SEARCH_STRING) / 2;
-    off_t bucketIndex = getBucketIndex(SEARCH_UINT8, PREFIX_SIZE);
+    off_t bucketIndex = getBucketIndex(SEARCH_UINT8);
     MemoTable2Record *buffer = NULL;
 
     FILE *file = NULL;
@@ -262,7 +262,7 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
             SEARCH_UINT8[i] = rand() % 256;
         }
 
-        fRecord = search_memo_record(file, getBucketIndex(SEARCH_UINT8, PREFIX_SIZE), SEARCH_UINT8, SEARCH_LENGTH, num_records_in_bucket_search, buffer);
+        fRecord = search_memo_record(file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8, SEARCH_LENGTH, num_records_in_bucket_search, buffer);
         if (fRecord != NULL)
             foundRecords++;
         else

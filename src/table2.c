@@ -464,7 +464,7 @@ uint64_t generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket
 
                 if (MEMORY_WRITE)
                 {
-                    off_t bucketIndex = getBucketIndex(hash_table2, PREFIX_SIZE);
+                    off_t bucketIndex = getBucketIndex(hash_table2);
                     hash_pass_count += insert_record2(buckets2, &record, bucketIndex);
                 }
                 // buckets2_count[bucketIndex]++;
