@@ -33,6 +33,7 @@
 extern int K;
 
 extern unsigned long long num_records_in_bucket;
+extern unsigned long long num_records_in_shuffled_bucket;
 extern unsigned long long rounds;
 extern unsigned long long total_num_buckets;
 extern unsigned long long num_buckets_to_read;
@@ -87,10 +88,10 @@ typedef struct
 typedef struct
 {
     MemoTable2Record *records;
-    size_t count;       // Number of records in the bucket
+    size_t count; // Number of records in the bucket
     size_t count_waste;
     bool full;
-    size_t flush;       // Number of flushes of bucket
+    size_t flush; // Number of flushes of bucket
 } BucketTable2;
 
 extern Bucket *buckets;

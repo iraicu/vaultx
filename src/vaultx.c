@@ -129,10 +129,9 @@ int main(int argc, char *argv[])
     const char *approach = "for"; // Default approach
     int num_threads = 0;          // 0 means OpenMP chooses
     int num_threads_io = 0;
-    unsigned long long num_iterations = 1ULL << K; // 2^K iterations
-    unsigned long long num_hashes = num_iterations;
+    unsigned long long num_records_total = 1ULL << K; // 2^K iterations
+    unsigned long long num_records_per_round = num_records_total;
     unsigned long long MEMORY_SIZE_MB = 1;
-    // unsigned long long MEMORY_SIZE_bytes_original = 0;
     char *FILENAME = NULL;       // Default output file name
     char *FILENAME_FINAL = NULL; // Default output file name
     char *FILENAME_TABLE2 = NULL;
@@ -208,7 +207,7 @@ int main(int argc, char *argv[])
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
-            num_iterations = 1ULL << K; // Compute 2^K
+            num_records_total = 1ULL << K; // Compute 2^K
             break;
         case 'm':
             MEMORY_SIZE_MB = atoi(optarg);
@@ -358,7 +357,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    unsigned long long file_size_bytes = num_iterations * NONCE_SIZE;
+    unsigned long long file_size_bytes = num_records_total * NONCE_SIZE;
     double file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
     unsigned long long MEMORY_SIZE_bytes = 0;
 
@@ -375,25 +374,26 @@ int main(int argc, char *argv[])
 
     rounds = ceil(file_size_bytes / MEMORY_SIZE_bytes);
     MEMORY_SIZE_bytes = file_size_bytes / rounds;
-    num_hashes = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
-    MEMORY_SIZE_bytes = num_hashes * NONCE_SIZE;
+    num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
+    MEMORY_SIZE_bytes = num_records_per_round * NONCE_SIZE;
     file_size_bytes = MEMORY_SIZE_bytes * rounds;
     file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
 
     MEMORY_SIZE_MB = (unsigned long long)(MEMORY_SIZE_bytes / (1024 * 1024));
 
-    num_hashes = MEMORY_SIZE_bytes / NONCE_SIZE;
+    num_records_per_round = MEMORY_SIZE_bytes / NONCE_SIZE;
 
     total_num_buckets = 1ULL << (PREFIX_SIZE * 8);
 
-    num_records_in_bucket = num_hashes / total_num_buckets;
+    num_records_in_bucket = num_records_per_round / total_num_buckets;
+    num_records_in_shuffled_bucket = num_records_in_bucket * rounds;
 
     MEMORY_SIZE_bytes = total_num_buckets * num_records_in_bucket * sizeof(MemoRecord);
     MEMORY_SIZE_MB = (unsigned long long)(MEMORY_SIZE_bytes / (1024 * 1024));
     file_size_bytes = MEMORY_SIZE_bytes * rounds;
     file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
-    num_hashes = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
-    num_iterations = num_hashes * rounds;
+    num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
+    num_records_total = num_records_per_round * rounds;
 
     if (!BENCHMARK)
     {
@@ -412,9 +412,9 @@ int main(int argc, char *argv[])
             printf("Memory Size (MB)            : %llu\n", MEMORY_SIZE_MB);
             printf("Memory Size (bytes)         : %llu\n", MEMORY_SIZE_bytes);
 
-            printf("Number of Hashes (RAM)      : %llu\n", num_hashes);
+            printf("Number of Hashes (RAM)      : %llu\n", num_records_per_round);
 
-            printf("Number of Hashes (Disk)     : %llu\n", num_iterations);
+            printf("Number of Hashes (Disk)     : %llu\n", num_records_total);
             printf("Size of MemoRecord          : %lu\n", sizeof(MemoRecord));
             printf("Rounds                      : %llu\n", rounds);
 
@@ -546,12 +546,12 @@ int main(int argc, char *argv[])
             unsigned long long MAX_NUM_HASHES = 1ULL << (NONCE_SIZE * 8);
             // if we want to overgenerate hashes to fill all buckets
             if (FULL_BUCKETS)
-                num_hashes = MAX_NUM_HASHES / rounds;
-            unsigned long long start_idx = r * num_hashes;
-            unsigned long long end_idx = start_idx + num_hashes;
+                num_records_per_round = MAX_NUM_HASHES / rounds;
+            unsigned long long start_idx = r * num_records_per_round;
+            unsigned long long end_idx = start_idx + num_records_per_round;
             unsigned long long nonce_max = 0;
 
-            printf("MAX_NUM_HASHES=%llu rounds=%llu num_hashes=%llu start_idx = %llu, end_idx = %llu\n", MAX_NUM_HASHES, rounds, num_hashes, start_idx, end_idx);
+            printf("MAX_NUM_HASHES=%llu rounds=%llu num_records_per_round=%llu start_idx = %llu, end_idx = %llu\n", MAX_NUM_HASHES, rounds, num_records_per_round, start_idx, end_idx);
 
             // Recursive task based parallelism
             if (strcmp(approach, "xtask") == 0)
@@ -797,16 +797,16 @@ int main(int argc, char *argv[])
             }
 
             // Calculate throughput (hashes per second)
-            throughput_hash = (num_hashes / (elapsed_time_hash + elapsed_time_io)) / (1e6);
+            throughput_hash = (num_records_per_round / (elapsed_time_hash + elapsed_time_io)) / (1e6);
 
             // Calculate I/O throughput
             if (rounds > 1)
             {
-                throughput_io = (num_hashes * sizeof(MemoTable2Record) * 2) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
+                throughput_io = (num_records_per_round * sizeof(MemoTable2Record) * 2) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
             }
             else
             {
-                throughput_io = (num_hashes * sizeof(MemoRecord) * 2) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
+                throughput_io = (num_records_per_round * sizeof(MemoRecord) * 2) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
             }
 
             if (!BENCHMARK)
@@ -879,12 +879,13 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            unsigned long long num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * sizeof(MemoRecord))));
+            unsigned long long num_buckets_to_read = ceil((MEMORY_SIZE_bytes / (num_records_in_bucket * rounds * sizeof(MemoRecord))) / 2);
             if (DEBUG)
                 printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * sizeof(MemoRecord) * num_buckets_to_read);
             // need to fix this for 5 byte NONCE_SIZE
             if (total_num_buckets % num_buckets_to_read != 0)
             {
+                printf("Warning: total_num_buckets=%llu is not a multiple of num_buckets_to_read=%llu, adjusting num_buckets_to_read...\n", total_num_buckets, num_buckets_to_read);
                 uint64_t ratio = total_num_buckets / num_buckets_to_read;
                 uint64_t result = largest_power_of_two_less_than(ratio);
                 if (DEBUG)
@@ -984,14 +985,11 @@ int main(int argc, char *argv[])
             }
 
             // Allocate memory
-            unsigned long long num_records_in_shuffled_bucket = num_records_in_bucket * rounds;
             unsigned long long buckets_per_batch = MEMORY_SIZE_bytes / (num_records_in_shuffled_bucket * sizeof(MemoRecord));
             unsigned long long num_batches = (total_num_buckets + buckets_per_batch - 1) / buckets_per_batch; // ceil
             printf("num_batches=%llu, buckets_per_batch=%llu, num_records_in_shuffled_bucket=%llu\n", num_batches, buckets_per_batch, num_records_in_shuffled_bucket);
             int hash_pass_count = 0;
             int zero_nonce_count = 0;
-
-            // printf("Allocating buckets: %llu buckets, total size: %llu bytes, size of Bucket structure: %ld\n", num_buckets_to_read, num_buckets_to_read * sizeof(Bucket), sizeof(BucketTable2));
 
             buckets = (Bucket *)calloc(buckets_per_batch, sizeof(Bucket));
             if (buckets == NULL)
@@ -999,16 +997,6 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Error: Unable to allocate memory for buckets.\n");
                 exit(EXIT_FAILURE);
             }
-
-            buckets2 = (BucketTable2 *)calloc(total_num_buckets, sizeof(BucketTable2));
-            if (buckets2 == NULL)
-            {
-                fprintf(stderr, "Error: Unable to allocate memory for buckets2.\n");
-                exit(EXIT_FAILURE);
-            }
-
-            // printf("Allocating %llu bytes for %llu buckets with %llu records\n", num_buckets_to_read * num_records_in_shuffled_bucket * sizeof(MemoRecord), num_buckets_to_read, num_records_in_shuffled_bucket);
-
             for (unsigned long long i = 0; i < buckets_per_batch; i++)
             {
                 buckets[i].records = (MemoRecord *)calloc(num_records_in_shuffled_bucket, sizeof(MemoRecord));
@@ -1019,8 +1007,12 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // printf("Allocating %llu bytes for %llu buckets with %llu records\n", total_num_buckets * num_records_in_bucket * sizeof(MemoTable2Record), total_num_buckets, num_records_in_bucket);
-
+            buckets2 = (BucketTable2 *)calloc(total_num_buckets, sizeof(BucketTable2));
+            if (buckets2 == NULL)
+            {
+                fprintf(stderr, "Error: Unable to allocate memory for buckets2.\n");
+                exit(EXIT_FAILURE);
+            }
             for (unsigned long long i = 0; i < total_num_buckets; i++)
             {
                 buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
@@ -1103,7 +1095,7 @@ int main(int argc, char *argv[])
 
                 for (unsigned long long i = 0; i < this_batch_size; i++)
                 {
-                    off_t offset_dest = (batch * total_num_buckets + start_bucket + i) * num_records_in_bucket * sizeof(MemoTable2Record);
+                    off_t offset_dest = (start_bucket + i) * num_records_in_bucket * sizeof(MemoTable2Record);
                     if (fseeko(fd_table2_tmp, offset_dest, SEEK_SET) < 0)
                     {
                         perror("Error seeking in file for writing table2");
@@ -1111,7 +1103,7 @@ int main(int argc, char *argv[])
                         exit(EXIT_FAILURE);
                     }
 
-                    size_t elements_written = fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
+                    size_t elements_written = fwrite(buckets2[start_bucket + i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
                     if (elements_written != num_records_in_bucket)
                     {
                         fprintf(stderr, "TABLE2: Error writing bucket %llu to file; elements written %zu when expected %llu\n",
@@ -1134,7 +1126,7 @@ int main(int argc, char *argv[])
                 printf("[%.2f] Table2Gen %.2f%% \n", omp_get_wtime() - start_time, (batch + 1) * 100.0 / num_batches);
             }
             // printf("Zero nonces found: %d\n", zero_nonce_count);
-            printf("Table2 generation completed with %d / %llu records stored on disk.\n", hash_pass_count, num_iterations);
+            printf("Table2 generation completed with %d / %llu records stored on disk.\n", hash_pass_count, num_records_total);
 
             // flush, close, and remove fd_dest file
             if (fflush(fd_dest) != 0)
@@ -1297,7 +1289,7 @@ int main(int argc, char *argv[])
         double elapsed_time = end_time - start_time;
 
         // Calculate total throughput
-        double total_throughput = (num_iterations / elapsed_time) / 1e6;
+        double total_throughput = (num_records_total / elapsed_time) / 1e6;
         if (!BENCHMARK)
         {
             printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput, total_throughput * NONCE_SIZE);
