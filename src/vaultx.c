@@ -809,6 +809,17 @@ int main(int argc, char *argv[])
                 throughput_io = (num_records_per_round * sizeof(MemoTable2Record)) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
             }
 
+            // Check Bucket Efficiency for this round
+            if (VERIFY)
+            {
+                unsigned long long num_zero = 0;
+                for (unsigned long long i = 0; i < total_num_buckets; i++)
+                {
+                    num_zero += num_records_in_bucket - buckets[i].count;
+                }
+                printf("Storage efficiency: %.2f%%\nNumber of zero nonces: %llu\n", 100 * (1 - ((double)num_zero / num_records_per_round)), num_zero);
+            }
+
             if (!BENCHMARK)
                 printf("[%.2f] HashGen %.2f%%: %.2f MH/s : I/O %.2f MB/s\n", omp_get_wtime() - start_time, (r + 1) * 100.0 / rounds, throughput_hash, throughput_io);
             // end of loop
@@ -834,19 +845,19 @@ int main(int argc, char *argv[])
         // should move timing for I/O to after this section of code
 
         // Verification if enabled
-        if (VERIFY)
-        {
-            unsigned long long num_zero = 0;
-            for (unsigned long long i = 0; i < total_num_buckets; i++)
-            {
-                for (unsigned long long j = 0; j < buckets[i].count; j++)
-                {
-                    if (byteArrayToLongLong(buckets[i].records[j].nonce, NONCE_SIZE) == 0)
-                        num_zero++;
-                }
-            }
-            printf("Number of zero nonces: %llu\n", num_zero);
-        }
+        // if (VERIFY)
+        // {
+        //     unsigned long long num_zero = 0;
+        //     for (unsigned long long i = 0; i < total_num_buckets; i++)
+        //     {
+        //         for (unsigned long long j = 0; j < buckets[i].count; j++)
+        //         {
+        //             if (byteArrayToLongLong(buckets[i].records[j].nonce, NONCE_SIZE) == 0)
+        //                 num_zero++;
+        //         }
+        //     }
+        //     printf("Number of zero nonces: %llu\n", num_zero);
+        // }
 
         // Free allocated memory
         for (unsigned long long i = 0; i < total_num_buckets; i++)
