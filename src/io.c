@@ -149,3 +149,37 @@ int move_file_overwrite(const char *source_path, const char *destination_path)
         printf("move_file_overwrite() finished!\n");
     return 0; // Success
 }
+
+long get_file_size(const char *filename)
+{
+    FILE *file = fopen(filename, "rb"); // Open the file in binary mode
+    long size;
+
+    if (file == NULL)
+    {
+        printf("Error opening file %s (#2)\n", filename);
+
+        perror("Error opening file");
+        return -1;
+    }
+
+    // Move the file pointer to the end of the file
+    if (fseek(file, 0, SEEK_END) != 0)
+    {
+        perror("Error seeking to end of file");
+        fclose(file);
+        return -1;
+    }
+
+    // Get the current position in the file, which is the size
+    size = ftell(file);
+    if (size == -1L)
+    {
+        perror("Error getting file position");
+        fclose(file);
+        return -1;
+    }
+
+    fclose(file);
+    return size;
+}

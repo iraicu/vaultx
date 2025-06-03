@@ -6,5 +6,6 @@
 int rename_file(const char *old_name, const char *new_name);
 void remove_file(const char *fileName);
 int move_file_overwrite(const char *source_path, const char *destination_path);
+long get_file_size(const char *filename); 
 
 #endif

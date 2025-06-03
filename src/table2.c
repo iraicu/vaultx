@@ -203,12 +203,12 @@ void generate2Blake3(uint8_t *record_hash, MemoTable2Record *record, unsigned lo
 }
 
 // Function to insert a record into a bucket
-void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t bucketIndex)
+int insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t bucketIndex)
 {
     if (bucketIndex >= total_num_buckets)
     {
         fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, total_num_buckets - 1);
-        return;
+        return 0;
     }
 
     BucketTable2 *bucket = &buckets2[bucketIndex];
@@ -226,6 +226,7 @@ void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t buc
     {
         memcpy(bucket->records[idx].nonce1, record->nonce1, NONCE_SIZE);
         memcpy(bucket->records[idx].nonce2, record->nonce2, NONCE_SIZE);
+        return 1; 
     }
     else
     {
@@ -239,6 +240,7 @@ void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t buc
         }
         bucket->count_waste++;
         // Overflow handling can be added here if necessary.
+        return 0; 
     }
 }
 
@@ -413,7 +415,7 @@ size_t process_memo_records_table2(
     return count_condition_met;
 }
 
-int generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
+uint64_t generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 {
     uint64_t expected_distance = 1ULL << (64 - K);
     uint64_t hash_pass_count = 0;
@@ -456,9 +458,6 @@ int generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
                     break;
                 }
 
-                // The distance is within the expected threshold; count it.
-                hash_pass_count++;
-
                 MemoTable2Record record;
                 uint8_t hash_table2[HASH_SIZE];
                 generate2Blake3(hash_table2, &record, (unsigned long long)sorted_nonces[i].nonce, (unsigned long long)sorted_nonces[j].nonce);
@@ -466,7 +465,7 @@ int generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
                 if (MEMORY_WRITE)
                 {
                     off_t bucketIndex = getBucketIndex(hash_table2, PREFIX_SIZE);
-                    insert_record2(buckets2, &record, bucketIndex);
+                    hash_pass_count += insert_record2(buckets2, &record, bucketIndex);
                 }
                 // buckets2_count[bucketIndex]++;
                 // printf("bucketIndex=%ld\n",bucketIndex);
