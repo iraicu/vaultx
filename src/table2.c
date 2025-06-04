@@ -369,6 +369,8 @@ size_t process_memo_records_table2(
                                     (double)(count_condition_met + count_condition_not_met);
                 printf("[%.2f] Verify %.2f%%: Sorted %.2f%% : Storage Efficiency %.2f%%\n",
                        elapsed, pct, pct_sorted, pct_met);
+                printf("Zero Nonces: %zu, Condition Met: %zu, Not Met: %zu, Total Records: %zu\n",
+                       zero_nonce_count, count_condition_met, count_condition_not_met, total_records);
             }
         }
 
