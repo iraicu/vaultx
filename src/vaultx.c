@@ -11,18 +11,18 @@ void print_usage(char *prog_name)
     printf("  -K, --exponent NUM                    Exponent K to compute 2^K number of records (default: 4)\n");
     printf("  -m, --memory NUM                      Memory size in MB (default: 1)\n");
     printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
-    printf("  -f, --tmp file NAME                   Temporary file name\n");
-    printf("  -g, --final file NAME                 Final file name\n");
-    printf("  -j, --tmp table2 file NAME            Temporary table2 file name\n");
-    printf("  -2, --table2 file NAME                Use Table2 approach (should specify -f (table1 file), if table1 was created previously, turn off HASHGEN)\n");
+    printf("  -f, --file table1 NAME                Temporary table1 file name\n");
+    printf("  -g, --file tmp table2 NAME            Temporary table2 file name\n");
+    printf("  -j, --file table2 NAME                Table2 file name\n");
+    // printf("  -2, --table2 file NAME                Use Table2 approach (should specify -f (table1 file), if table1 was created previously, turn off HASHGEN)\n");
     printf("  -s, --search STRING                   Search for a specific hash prefix in the file\n");
     printf("  -S, --search-batch NUM                Search for a specific hash prefix in the file in batch mode\n");
     printf("  -x, --benchmark                       Enable benchmark mode (default: false)\n");
     printf("  -h, --help                            Display this help message\n");
     printf("\nExample:\n");
-    printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo\n", prog_name);
-    printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo -x true (Only prints time)\n", prog_name);
-    printf("  %s -a for -t 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo -2 true\n", prog_name);
+    printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f memo.t -g memo2.t\n", prog_name);
+    printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f memo.t -g memo2.t -x true (Only prints time)\n", prog_name);
+    printf("  %s -a for -t 8 -K 25 -m 1024 -f memo.t -g memo2.t -j memo.x\n", prog_name);
 }
 
 // Function to compute the bucket index based on hash prefix
@@ -132,10 +132,9 @@ int main(int argc, char *argv[])
     unsigned long long num_records_total = 1ULL << K; // 2^K iterations
     unsigned long long num_records_per_round = num_records_total;
     unsigned long long MEMORY_SIZE_MB = 1;
-    char *FILENAME = NULL;       // Default output file name
-    char *FILENAME_FINAL = NULL; // Default output file name
+    char *FILENAME_TABLE1 = NULL;       // Default output file name
+    char *FILENAME_TMP = NULL;
     char *FILENAME_TABLE2 = NULL;
-    char *FILENAME_TABLE2_tmp = NULL;
     char *SEARCH_STRING = NULL;
 
     // Define long options
@@ -145,9 +144,8 @@ int main(int argc, char *argv[])
         {"threads_io", required_argument, 0, 'i'},
         {"exponent", required_argument, 0, 'K'},
         {"memory", required_argument, 0, 'm'},
-        {"file", required_argument, 0, 'f'},
-        {"file_final", required_argument, 0, 'g'},
-        {"file_table2_tmp", required_argument, 0, '2'},
+        {"file_table1", required_argument, 0, 'f'},
+        {"file_table2_tmp", required_argument, 0, 'g'},
         {"file_table2", required_argument, 0, 'j'},
         {"batch_size", required_argument, 0, 'b'},
         {"memory_write", required_argument, 0, 'w'},
@@ -165,7 +163,7 @@ int main(int argc, char *argv[])
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:2:j:b:w:c:v:s:S:x:y:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:j:b:w:c:v:s:S:x:y:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -219,16 +217,12 @@ int main(int argc, char *argv[])
             }
             break;
         case 'f':
-            FILENAME = optarg;
+            FILENAME_TABLE1 = optarg;
             writeData = true;
             break;
         case 'g':
-            FILENAME_FINAL = optarg;
+            FILENAME_TMP = optarg;
             writeDataFinal = true;
-            break;
-        case '2':
-            FILENAME_TABLE2_tmp = optarg;
-            writeDataTable2Tmp = true;
             break;
         case 'j':
             FILENAME_TABLE2 = optarg;
@@ -445,15 +439,15 @@ int main(int argc, char *argv[])
 
             if (writeData)
             {
-                printf("Temporary File              : %s\n", FILENAME);
+                printf("File Table 1 (tmp)          : %s\n", FILENAME_TABLE1);
             }
             if (writeDataFinal)
             {
-                printf("Output File Table 1         : %s\n", FILENAME_FINAL);
+                printf("File Table 2 (tmp)          : %s\n", FILENAME_TMP);
             }
             if (writeDataTable2)
             {
-                printf("Output File Table 2         : %s\n", FILENAME_TABLE2);
+                printf("File Table 2                : %s\n", FILENAME_TABLE2);
             }
         }
     }
@@ -461,13 +455,13 @@ int main(int argc, char *argv[])
     if (HASHGEN)
     {
         // Open tmp file for writing 1) if in-memory: table2, 2) if out-of-memory: unshuffled table1
-        FILE *fd = NULL;
+        FILE *fd_table1 = NULL;
         if (writeData)
         {
-            fd = fopen(FILENAME, "wb+");
-            if (fd == NULL)
+            fd_table1 = fopen(FILENAME_TABLE1, "wb+");
+            if (fd_table1 == NULL)
             {
-                printf("Error opening file %s (#4)\n", FILENAME);
+                printf("Error opening file %s (#4)\n", FILENAME_TABLE1);
 
                 perror("Error opening file");
                 return EXIT_FAILURE;
@@ -701,10 +695,10 @@ int main(int argc, char *argv[])
 
                 // Seek to the correct position in the file
                 off_t offset = r * num_records_in_bucket * total_num_buckets * sizeof(MemoTable2Record); // total_num_buckets that fit in memory
-                if (fseeko(fd, offset, SEEK_SET) < 0)
+                if (fseeko(fd_table1, offset, SEEK_SET) < 0)
                 {
                     perror("Error seeking in file");
-                    fclose(fd);
+                    fclose(fd_table1);
                     exit(EXIT_FAILURE);
                 }
 
@@ -726,12 +720,12 @@ int main(int argc, char *argv[])
                 // Write table2 to disk
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
                 {
-                    size_t elements_written = fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd);
+                    size_t elements_written = fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table1);
                     if (elements_written != num_records_in_bucket)
                     {
                         fprintf(stderr, "Error writing bucket to file; elements written %zu when expected %llu\n",
                                 elements_written, num_records_in_bucket);
-                        fclose(fd);
+                        fclose(fd_table1);
                         exit(EXIT_FAILURE);
                     }
                     bytesWritten += elements_written * sizeof(MemoTable2Record);
@@ -764,10 +758,10 @@ int main(int argc, char *argv[])
 
                 // Seek to the correct position in the file
                 off_t offset = r * num_records_in_bucket * total_num_buckets * sizeof(MemoRecord); // total_num_buckets that fit in memory
-                if (fseeko(fd, offset, SEEK_SET) < 0)
+                if (fseeko(fd_table1, offset, SEEK_SET) < 0)
                 {
                     perror("Error seeking in file");
-                    fclose(fd);
+                    fclose(fd_table1);
                     exit(EXIT_FAILURE);
                 }
 
@@ -781,12 +775,12 @@ int main(int argc, char *argv[])
                 // write table1
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
                 {
-                    size_t elements_written = fwrite(buckets[i].records, sizeof(MemoRecord), num_records_in_bucket, fd);
+                    size_t elements_written = fwrite(buckets[i].records, sizeof(MemoRecord), num_records_in_bucket, fd_table1);
                     if (elements_written != num_records_in_bucket)
                     {
                         fprintf(stderr, "Error writing bucket to file; elements written %zu when expected %llu\n",
                                 elements_written, num_records_in_bucket);
-                        fclose(fd);
+                        fclose(fd_table1);
                         exit(EXIT_FAILURE);
                     }
                     bytesWritten += elements_written * sizeof(MemoRecord);
@@ -834,10 +828,10 @@ int main(int argc, char *argv[])
         // Flush memory buffer to disk and close the file
         if (writeData)
         {
-            if (fflush(fd) != 0)
+            if (fflush(fd_table1) != 0)
             {
                 perror("Failed to flush buffer");
-                fclose(fd);
+                fclose(fd_table1);
                 return EXIT_FAILURE;
             }
         }
@@ -879,18 +873,27 @@ int main(int argc, char *argv[])
         buckets2 = NULL;
 
         // Shuffle table1, generate table2, shuffle table2, and write to disk (filename_table2)
-        if (writeDataFinal && rounds > 1)
+        if (writeDataTable2Tmp && rounds > 1)
         {
             // Shuffle table1 and write to disk
             // Open the file for writing shuffled table1
-            FILE *fd_dest = NULL;
-            fd_dest = fopen(FILENAME_FINAL, "wb+");
-            if (fd_dest == NULL)
-            {
-                printf("Error opening file %s (#5)\n", FILENAME_FINAL);
-                perror("Error opening file");
+            // FILE *fd_dest = NULL;
+            // fd_dest = fopen(FILENAME_FINAL, "wb+");
+            // if (fd_dest == NULL)
+            // {
+            //     printf("Error opening file %s (#5)\n", FILENAME_FINAL);
+            //     perror("Error opening file");
 
-                // perror("Error opening file");
+            //     // perror("Error opening file");
+            //     return EXIT_FAILURE;
+            // }
+
+            FILE *fd_table2_tmp = NULL;
+            fd_table2_tmp = fopen(FILENAME_TMP, "wb+");
+            if (fd_table2_tmp == NULL)
+            {
+                printf("Error opening file %s (#6)\n", FILENAME_TMP);
+                perror("Error opening file");
                 return EXIT_FAILURE;
             }
 
@@ -923,105 +926,25 @@ int main(int argc, char *argv[])
                 omp_set_num_threads(num_threads_io);
             }
 
-            // Shuffle Table1
-            shuffle_table1(fd, fd_dest, buffer_size, records_per_batch, num_buckets_to_read, start_time, elapsed_time_io2, elapsed_time_io2_total);
-
-            // end of for loop
-            start_time_io = omp_get_wtime();
-
-            // Flush and close the file
-            if (writeData)
-            {
-                if (fflush(fd) != 0)
-                {
-                    perror("Failed to flush buffer");
-                    fclose(fd);
-                    return EXIT_FAILURE;
-                }
-
-                if (fsync(fileno(fd)) != 0)
-                {
-                    perror("Failed to fsync buffer");
-                    fclose(fd);
-                    return EXIT_FAILURE;
-                }
-                fclose(fd);
-            }
-
-            // flush the destination file, don't close it, we will use it in the next step when generating table2
-            if (fflush(fd_dest) != 0)
-            {
-                perror("Failed to flush buffer");
-                fclose(fd_dest);
-                return EXIT_FAILURE;
-            }
-            if (fsync(fileno(fd_dest)) != 0)
-            {
-                perror("Failed to fsync buffer");
-                fclose(fd_dest);
-                return EXIT_FAILURE;
-            }
-
-            remove_file(FILENAME);
-
-            end_time_io = omp_get_wtime();
-            elapsed_time_io = end_time_io - start_time_io;
-            elapsed_time_io_total += elapsed_time_io;
-
-            // If table2 tmp file is not specified, exit
-            if (!writeDataTable2Tmp)
-            {
-                printf("Error: FILENAME_TABLE2_tmp is not specified, exiting...\n");
-                fclose(fd_dest);
-                return EXIT_FAILURE;
-            }
-
-            // is creating table2 the performance bottleneck?
-            // fd_dest still opened
-            // Open the file for writing unshuffled table2
-            FILE *fd_table2_tmp = NULL;
-            fd_table2_tmp = fopen(FILENAME_TABLE2_tmp, "wb+");
-            if (fd_table2_tmp == NULL)
-            {
-                printf("Error opening fd_table2_tmp file %s (#5)\n", FILENAME_TABLE2_tmp);
-                perror("Error opening file");
-                return EXIT_FAILURE;
-            }
-
-            // Find matches in table1, generate unshuffled table2 and write it to disk
-            if (DEBUG)
-                printf("finding matches within table 1...\n");
-
-            // size_t bytesWritten = 0;
-
-            if (num_threads_io > 0)
-            {
-                omp_set_num_threads(num_threads_io);
-            }
-
-            // Allocate memory
-            num_buckets_to_read = MEMORY_SIZE_bytes / (num_records_in_shuffled_bucket * sizeof(MemoRecord));
-            // unsigned long long num_batches = (total_num_buckets + num_buckets_to_read - 1) / buckets_per_batch; // ceil
-            // printf("num_batches=%llu, buckets_per_batch=%llu, num_records_in_shuffled_bucket=%llu\n", num_batches, buckets_per_batch, num_records_in_shuffled_bucket);
-            hash_pass_count = 0;
-            // int zero_nonce_count = 0;
-
-            buckets = (Bucket *)calloc(num_buckets_to_read, sizeof(Bucket));
+            // instead of shuffling the whole table1, exctract all buckets of the same prefix, sort, find matches, and write table2 to disk
+            MemoRecord *buffer = (MemoRecord *)calloc(buffer_size, sizeof(MemoRecord));
             if (buckets == NULL)
             {
                 fprintf(stderr, "Error: Unable to allocate memory for buckets.\n");
-                exit(EXIT_FAILURE);
-            }
-            for (unsigned long long i = 0; i < num_buckets_to_read; i++)
-            {
-                buckets[i].records = (MemoRecord *)calloc(num_records_in_shuffled_bucket, sizeof(MemoRecord));
-                if (buckets[i].records == NULL)
-                {
-                    fprintf(stderr, "Error: Unable to allocate memory for records.\n");
-                    exit(EXIT_FAILURE);
-                }
+                fclose(fd_table2_tmp);
+                return EXIT_FAILURE;
             }
 
+            Bucket *buckets_shuffled = (Bucket *)calloc(num_buckets_to_read, sizeof(Bucket));
+            if (buckets_shuffled == NULL)
+            {
+                fprintf(stderr, "Error: Unable to allocate memory for buffer_shuffled.\n");
+                fclose(fd_table2_tmp);
+                free(buffer);
+                return EXIT_FAILURE;
+            }
+
+            // Allocate memory for the destination buckets
             buckets2 = (BucketTable2 *)calloc(total_num_buckets, sizeof(BucketTable2));
             if (buckets2 == NULL)
             {
@@ -1037,99 +960,293 @@ int main(int argc, char *argv[])
                     exit(EXIT_FAILURE);
                 }
             }
-            if (num_threads > 0)
+
+            for (unsigned long long i = 0; i < total_num_buckets; i = i + num_buckets_to_read)
             {
-                omp_set_num_threads(num_threads);
-            }
+                double start_time_io2 = omp_get_wtime();
 
-            // unsigned long long full_buckets = 0;
-            // unsigned long long record_counts = 0;
-            // unsigned long long record_counts_waste = 0;
+                // #pragma omp parallel for schedule(static)
+                for (unsigned long long r = 0; r < rounds; r++)
+                {
+                    off_t offset_src = (r * total_num_buckets + i) * num_records_in_bucket * sizeof(MemoRecord);
+                    if (fseeko(fd_table1, offset_src, SEEK_SET) < 0)
+                    {
+                        perror("Error seeking in file for reading table1");
+                        fclose(fd_table1);
+                        free(buckets);
+                        free(buckets2);
+                        return EXIT_FAILURE;
+                    }
 
-            double start_time_table2 = omp_get_wtime();
+                    size_t buffer_idx = r * num_buckets_to_read * num_records_in_bucket;
 
-            for (unsigned long long r = 0; r < rounds; r++)
-            {
-#pragma omp parallel reduction(+ : hash_pass_count)
+                    size_t elements_read = fread(&buffer[buffer_idx], sizeof(MemoRecord), num_buckets_to_read * num_records_in_bucket, fd_table1);
+                    if (elements_read != num_buckets_to_read * num_records_in_bucket)
+                    {
+                        fprintf(stderr, "Error reading from file; elements read %zu when expected %llu\n",
+                                elements_read, num_buckets_to_read * num_records_in_bucket);
+                        fclose(fd_table1);
+                        free(buckets);
+                        free(buckets2);
+                        return EXIT_FAILURE;
+                    }
+                }
+
+#pragma omp parallel
                 {
 #pragma omp for schedule(static)
                     for (unsigned long long b = 0; b < num_buckets_to_read; b++)
                     {
-
-                        off_t offset_src = (r * num_buckets_to_read + b) * num_records_in_shuffled_bucket * sizeof(MemoRecord); // total_num_buckets that fit in memory
-                        if (fseeko(fd_dest, offset_src, SEEK_SET) < 0)
+                        for (unsigned long long r = 0; r < rounds; r++)
                         {
-                            perror("Error seeking in file for reading table1");
-                            fclose(fd_dest);
-                            exit(EXIT_FAILURE);
-                        }
+                            off_t idx_src = (r * num_buckets_to_read + b) * num_records_in_bucket;
+                            off_t idx_dest = r; // extract a hash prefix or calculate bucket index
+                            // idx_dest = getBucketIndex(hash, PREFIX_SIZE);
 
-                        size_t elements_read = fread(buckets[b].records, sizeof(MemoRecord), num_records_in_shuffled_bucket, fd_dest);
-                        if (elements_read != num_records_in_shuffled_bucket)
-                        {
-                            fprintf(stderr, "TABLE2: Error reading bucket %llu from file; elements read %zu when expected %llu\n", b,
-                                    elements_read, num_records_in_shuffled_bucket);
-                            if (feof(fd_dest))
-                                printf("Reached EOF\n");
-                            if (ferror(fd_dest))
-                                printf("Read error\n");
-                            fclose(fd_dest);
-                            exit(EXIT_FAILURE);
+                            memcpy(&buckets_shuffled[idx_dest].records, &buffer[idx_src], num_records_in_bucket * sizeof(MemoRecord));
                         }
                     }
 
 #pragma omp for schedule(static) nowait
+                    for (unsigned long long b = 0; b < num_buckets_to_read * rounds; b++)
+                    {
+                        sort_bucket_records_inplace(buckets_shuffled[b].records, num_records_in_shuffled_bucket);
+                        generate_table2(buckets_shuffled[b].records, num_records_in_shuffled_bucket);
+                    }
+
                     for (unsigned long long b = 0; b < num_buckets_to_read; b++)
                     {
-                        sort_bucket_records_inplace(buckets[b].records, num_records_in_shuffled_bucket);
-                        hash_pass_count += generate_table2(buckets[b].records, num_records_in_shuffled_bucket);
+                        // Write the shuffled bucket to the destination file
+                        size_t elements_written = fwrite(buckets2[b].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
+                        if (elements_written != num_records_in_bucket)
+                        {
+                            fprintf(stderr, "Error writing shuffled bucket to file; elements written %zu when expected %llu\n",
+                                    elements_written, num_records_in_bucket);
+                            fclose(fd_table2_tmp);
+                            free(buckets);
+                            free(buckets2);
+                            return EXIT_FAILURE;
+                        }
                     }
                 }
 
-                for (unsigned long long b = 0; b < total_num_buckets; b++)
-                {
-                    off_t offset_dest = (r * total_num_buckets + b) * num_records_in_bucket * sizeof(MemoTable2Record);
-                    if (fseeko(fd_table2_tmp, offset_dest, SEEK_SET) < 0)
-                    {
-                        perror("Error seeking in file for writing table2");
-                        fclose(fd_table2_tmp);
-                        exit(EXIT_FAILURE);
-                    }
-
-                    size_t elements_written = fwrite(buckets2[b].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
-                    if (elements_written != num_records_in_bucket)
-                    {
-                        fprintf(stderr, "TABLE2: Error writing bucket %llu to file; elements written %zu when expected %llu\n",
-                                b, elements_written, num_records_in_bucket);
-                        fclose(fd_table2_tmp);
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                printf("[%.2f] Table2Gen %.2f%% \n", omp_get_wtime() - start_time, (r + 1) * 100.0 / rounds);
+                double end_time_io2 = omp_get_wtime();
+                elapsed_time_io2 = end_time_io2 - start_time_io2;
+                elapsed_time_io2_total += elapsed_time_io2;
+                double throughput_io2 = (num_records_in_bucket * num_buckets_to_read * rounds * sizeof(MemoRecord)) / (elapsed_time_io2 * 1024 * 1024);
+                // printf("num_buckets=%llu num_records_in_bucket=%llu num_buckets_to_read=%llu, rounds=%llu, i=%llu\n", num_buckets, num_records_in_bucket, num_buckets_to_read, rounds, i);
+                // Last Shuffle print shows at 75% completion. why?
+                if (!BENCHMARK)
+                    printf("[%.2f] Shuffle Table1 %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / total_num_buckets, throughput_io2);
             }
 
-            double end_time_table2 = omp_get_wtime();
-            double elapsed_time_table2 = end_time_table2 - start_time_table2;
-            printf("Table2 generation took %.2f seconds.\n", elapsed_time_table2);
-            // printf("Zero nonces found: %d\n", zero_nonce_count);
-            printf("Table2 generation completed with %d / %llu records stored on disk.\n", hash_pass_count, num_records_total);
+            free(buffer);
+            free(buckets_shuffled);
+            free(buckets2);
 
-            // flush, close, and remove fd_dest file
-            if (fflush(fd_dest) != 0)
+            // Shuffle Table1
+            // shuffle_table1(fd, fd_dest, buffer_size, records_per_batch, num_buckets_to_read, start_time, elapsed_time_io2, elapsed_time_io2_total);
+
+            // end of for loop
+            start_time_io = omp_get_wtime();
+
+            // Flush and close the file
+            if (writeData)
+            {
+                if (fflush(fd_table1) != 0)
+                {
+                    perror("Failed to flush buffer");
+                    fclose(fd_table1);
+                    return EXIT_FAILURE;
+                }
+
+                if (fsync(fileno(fd_table1)) != 0)
+                {
+                    perror("Failed to fsync buffer");
+                    fclose(fd_table1);
+                    return EXIT_FAILURE;
+                }
+                fclose(fd_table1);
+            }
+
+            // flush the destination file, don't close it, we will use it in the next step when generating table2
+            if (fflush(fd_table2_tmp) != 0)
             {
                 perror("Failed to flush buffer");
-                fclose(fd_dest);
+                fclose(fd_table2_tmp);
                 return EXIT_FAILURE;
             }
-            if (fsync(fileno(fd_dest)) != 0)
+            if (fsync(fileno(fd_table2_tmp)) != 0)
             {
                 perror("Failed to fsync buffer");
-                fclose(fd_dest);
+                fclose(fd_table2_tmp);
                 return EXIT_FAILURE;
             }
 
-            fclose(fd_dest);
-            remove_file(FILENAME_FINAL);
+            remove_file(FILENAME_TABLE1);
+
+            end_time_io = omp_get_wtime();
+            elapsed_time_io = end_time_io - start_time_io;
+            elapsed_time_io_total += elapsed_time_io;
+
+            // previous code to generate table2 if we first need to read shuffled table1 from disk
+            // // If table2 tmp file is not specified, exit
+            // if (!writeDataTable2Tmp)
+            // {
+            //     printf("Error: FILENAME_TABLE2_tmp is not specified, exiting...\n");
+            //     fclose(fd_dest);
+            //     return EXIT_FAILURE;
+            // }
+
+            // is creating table2 the performance bottleneck?
+            // fd_dest still opened
+            // Open the file for writing unshuffled table2
+//             FILE *fd_table2_tmp = NULL;
+//             fd_table2_tmp = fopen(FILENAME_TABLE2_tmp, "wb+");
+//             if (fd_table2_tmp == NULL)
+//             {
+//                 printf("Error opening fd_table2_tmp file %s (#5)\n", FILENAME_TABLE2_tmp);
+//                 perror("Error opening file");
+//                 return EXIT_FAILURE;
+//             }
+
+//             // Find matches in table1, generate unshuffled table2 and write it to disk
+//             if (DEBUG)
+//                 printf("finding matches within table 1...\n");
+
+//             // size_t bytesWritten = 0;
+
+//             if (num_threads_io > 0)
+//             {
+//                 omp_set_num_threads(num_threads_io);
+//             }
+
+//             // Allocate memory
+//             num_buckets_to_read = MEMORY_SIZE_bytes / (num_records_in_shuffled_bucket * sizeof(MemoRecord));
+//             // unsigned long long num_batches = (total_num_buckets + num_buckets_to_read - 1) / buckets_per_batch; // ceil
+//             // printf("num_batches=%llu, buckets_per_batch=%llu, num_records_in_shuffled_bucket=%llu\n", num_batches, buckets_per_batch, num_records_in_shuffled_bucket);
+//             hash_pass_count = 0;
+//             // int zero_nonce_count = 0;
+
+//             buckets = (Bucket *)calloc(num_buckets_to_read, sizeof(Bucket));
+//             if (buckets == NULL)
+//             {
+//                 fprintf(stderr, "Error: Unable to allocate memory for buckets.\n");
+//                 exit(EXIT_FAILURE);
+//             }
+//             for (unsigned long long i = 0; i < num_buckets_to_read; i++)
+//             {
+//                 buckets[i].records = (MemoRecord *)calloc(num_records_in_shuffled_bucket, sizeof(MemoRecord));
+//                 if (buckets[i].records == NULL)
+//                 {
+//                     fprintf(stderr, "Error: Unable to allocate memory for records.\n");
+//                     exit(EXIT_FAILURE);
+//                 }
+//             }
+
+//             buckets2 = (BucketTable2 *)calloc(total_num_buckets, sizeof(BucketTable2));
+//             if (buckets2 == NULL)
+//             {
+//                 fprintf(stderr, "Error: Unable to allocate memory for buckets2.\n");
+//                 exit(EXIT_FAILURE);
+//             }
+//             for (unsigned long long i = 0; i < total_num_buckets; i++)
+//             {
+//                 buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
+//                 if (buckets2[i].records == NULL)
+//                 {
+//                     fprintf(stderr, "Error: Unable to allocate memory for records in table 2.\n");
+//                     exit(EXIT_FAILURE);
+//                 }
+//             }
+//             if (num_threads > 0)
+//             {
+//                 omp_set_num_threads(num_threads);
+//             }
+
+//             // unsigned long long full_buckets = 0;
+//             // unsigned long long record_counts = 0;
+//             // unsigned long long record_counts_waste = 0;
+
+//             double start_time_table2 = omp_get_wtime();
+
+//             for (unsigned long long r = 0; r < rounds; r++)
+//             {
+//                 for (unsigned long long b = 0; b < num_buckets_to_read; b++)
+//                 {
+//                     off_t offset_src = (r * num_buckets_to_read + b) * num_records_in_shuffled_bucket * sizeof(MemoRecord); // total_num_buckets that fit in memory
+//                     if (fseeko(fd_dest, offset_src, SEEK_SET) < 0)
+//                     {
+//                         perror("Error seeking in file for reading table1");
+//                         fclose(fd_dest);
+//                         exit(EXIT_FAILURE);
+//                     }
+
+//                     size_t elements_read = fread(buckets[b].records, sizeof(MemoRecord), num_records_in_shuffled_bucket, fd_dest);
+//                     if (elements_read != num_records_in_shuffled_bucket)
+//                     {
+//                         fprintf(stderr, "TABLE2: Error reading bucket %llu from file; elements read %zu when expected %llu\n", b,
+//                                 elements_read, num_records_in_shuffled_bucket);
+//                         if (feof(fd_dest))
+//                             printf("Reached EOF\n");
+//                         if (ferror(fd_dest))
+//                             printf("Read error\n");
+//                         fclose(fd_dest);
+//                         exit(EXIT_FAILURE);
+//                     }
+//                 }
+
+// #pragma omp parallel for schedule(static) reduction(+ : hash_pass_count)
+//                 for (unsigned long long b = 0; b < num_buckets_to_read; b++)
+//                 {
+//                     sort_bucket_records_inplace(buckets[b].records, num_records_in_shuffled_bucket);
+//                     hash_pass_count += generate_table2(buckets[b].records, num_records_in_shuffled_bucket);
+//                 }
+
+//                 for (unsigned long long b = 0; b < total_num_buckets; b++)
+//                 {
+//                     off_t offset_dest = (r * total_num_buckets + b) * num_records_in_bucket * sizeof(MemoTable2Record);
+//                     if (fseeko(fd_table2_tmp, offset_dest, SEEK_SET) < 0)
+//                     {
+//                         perror("Error seeking in file for writing table2");
+//                         fclose(fd_table2_tmp);
+//                         exit(EXIT_FAILURE);
+//                     }
+
+//                     size_t elements_written = fwrite(buckets2[b].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
+//                     if (elements_written != num_records_in_bucket)
+//                     {
+//                         fprintf(stderr, "TABLE2: Error writing bucket %llu to file; elements written %zu when expected %llu\n",
+//                                 b, elements_written, num_records_in_bucket);
+//                         fclose(fd_table2_tmp);
+//                         exit(EXIT_FAILURE);
+//                     }
+//                 }
+//                 printf("[%.2f] Table2Gen %.2f%% \n", omp_get_wtime() - start_time, (r + 1) * 100.0 / rounds);
+//             }
+
+            // double end_time_table2 = omp_get_wtime();
+            // double elapsed_time_table2 = end_time_table2 - start_time_table2;
+            // printf("Table2 generation took %.2f seconds.\n", elapsed_time_table2);
+            // // printf("Zero nonces found: %d\n", zero_nonce_count);
+            // printf("Table2 generation completed with %d / %llu records stored on disk.\n", hash_pass_count, num_records_total);
+
+            // flush, close, and remove fd_dest file
+            // if (fflush(fd_dest) != 0)
+            // {
+            //     perror("Failed to flush buffer");
+            //     fclose(fd_dest);
+            //     return EXIT_FAILURE;
+            // }
+            // if (fsync(fileno(fd_dest)) != 0)
+            // {
+            //     perror("Failed to fsync buffer");
+            //     fclose(fd_dest);
+            //     return EXIT_FAILURE;
+            // }
+
+            // fclose(fd_dest);
+            // remove_file(FILENAME_FINAL);
 
             printf("Freeing buckets...\n");
             // Free allocated memory
@@ -1221,20 +1338,20 @@ int main(int argc, char *argv[])
                 }
 
                 fclose(fd_table2);
-                remove_file(FILENAME_TABLE2_tmp);
+                remove_file(FILENAME_TMP);
             }
         }
         else if (writeDataTable2 && rounds == 1)
         {
             // Call the rename_file function
-            if (move_file_overwrite(FILENAME, FILENAME_TABLE2) == 0)
+            if (move_file_overwrite(FILENAME_TABLE1, FILENAME_TABLE2) == 0)
             {
                 if (!BENCHMARK)
-                    printf("File renamed/moved successfully from '%s' to '%s'.\n", FILENAME, FILENAME_TABLE2);
+                    printf("File renamed/moved successfully from '%s' to '%s'.\n", FILENAME_TABLE1, FILENAME_TABLE2);
             }
             else
             {
-                printf("Error in moving file '%s' to '%s'.\n", FILENAME, FILENAME_TABLE2);
+                printf("Error in moving file '%s' to '%s'.\n", FILENAME_TABLE1, FILENAME_TABLE2);
                 return EXIT_FAILURE;
                 // Error message already printed by rename_file via perror()
                 // Additional handling can be done here if necessary
