@@ -40,10 +40,9 @@ extern unsigned long long num_buckets_to_read;
 extern unsigned long long full_buckets_global;
 
 extern bool DEBUG;
-extern bool writeData;
-extern bool writeDataFinal;
+extern bool writeDataTmp;
+extern bool writeDataTmpTable2;
 extern bool writeDataTable2;
-extern bool writeDataTable2Tmp;
 extern bool SEARCH_BATCH;
 extern bool SEARCH;
 extern bool HASHGEN;

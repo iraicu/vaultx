@@ -5,3 +5,6 @@ memo.t
 memo2.t
 memo.x
 memo.xx
+blake3_bench
+perf.data
+perf.data.old

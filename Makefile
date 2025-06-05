@@ -107,5 +107,8 @@ vaultx_mac_c: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c sr
 #-D NONCE_SIZE=$(NONCE_SIZE)
 	$(CC) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) -o vaultx vaultx.c -fopenmp -lblake3 -O3  -I/opt/homebrew/opt/blake3/include -L/opt/homebrew/opt/blake3/lib
 
+blake3_bench: src/blake3_bench.c blake3/blake3.c blake3/blake3_dispatch.c blake3/blake3_portable.c $(ASM_TARGETS)
+	$(CC) $(CFLAGS) $(EXTRAFLAGS) -I/usr/include $(CFLAGS) $(EXTRAFLAGS) $^ -o blake3_bench $(LDFLAGS) -fopenmp
+
 clean: 
 	rm -f $(NAME) vaultx vaultx_* *.o
