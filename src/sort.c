@@ -1,4 +1,5 @@
 #include "sort.h"
+#include "table1.h"
 
 // Comparison function for qsort(), comparing the hash fields.
 // int compare_memo_all_record(const void *a, const void *b)
@@ -17,7 +18,6 @@ int compare_memo_all_record(const void* a, const void* b) {
 
     g(A->nonce, &current_file, hashA);
     g(B->nonce, &current_file, hashB);
-
 
     return memcmp(hashA, hashB, HASH_SIZE);
 }

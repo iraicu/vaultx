@@ -1,21 +1,21 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#include <errno.h>
+#include <fcntl.h> // For open, O_RDWR, O_CREAT, O_TRUNC
+#include <getopt.h> // For getopt_long
+#include <math.h>
+#include <omp.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <omp.h>
+#include <string.h> // For strcmp
+#include <sys/stat.h> // For file modes
+#include <sys/types.h> // For data types
 #include <time.h>
 #include <unistd.h> // For getpid()
-#include <string.h> // For strcmp
-#include <getopt.h> // For getopt_long
-#include <stdbool.h>
-#include <fcntl.h>     // For open, O_RDWR, O_CREAT, O_TRUNC
-#include <sys/types.h> // For data types
-#include <sys/stat.h>  // For file modes
-#include <math.h>
-#include <errno.h>
 
 #include "../blake3/blake3.h" // Include Blake3 header
 
@@ -63,7 +63,7 @@ extern size_t PREFIX_SEARCH_SIZE;
 // Structure to hold a record with nonce and hash
 typedef struct
 {
-    uint8_t hash[HASH_SIZE];   // 32-byte Blake3 hash
+    uint8_t hash[HASH_SIZE]; // 32-byte Blake3 hash
     uint8_t nonce[NONCE_SIZE]; // Nonce to store the seed
 } MemoAllRecord;
 
@@ -82,25 +82,26 @@ typedef struct
 
 typedef struct
 {
-    MemoRecord *records;
-    size_t count;       // Number of records in the bucket
+    MemoRecord* records;
+    size_t count; // Number of records in the bucket
     size_t count_waste; // Number of records generated but not stored
-    bool full;          // Number of records in the bucket
-    size_t flush;       // Number of flushes of bucket
+    bool full; // Number of records in the bucket
+    size_t flush; // Number of flushes of bucket
 } Bucket;
 
 typedef struct
 {
-    MemoTable2Record *records;
+    MemoTable2Record* records;
     size_t count; // Number of records in the bucket
     size_t count_waste;
     bool full;
     size_t flush; // Number of flushes of bucket
 } BucketTable2;
 
-extern Bucket *buckets;
-extern Bucket *buckets_phase2;
-extern BucketTable2 *buckets2;
-extern BucketTable2 *buckets2_phase2;
+extern Bucket* buckets;
+extern Bucket* buckets_phase2;
+extern BucketTable2* buckets2;
+extern BucketTable2* buckets_table2;
+extern BucketTable2* buckets2_phase2;
 
 #endif
