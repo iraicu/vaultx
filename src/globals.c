@@ -9,7 +9,6 @@ unsigned long long total_buckets = 1;
 unsigned long long rounds = 1; // filesize : memorysize
 unsigned long long num_buckets_to_read = 1;
 unsigned long long full_buckets_global = 0;
-unsigned long long total_files = 3;
 unsigned long long current_file = 1;
 
 bool DEBUG = false;

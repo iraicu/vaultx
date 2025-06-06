@@ -40,7 +40,6 @@ extern unsigned long long rounds;
 extern unsigned long long total_buckets;
 extern unsigned long long num_buckets_to_read;
 extern unsigned long long full_buckets_global;
-extern unsigned long long total_files;
 extern unsigned long long current_file;
 
 extern bool DEBUG;

@@ -18,6 +18,8 @@ void print_usage(char* prog_name) {
     printf("  -S, --search-batch NUM                Search for a specific hash prefix in the file in batch mode\n");
     printf("  -x, --benchmark                       Enable benchmark mode (default: false)\n");
     printf("  -h, --help                            Display this help message\n");
+    printf("  -n, --total_files NUM                 Number of K fiels to generate\n");
+    printf("  -M, --merge                           Merge k files into a big file\n");
     printf("\nExample:\n");
     printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo\n", prog_name);
     printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo -x true (Only prints time)\n", prog_name);
@@ -162,6 +164,8 @@ int main(int argc, char* argv[]) {
     int num_threads_io = 0;
     unsigned long long total_nonces = 1ULL << K; // 2^K iterations
     unsigned long long MEMORY_SIZE_MB = 1;
+    int TOTAL_FILES = 2;
+    bool MERGE = false;
 
     char FILENAME[100]; // Default output file name
     char* FILENAME_FINAL = NULL; // Default output file name
@@ -190,6 +194,8 @@ int main(int argc, char* argv[]) {
         { "full_buckets", required_argument, 0, 'y' },
         { "debug", required_argument, 0, 'd' },
         { "help", no_argument, 0, 'h' },
+        { "total_files", required_argument, 0, 'n' },
+        { "merge", required_argument, 0, 'M' },
         { 0, 0, 0, 0 }
     };
 
@@ -197,7 +203,7 @@ int main(int argc, char* argv[]) {
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:2:j:b:w:c:v:s:S:x:y:d:h", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:2:j:b:w:c:v:s:S:x:y:d:h:n:M:", long_options, &option_index)) != -1) {
         switch (opt) {
         case 'a':
             if (strcmp(optarg, "xtask") == 0 || strcmp(optarg, "task") == 0 || strcmp(optarg, "for") == 0 || strcmp(optarg, "tbb") == 0) {
@@ -323,6 +329,22 @@ int main(int argc, char* argv[]) {
                 DEBUG = false;
             }
             break;
+        case 'n':
+            TOTAL_FILES = atoi(optarg);
+            if (TOTAL_FILES < 1) {
+                fprintf(stderr, "Number of files must be 1 or greater.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'M':
+            if (strcmp(optarg, "true") == 0) {
+                MERGE = true;
+                HASHGEN = false;
+            } else {
+                MERGE = false;
+            }
+            break;
         case 'h':
         default:
             print_usage(argv[0]);
@@ -441,7 +463,7 @@ int main(int argc, char* argv[]) {
 
         double total_time = 0;
 
-        for (unsigned long long f = 1; f <= total_files; f++) {
+        for (unsigned long long f = 1; f <= TOTAL_FILES; f++) {
             double file_time = 0;
 
             uint8_t fileId[FILEID_SIZE];
@@ -577,7 +599,7 @@ int main(int argc, char* argv[]) {
             double hashgen_time = hashgen_end_time - hashgen_start_time;
             file_time += hashgen_time;
 
-            printf("[File %llu] %-35s: %.2fs\n", f, "Hash Generation Complete", hashgen_time);
+            printf("[File %llu] %-40s: %.2fs\n", f, "Hash Generation Complete", hashgen_time);
 
             // TODO: Parallelize storage efficiency calculations
             if (VERIFY) {
@@ -587,7 +609,7 @@ int main(int argc, char* argv[]) {
                     num_zero += num_records_in_bucket - buckets[i].count;
                 }
 
-                printf("[File %llu] %-35s: %.2f%%\n", current_file, "Table 1 Storage efficiency", 100 * (1 - ((double)num_zero / total_nonces)));
+                printf("[File %llu] %-40s: %.2f%%\n", current_file, "Table 1 Storage efficiency", 100 * (1 - ((double)num_zero / total_nonces)));
             }
 
             // Sort hashes
@@ -604,7 +626,7 @@ int main(int argc, char* argv[]) {
             double sort_time = sort_end_time - sort_start_time;
             file_time += sort_time;
 
-            printf("[File %llu] %-35s: %.3fs\n", f, "Sorting Complete", sort_time);
+            printf("[File %llu] %-40s: %.3fs\n", f, "Sorting Complete", sort_time);
             // Bucket* bucket = &buckets[100];
             // for (int j = 0; j < bucket->count; j++) {
 
@@ -681,7 +703,7 @@ int main(int argc, char* argv[]) {
             double matching_time = matching_end_time - matching_start_time;
             file_time += matching_time;
 
-            printf("[File %llu] %-35s: %.2fs\n", current_file, "Table 2 Generation Complete", matching_time);
+            printf("[File %llu] %-40s: %.2fs\n", current_file, "Table 2 Generation Complete", matching_time);
 
             if (VERIFY) {
                 size_t total_records = 0;
@@ -690,7 +712,7 @@ int main(int argc, char* argv[]) {
                     total_records += buckets_table2[i].count;
                 }
 
-                printf("[File %llu] %-35s: %.2f%%\n", current_file, "Table 2 Storage Efficiency", 100 * ((double)total_records / total_nonces));
+                printf("[File %llu] %-40s: %.2f%%\n", current_file, "Table 2 Storage Efficiency", 100 * ((double)total_records / total_nonces));
             }
 
             // for (int s = 0; s < total_buckets; s++) {
@@ -757,17 +779,29 @@ int main(int argc, char* argv[]) {
             double fileio_end_time = omp_get_wtime();
             double fileio_time = fileio_end_time - fileio_start_time;
             file_time += fileio_time;
-            total_time += file_time;
 
-            printf("[File %llu] %-35s: %.2fs\n", current_file, "Finished writing to disk", fileio_time);
-            printf("File %llu   %-35s: %.2fs\n\n\n", current_file, "Processing Complete", file_time);
+            // Clearing memory of all buckets
+            if (current_file < TOTAL_FILES) {
+                double empty_start_time = omp_get_wtime();
 
-            // Empty memory of all buckets
-            for (unsigned long long i = 0; i < total_buckets; i++) {
-                memset(buckets[i].records, 0, sizeof(MemoRecord) * num_records_in_bucket);
-                memset(buckets_table2[i].records, 0, sizeof(MemoTable2Record) * num_records_in_bucket);
+                for (unsigned long long i = 0; i < total_buckets; i++) {
+                    memset(buckets[i].records, 0, sizeof(MemoRecord) * num_records_in_bucket);
+                    memset(buckets_table2[i].records, 0, sizeof(MemoTable2Record) * num_records_in_bucket);
+                }
+
+                double empty_end_time = omp_get_wtime();
+                double empty_time = empty_end_time - empty_start_time;
+                file_time += empty_time;
+
+                printf("[File %llu] %-40s: %.2fs\n", current_file, "Clearing bucket memory for next file", empty_time);
             }
 
+            total_time += file_time;
+
+            printf("[File %llu] %-40s: %.2fs\n", current_file, "Finished writing to disk", fileio_time);
+            printf("File %llu   %-40s: %.2fs\n\n\n", current_file, "Processing Complete", file_time);
+
+            // Prepare for next file
             current_file++;
             full_buckets_global = 0;
 
@@ -794,65 +828,69 @@ int main(int argc, char* argv[]) {
             //  start_time_io = omp_get_wtime();
         }
 
-        return 1;
-
-        // will need to check on MacOS with a spinning hdd if we need to call sync() to flush all filesystems
-#ifdef __linux__
-        if (writeData) {
-            if (DEBUG)
-                printf("Final flush in progress...\n");
-            int fd2 = open(FILENAME_TABLE2, O_RDWR);
-            if (fd2 == -1) {
-                printf("Error opening file %s (#6)\n", FILENAME_TABLE2);
-
-                perror("Error opening file");
-                return EXIT_FAILURE;
-            }
-
-            // Sync the entire filesystem
-            if (syncfs(fd2) == -1) {
-                perror("Error syncing filesystem with syncfs");
-                close(fd2);
-                return EXIT_FAILURE;
-            }
-        }
-#endif
-
-        // Calculate total throughput
-        // double total_throughput = (total_nonces / elapsed_time) / 1e6;
-        // if (!BENCHMARK) {
-        //     printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput, total_throughput * NONCE_SIZE);
-        //     printf("Total Time: %.6f seconds\n", elapsed_time);
-        // } else {
-        //     // printf("%s %d %lu %d %llu %.2f %zu %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, hashgen_total_time, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
-        //     return 0;
-        // }
-    }
-    // end of HASHGEN
-
-    // omp_set_num_threads(num_threads);
-
-    if (SEARCH && !SEARCH_BATCH) {
-        search_memo_records(FILENAME_TABLE2, SEARCH_STRING);
+        printf("[%.2fs] Completed generating %d files\n", total_time, TOTAL_FILES);
     }
 
-    if (SEARCH_BATCH) {
-        search_memo_records_batch(FILENAME_TABLE2, BATCH_SIZE, PREFIX_SEARCH_SIZE);
+    if (MERGE) {
+        printf("Merging!\n");
     }
-
-    // Call the function to count zero-value MemoRecords
-    // printf("verifying efficiency of final stored file...\n");
-    // count_zero_memo_records(FILENAME_FINAL);
-
-    // Call the function to process MemoRecords
-    if (VERIFY) {
-        if (!BENCHMARK)
-            printf("verifying sorted order by bucketIndex of final stored file...\n");
-        // process_memo_records(FILENAME_FINAL, MEMORY_SIZE_bytes / sizeof(MemoRecord));
-        process_memo_records_table2(FILENAME_TABLE2, num_records_in_bucket * rounds);
-    }
-
-    if (DEBUG)
-        printf("SUCCESS!\n");
     return 0;
 }
+
+// will need to check on MacOS with a spinning hdd if we need to call sync() to flush all filesystems
+// #ifdef __linux__
+//         if (writeData) {
+//             if (DEBUG)
+//                 printf("Final flush in progress...\n");
+//             int fd2 = open(FILENAME_TABLE2, O_RDWR);
+//             if (fd2 == -1) {
+//                 printf("Error opening file %s (#6)\n", FILENAME_TABLE2);
+
+//                 perror("Error opening file");
+//                 return EXIT_FAILURE;
+//             }
+
+//             // Sync the entire filesystem
+//             if (syncfs(fd2) == -1) {
+//                 perror("Error syncing filesystem with syncfs");
+//                 close(fd2);
+//                 return EXIT_FAILURE;
+//             }
+//         }
+// #endif
+
+// Calculate total throughput
+// double total_throughput = (total_nonces / elapsed_time) / 1e6;
+// if (!BENCHMARK) {
+//     printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput, total_throughput * NONCE_SIZE);
+//     printf("Total Time: %.6f seconds\n", elapsed_time);
+// } else {
+//     // printf("%s %d %lu %d %llu %.2f %zu %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, hashgen_total_time, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
+//     return 0;
+// }
+// end of HASHGEN
+
+// omp_set_num_threads(num_threads);
+
+// if (SEARCH && !SEARCH_BATCH) {
+//     search_memo_records(FILENAME_TABLE2, SEARCH_STRING);
+// }
+
+// if (SEARCH_BATCH) {
+//     search_memo_records_batch(FILENAME_TABLE2, BATCH_SIZE, PREFIX_SEARCH_SIZE);
+// }
+
+// Call the function to count zero-value MemoRecords
+// printf("verifying efficiency of final stored file...\n");
+// count_zero_memo_records(FILENAME_FINAL);
+
+// Call the function to process MemoRecords
+// if (VERIFY) {
+//     if (!BENCHMARK)
+//         printf("verifying sorted order by bucketIndex of final stored file...\n");
+//     // process_memo_records(FILENAME_FINAL, MEMORY_SIZE_bytes / sizeof(MemoRecord));
+//     process_memo_records_table2(FILENAME_TABLE2, num_records_in_bucket * rounds);
+// }
+
+// if (DEBUG)
+//     printf("SUCCESS!\n");
