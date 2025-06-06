@@ -634,6 +634,7 @@ int main(int argc, char* argv[]) {
 
             printf("[File %d] Hash Generation Complete: %.3fs\n", f, hashgen_time);
 
+            // TODO: Parallelize storage efficiency calculations
             if (VERIFY) {
                 unsigned long long num_zero = 0;
 
@@ -641,7 +642,7 @@ int main(int argc, char* argv[]) {
                     num_zero += num_records_in_bucket - buckets[i].count;
                 }
 
-                printf("[File %d] Storage efficiency: %.3f%%\n", current_file, 100 * (1 - ((double)num_zero / total_nonces)));
+                printf("[File %d] Table 1 Storage efficiency: %.3f%%\n", current_file, 100 * (1 - ((double)num_zero / total_nonces)));
             }
 
             // Sort hashes
@@ -692,60 +693,72 @@ int main(int argc, char* argv[]) {
             }
 
             // FIXME: How to use a good bucket distance
-            uint64_t expected_distance = 1ULL << (64 - K);
-            // uint64_t expected_distance = 1ULL << (10)
+            uint64_t expected_distance = 1ULL << (62);
 
-            // FIXME:
-            // #pragma omp parallel for schedule(static)
-            // for (unsigned long long b = 0; b < total_buckets; b++) {
-            Bucket* bucket = &buckets[100];
+#pragma omp parallel for schedule(static)
+            for (unsigned long long b = 0; b < total_buckets; b++) {
+                Bucket* bucket = &buckets[b];
 
-            for (unsigned long long i = 0; i + 1 < bucket->count; i++) {
+                for (unsigned long long i = 0; i + 1 < bucket->count; i++) {
 
-                uint8_t hash1[HASH_SIZE];
+                    // Calculate expected distance
+                    // uint8_t* nonce_min = bucket->records[0].nonce;
+                    // uint8_t* nonce_max = bucket->records[bucket->count - 1].nonce;
+                    // uint8_t hash_max[HASH_SIZE];
+                    // uint8_t hash_min[HASH_SIZE];
+                    // g(nonce_min, fileId, hash_min);
+                    // g(nonce_max, fileId, hash_max);
+                    // uint64_t expected_distance = (double)compute_hash_distance(hash_max, hash_min, HASH_SIZE) / bucket->count;
 
-                g(bucket->records[i].nonce, fileId, hash1);
+                    uint8_t hash1[HASH_SIZE];
+                    uint8_t hash2[HASH_SIZE];
 
-                uint8_t hash2[HASH_SIZE];
+                    g(bucket->records[i].nonce, fileId, hash1);
 
-                unsigned long long j = i + 1;
+                    unsigned long long j = i + 1;
 
-                while (j < bucket->count) {
+                    while (j < bucket->count) {
+                        g(bucket->records[j].nonce, fileId, hash2);
 
-                    g(bucket->records[j].nonce, fileId, hash2);
-                    uint64_t distance = compute_hash_distance(hash1, hash2, HASH_SIZE);
+                        uint64_t distance = compute_hash_distance(hash1, hash2, HASH_SIZE);
+                        // printf("HashA: %s, Hashb: %s, Distance: %.2f\n", byteArrayToHexString(hash1, HASH_SIZE), byteArrayToHexString(hash2, HASH_SIZE), log2(distance));
 
-                    if (distance > expected_distance) {
-                        break;
+                        if (distance > expected_distance) {
+                            break;
+                        }
+
+                        MemoTable2Record record;
+                        memcpy(record.nonce1, bucket->records[i].nonce, NONCE_SIZE);
+                        memcpy(record.nonce2, bucket->records[j].nonce, NONCE_SIZE);
+
+                        uint8_t hash[HASH_SIZE];
+                        g2(record.nonce1, record.nonce2, fileId, hash);
+
+                        size_t bucketIndex = getBucketIndex(hash);
+                        insert_record2(buckets_table2, &record, bucketIndex);
+
+                        j++;
                     }
-
-                    printf("HashA: %s, Hashb: %s, Distance: %lu\n", byteArrayToHexString(hash1, HASH_SIZE), byteArrayToHexString(hash2, HASH_SIZE), distance);
-
-                    MemoTable2Record record;
-                    memcpy(record.nonce1, bucket->records[i].nonce, NONCE_SIZE);
-                    memcpy(record.nonce2, bucket->records[j].nonce, NONCE_SIZE);
-
-                    uint8_t hash[HASH_SIZE];
-
-                    g2(record.nonce1, record.nonce2, fileId, hash);
-
-                    size_t bucketIndex = getBucketIndex(hash);
-
-                    printf("%d\n", bucketIndex);
-
-                    insert_record2(buckets_table2, &record, bucketIndex);
-
-                    j++;
                 }
             }
-            //  }
 
             printf("[File %d] Table 2 Generation Complete: %.2fs\n", current_file, omp_get_wtime() - table2gen_start_time);
 
-            // for (int s = 0; s < 100; s++) {
+            if (VERIFY) {
+                size_t total_records = 0;
+
+                for (unsigned long long i = 0; i < total_buckets; i++) {
+                    total_records += buckets_table2[i].count;
+                }
+
+                printf("[File %d] Table 2 Storage Efficiency: %.2f%%\n", current_file, 100 * ((double)total_records / total_nonces));
+            }
+
+            // for (int s = 0; s < total_buckets; s++) {
             //     BucketTable2* b = &buckets_table2[s];
-            //     printf("%d\n", b->count);
+            //     // printf("%d\n", b->count);
             //     if (b->count > 0) {
+            //         printf("%d\n", b->count);
             //         for (int j = 0; j < b->count; j++) {
 
             //             uint8_t* nonce1 = b->records[j].nonce1;
@@ -761,11 +774,19 @@ int main(int argc, char* argv[]) {
 
             //             g2(nonce1, nonce2, fileId, hash3);
 
-            //             // printf("HashA: %s, Hashb: %s, Hash3: %s\n", byteArrayToHexString(hash1, HASH_SIZE), byteArrayToHexString(hash2, HASH_SIZE), byteArrayToHexString(hash3, HASH_SIZE));
+            //             printf("HashA: %s, Hashb: %s, Hash3: %s\n", byteArrayToHexString(hash1, HASH_SIZE), byteArrayToHexString(hash2, HASH_SIZE), byteArrayToHexString(hash3, HASH_SIZE));
             //         }
+
+            //         printf("\n\n");
             //     }
             // }
             return 1;
+
+            // Write Table 2 to disk
+
+
+
+            
 
             //             if (writeData && rounds == 1) {
 

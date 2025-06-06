@@ -251,6 +251,7 @@ int insert_record2(BucketTable2* buckets2, MemoTable2Record* record, size_t buck
     }
 }
 
+// FIXME:
 uint64_t compute_hash_distance(const uint8_t* hash_output, const uint8_t* prev_hash, size_t hash_size) {
     // Ensure there are at least 8 bytes in the hash
     if (hash_size < 8) {
