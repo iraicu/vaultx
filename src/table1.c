@@ -1,11 +1,29 @@
 #include "table1.h"
 
 // Function to generate Blake3 hash
-void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long seed)
-{
+void g(uint8_t* nonce, uint8_t* fileId, uint8_t* hash) {
     // Ensure that the pointers are valid
-    if (record_hash == NULL || record->nonce == NULL)
-    {
+    if (nonce == NULL || fileId == NULL || hash == NULL) {
+        fprintf(stderr, "Error: NULL pointer passed to generateBlake3.\n");
+        return;
+    }
+
+    // FIXME: Do i need a new one every single time????
+    //  Generate Blake3 hash
+    blake3_hasher hasher;
+    // FIXME: Which one to use???
+    // FIXME: RQUIRES 32 byte key
+    blake3_hasher_init(&hasher);
+    // blake3_hasher_init_keyed(&hasher, fileId);
+    blake3_hasher_update(&hasher, fileId, FILEID_SIZE);
+    blake3_hasher_update(&hasher, nonce, NONCE_SIZE);
+    blake3_hasher_finalize(&hasher, hash, HASH_SIZE);
+}
+
+// Function to generate Blake3 hash
+void generateBlake3(uint8_t* record_hash, MemoRecord* record, unsigned long long seed) {
+    // Ensure that the pointers are valid
+    if (record_hash == NULL || record->nonce == NULL) {
         fprintf(stderr, "Error: NULL pointer passed to generateBlake3.\n");
         return;
     }
@@ -13,7 +31,8 @@ void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long
     // Store seed into the nonce
     memcpy(record->nonce, &seed, NONCE_SIZE);
 
-    // Generate Blake3 hash
+    // FIXME: Do i need a new one every single time????
+    //  Generate Blake3 hash
     blake3_hasher hasher;
     blake3_hasher_init(&hasher);
     blake3_hasher_update(&hasher, record->nonce, NONCE_SIZE);
@@ -21,15 +40,13 @@ void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long
 }
 
 // Function to insert a record into a bucket
-void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
-{
-    if (bucketIndex >= total_num_buckets)
-    {
-        fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, total_num_buckets - 1);
+void insert_record(Bucket* buckets, MemoRecord* record, size_t bucketIndex) {
+    if (bucketIndex >= total_buckets) {
+        fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, total_buckets - 1);
         return;
     }
 
-    Bucket *bucket = &buckets[bucketIndex];
+    Bucket* bucket = &buckets[bucketIndex];
     size_t idx;
 
 // Atomically capture the current count and increment it
@@ -40,16 +57,12 @@ void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
     }
 
     // Check if there's room in the bucket
-    if (idx < num_records_in_bucket)
-    {
+    if (idx < num_records_in_bucket) {
         memcpy(bucket->records[idx].nonce, record->nonce, NONCE_SIZE);
-    }
-    else
-    {
+    } else {
         // Ensure count doesn't exceed the maximum allowed
         bucket->count = num_records_in_bucket;
-        if (!bucket->full)
-        {
+        if (!bucket->full) {
 #pragma omp atomic
             full_buckets_global++;
             bucket->full = true;
@@ -59,11 +72,48 @@ void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
     }
 }
 
+// // Function to insert a record into a bucket
+// void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex)
+// {
+//     if (bucketIndex >= total_buckets)
+//     {
+//         fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, total_buckets - 1);
+//         return;
+//     }
+
+//     Bucket *bucket = &buckets[bucketIndex];
+//     size_t idx;
+
+// // Atomically capture the current count and increment it
+// #pragma omp atomic capture
+//     {
+//         idx = bucket->count;
+//         bucket->count++;
+//     }
+
+//     // Check if there's room in the bucket
+//     if (idx < num_records_in_bucket)
+//     {
+//         memcpy(bucket->records[idx].nonce, record->nonce, NONCE_SIZE);
+//     }
+//     else
+//     {
+//         // Ensure count doesn't exceed the maximum allowed
+//         bucket->count = num_records_in_bucket;
+//         if (!bucket->full)
+//         {
+// #pragma omp atomic
+//             full_buckets_global++;
+//             bucket->full = true;
+//         }
+//         bucket->count_waste++;
+//         // Overflow handling can be added here if necessary.
+//     }
+// }
+
 // Recursive function to generate numbers using divide and conquer
-void generateHashes(unsigned long long start, unsigned long long end)
-{
-    if (end - start < BATCH_SIZE)
-    {
+void generateHashes(unsigned long long start, unsigned long long end) {
+    if (end - start < BATCH_SIZE) {
         // printf("%d\n", start); // Print a single number
 
         MemoRecord record;
@@ -74,11 +124,9 @@ void generateHashes(unsigned long long start, unsigned long long end)
         //     batch_end = end_idx;
         // }
 
-        for (unsigned long long j = start; j <= end; j++)
-        {
+        for (unsigned long long j = start; j <= end; j++) {
             generateBlake3(record_hash, &record, j);
-            if (MEMORY_WRITE)
-            {
+            if (MEMORY_WRITE) {
                 off_t bucketIndex = getBucketIndex(record_hash);
                 insert_record(buckets, &record, bucketIndex);
             }
@@ -91,7 +139,7 @@ void generateHashes(unsigned long long start, unsigned long long end)
 
 // Recursive calls for the left and right halves
 #pragma omp task shared(start, mid) // Task for the left half
-    generateHashes(start, mid);     // Generate numbers in the left half
+    generateHashes(start, mid); // Generate numbers in the left half
 
 #pragma omp task shared(mid, end) // Task for the right half
     generateHashes(mid + 1, end); // Generate numbers in the right half
@@ -99,32 +147,29 @@ void generateHashes(unsigned long long start, unsigned long long end)
 #pragma omp taskwait // Wait for both tasks to complete
 }
 
-size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
-{
-    MemoRecord *buffer = NULL;
+size_t process_memo_records(const char* filename, const size_t BATCH_SIZE) {
+    MemoRecord* buffer = NULL;
     size_t total_records = 0;
     size_t zero_nonce_count = 0;
     size_t full_buckets = 0;
     bool bucket_not_full = false;
     size_t records_read;
-    FILE *file = NULL;
-    uint8_t prev_hash[HASH_SIZE] = {0};   // Initialize previous hash prefix to zero
-    uint8_t prev_nonce[NONCE_SIZE] = {0}; // Initialize previous nonce to zero
-    size_t count_condition_met = 0;       // Counter for records meeting the condition
+    FILE* file = NULL;
+    uint8_t prev_hash[HASH_SIZE] = { 0 }; // Initialize previous hash prefix to zero
+    uint8_t prev_nonce[NONCE_SIZE] = { 0 }; // Initialize previous nonce to zero
+    size_t count_condition_met = 0; // Counter for records meeting the condition
     size_t count_condition_not_met = 0;
 
     long filesize = get_file_size(filename);
 
-    if (filesize != -1)
-    {
+    if (filesize != -1) {
         if (!BENCHMARK)
             printf("Size of '%s' is %ld bytes.\n", filename, filesize);
     }
 
     // Open the file for reading in binary mode
     file = fopen(filename, "rb");
-    if (file == NULL)
-    {
+    if (file == NULL) {
         printf("Error opening file %s (#3)\n", filename);
 
         perror("Error opening file");
@@ -132,9 +177,8 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
     }
 
     // Allocate memory for the batch of MemoRecords
-    buffer = (MemoRecord *)malloc(BATCH_SIZE * sizeof(MemoRecord));
-    if (buffer == NULL)
-    {
+    buffer = (MemoRecord*)malloc(BATCH_SIZE * sizeof(MemoRecord));
+    if (buffer == NULL) {
         fprintf(stderr, "Error: Unable to allocate memory.\n");
         fclose(file);
         return 0;
@@ -144,20 +188,17 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
     double start_time = omp_get_wtime();
 
     // Read the file in batches
-    while ((records_read = fread(buffer, sizeof(MemoRecord), BATCH_SIZE, file)) > 0)
-    {
+    while ((records_read = fread(buffer, sizeof(MemoRecord), BATCH_SIZE, file)) > 0) {
         double start_time_verify = omp_get_wtime();
         double end_time_verify = omp_get_wtime();
         bucket_not_full = false;
         // uint64_t distance = 0;
 
         // Process each MemoRecord in the batch
-        for (size_t i = 0; i < records_read; ++i)
-        {
+        for (size_t i = 0; i < records_read; ++i) {
             ++total_records;
 
-            if (is_nonce_nonzero(buffer[i].nonce, NONCE_SIZE))
-            {
+            if (is_nonce_nonzero(buffer[i].nonce, NONCE_SIZE)) {
                 uint8_t hash_output[HASH_SIZE];
 
                 // Compute Blake3 hash of the nonce
@@ -167,17 +208,13 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
                 blake3_hasher_finalize(&hasher, hash_output, HASH_SIZE);
 
                 // Compare the first PREFIX_SIZE bytes of the current hash to the previous hash prefix
-                if (memcmp(hash_output, prev_hash, PREFIX_SIZE) >= 0)
-                {
+                if (memcmp(hash_output, prev_hash, PREFIX_SIZE) >= 0) {
                     // Current hash's first PREFIX_SIZE bytes are equal to or greater than previous
                     ++count_condition_met;
-                }
-                else
-                {
+                } else {
                     ++count_condition_not_met;
 
-                    if (DEBUG)
-                    {
+                    if (DEBUG) {
                         // Print previous hash and nonce, and current hash and nonce
                         printf("Condition not met at record %zu:\n", total_records);
                         printf("Previous nonce: ");
@@ -203,9 +240,7 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
                 // Update the previous hash prefix and nonce
                 memcpy(prev_hash, hash_output, HASH_SIZE);
                 memcpy(prev_nonce, buffer[i].nonce, NONCE_SIZE);
-            }
-            else
-            {
+            } else {
                 ++zero_nonce_count;
                 bucket_not_full = true;
                 // Optionally, handle zero nonces here
@@ -224,8 +259,7 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
     }
 
     // Check for reading errors
-    if (ferror(file))
-    {
+    if (ferror(file)) {
         perror("Error reading file");
     }
 
@@ -235,7 +269,7 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
 
     // Print the total number of times the condition was met
     printf("sorted=%zu not_sorted=%zu zero_nonces=%zu total_records=%zu full_buckets=%zu storage_efficiency=%.2f bucket_efficiency=%.2f\n",
-           count_condition_met, count_condition_not_met, zero_nonce_count, total_records, full_buckets, count_condition_met * 100.0 / total_records, full_buckets * 100.0 / (total_num_buckets));
+        count_condition_met, count_condition_not_met, zero_nonce_count, total_records, full_buckets, count_condition_met * 100.0 / total_records, full_buckets * 100.0 / (total_buckets));
 
     return count_condition_met;
 }

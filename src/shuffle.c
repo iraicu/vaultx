@@ -21,7 +21,7 @@ void shuffle_table1(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         exit(EXIT_FAILURE);
     }
 
-    for (unsigned long long i = 0; i < total_num_buckets; i = i + num_buckets_to_read)
+    for (unsigned long long i = 0; i < total_buckets; i = i + num_buckets_to_read)
     {
         double start_time_io2 = omp_get_wtime();
 
@@ -29,7 +29,7 @@ void shuffle_table1(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         for (unsigned long long r = 0; r < rounds; r++)
         {
             //  Calculate the source offset
-            off_t offset_src = ((r * total_num_buckets + i) * num_records_in_bucket) * sizeof(MemoRecord);
+            off_t offset_src = ((r * total_buckets + i) * num_records_in_bucket) * sizeof(MemoRecord);
             if (DEBUG)
                 printf("read data: offset_src=%lu bytes=%lu\n",
                        offset_src, records_per_batch * sizeof(MemoRecord));
@@ -116,7 +116,7 @@ void shuffle_table1(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         // printf("num_buckets=%llu num_records_in_bucket=%llu num_buckets_to_read=%llu, rounds=%llu, i=%llu\n", num_buckets, num_records_in_bucket, num_buckets_to_read, rounds, i);
         // Last Shuffle print shows at 75% completion. why?
         if (!BENCHMARK)
-            printf("[%.2f] Shuffle Table1 %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / total_num_buckets, throughput_io2);
+            printf("[%.2f] Shuffle Table1 %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / total_buckets, throughput_io2);
     }
 
     free(buffer);
@@ -149,7 +149,7 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
     unsigned long long total_records_processed = 0;
     unsigned long long zero_nonce_count = 0;
 
-    for (unsigned long long i = 0; i < total_num_buckets; i = i + num_buckets_to_read)
+    for (unsigned long long i = 0; i < total_buckets; i = i + num_buckets_to_read)
     {
         double start_time_io2 = omp_get_wtime();
 
@@ -157,7 +157,7 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         for (unsigned long long r = 0; r < rounds; r++)
         {
             //  Calculate the source offset
-            off_t offset_src = ((r * total_num_buckets + i) * num_records_in_bucket) * sizeof(MemoTable2Record);
+            off_t offset_src = ((r * total_buckets + i) * num_records_in_bucket) * sizeof(MemoTable2Record);
             if (DEBUG)
                 printf("read data: offset_src=%lu bytes=%lu\n",
                        offset_src, records_per_batch * sizeof(MemoTable2Record));
@@ -290,7 +290,7 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         double throughput_io2 = (num_records_in_bucket * num_buckets_to_read * rounds * sizeof(MemoTable2Record)) / (elapsed_time_io2 * 1024 * 1024);
         // Last Shuffle print shows at 75% completion. why?
         if (!BENCHMARK)
-            printf("[%.2f] Shuffle Table2 %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / total_num_buckets, throughput_io2);
+            printf("[%.2f] Shuffle Table2 %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / total_buckets, throughput_io2);
     }
 
     free(buffer_table2);

@@ -30,14 +30,18 @@
 #define HASH_SIZE (RECORD_SIZE - NONCE_SIZE)
 #define PREFIX_SIZE 3 // Example prefix size for getBucketIndex
 
+#define FILEID_SIZE 2
+
 extern int K;
 
 extern unsigned long long num_records_in_bucket;
 extern unsigned long long num_records_in_shuffled_bucket;
 extern unsigned long long rounds;
-extern unsigned long long total_num_buckets;
+extern unsigned long long total_buckets;
 extern unsigned long long num_buckets_to_read;
 extern unsigned long long full_buckets_global;
+extern unsigned long long total_files;
+extern unsigned long long current_file;
 
 extern bool DEBUG;
 extern bool writeData;
