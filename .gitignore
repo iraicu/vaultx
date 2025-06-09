@@ -8,3 +8,7 @@ memo.xx
 blake3_bench
 perf.data
 perf.data.old
+*.tmp
+*.tmp2
+*.plot
+secp256k1/

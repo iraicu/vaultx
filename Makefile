@@ -6,9 +6,10 @@ CCP=g++-14
 #s8
 XCC=/home/wwang/xgcc/bin/xgcc
 
-CFLAGS=-g -O3 -DBLAKE3_USE_NEON=0 -Wall -Wextra -pedantic -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -fvisibility=hidden
+CFLAGS=-g -O3 -DBLAKE3_USE_NEON=0 -Wall -Wextra -pedantic -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -fvisibility=hidden 
+
 #CFLAGS=-O3 -Wall -Wextra -pedantic -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -fvisibility=hidden
-LDFLAGS=-lm -lpthread -pie -Wl,-z,relro,-z,now
+LDFLAGS=-lm -lpthread -pie -Wl,-z,relro,-z,now -lsecp256k1 -lsodium
 TARGETS=
 ASM_TARGETS=
 EXTRAFLAGS=-Wa,--noexecstack
@@ -87,7 +88,7 @@ vaultx_x86: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c src/
 	$(CCP) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $(CFLAGS) $(EXTRAFLAGS) $^ -x c++ -std=c++17 -o vaultx $(LDFLAGS) -fopenmp -ltbb
 
 vaultx_x86_c: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c src/globals.c src/io.c src/search.c blake3/blake3.c blake3/blake3_dispatch.c blake3/blake3_portable.c $(ASM_TARGETS)
-	$(CC) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) -I/usr/include $(CFLAGS) $(EXTRAFLAGS) $^ -o vaultx $(LDFLAGS) -fopenmp
+	$(CC) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) -I/usr/include $(CFLAGS) $(EXTRAFLAGS) $^ -o vaultx $(LDFLAGS) -fopenmp 
 
 vaultx_x86_xgcc: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c src/globals.c src/io.c src/search.c blake3/blake3.c blake3/blake3_dispatch.c blake3/blake3_portable.c $(ASM_TARGETS)
 	$(XCC) -I/ssd-raid0/shared/xgcc/include/ -I/ssd-raid0/shared/xgcc/lib/gcc/x86_64-pc-linux-gnu/12.2.1/include/ -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $(CFLAGS) $(EXTRAFLAGS) $^ -o $@ $(LDFLAGS) -fopenmp 

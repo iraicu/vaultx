@@ -8,7 +8,7 @@ int compare_memo_all_record(const void *a, const void *b)
     return memcmp(recA->hash, recB->hash, HASH_SIZE);
 }
 
-
+// memory overhead
 void sort_bucket_records_inplace(MemoRecord *records, size_t total_records)
 {
     // Build an auxiliary array of (nonce, hash) pairs
@@ -22,6 +22,7 @@ void sort_bucket_records_inplace(MemoRecord *records, size_t total_records)
     // Populate it
     for (size_t i = 0; i < total_records; i++)
     {
+        if (i )
         memcpy(all_records[i].nonce, records[i].nonce, NONCE_SIZE);
         blake3_hasher hasher;
         blake3_hasher_init(&hasher);

@@ -419,6 +419,7 @@ size_t process_memo_records_table2(
 
 uint64_t generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 {
+    // printf("Generating Table2 with %zu records in the bucket...\n", num_records_in_bucket);
     uint64_t expected_distance = 1ULL << (64 - K);
     uint64_t hash_pass_count = 0;
 
