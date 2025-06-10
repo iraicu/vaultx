@@ -20,6 +20,7 @@
 #include "shuffle.h"
 
 void print_usage(char *prog_name);
+int generate_plot_id();
 off_t getBucketIndex(const uint8_t *hash);
 unsigned long long byteArrayToLongLong(const uint8_t *byteArray, size_t length);
 void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long seed);

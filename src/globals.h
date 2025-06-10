@@ -57,6 +57,9 @@ extern bool FULL_BUCKETS;
 extern size_t BATCH_SIZE;
 extern size_t PREFIX_SEARCH_SIZE;
 
+extern uint8_t plot_id[32]; // Plot ID for the vault
+extern uint8_t hashed_key[32];
+
 // Structure to hold a record with nonce and hash
 typedef struct
 {

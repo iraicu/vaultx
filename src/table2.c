@@ -105,7 +105,7 @@ int print_table2_entry(const uint8_t *nonce_output, const uint8_t *prev_nonce, c
 
     uint8_t hash_table2[hash_size];
     blake3_hasher hasher;
-    blake3_hasher_init(&hasher);
+    blake3_hasher_init_keyed(&hasher, hashed_key);
     blake3_hasher_update(&hasher, prev_nonce, NONCE_SIZE);
     blake3_hasher_update(&hasher, nonce_output, NONCE_SIZE);
 
@@ -196,7 +196,7 @@ void generate2Blake3(uint8_t *record_hash, MemoTable2Record *record, unsigned lo
 
     // Generate Blake3 hash
     blake3_hasher hasher;
-    blake3_hasher_init(&hasher);
+    blake3_hasher_init_keyed(&hasher, hashed_key);
     blake3_hasher_update(&hasher, record->nonce1, NONCE_SIZE);
     blake3_hasher_update(&hasher, record->nonce2, NONCE_SIZE);
     blake3_hasher_finalize(&hasher, record_hash, HASH_SIZE);
@@ -226,7 +226,7 @@ int insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t buck
     {
         memcpy(bucket->records[idx].nonce1, record->nonce1, NONCE_SIZE);
         memcpy(bucket->records[idx].nonce2, record->nonce2, NONCE_SIZE);
-        return 1; 
+        return 1;
     }
     else
     {
@@ -240,7 +240,7 @@ int insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t buck
         }
         bucket->count_waste++;
         // Overflow handling can be added here if necessary.
-        return 0; 
+        return 0;
     }
 }
 
@@ -326,7 +326,7 @@ size_t process_memo_records_table2(
                 // compute the hash
                 uint8_t hash_output[HASH_SIZE];
                 blake3_hasher hasher;
-                blake3_hasher_init(&hasher);
+                blake3_hasher_init_keyed(&hasher, hashed_key);
                 blake3_hasher_update(&hasher, buffer[i].nonce1, NONCE_SIZE);
                 blake3_hasher_update(&hasher, buffer[i].nonce2, NONCE_SIZE);
                 blake3_hasher_finalize(&hasher, hash_output, HASH_SIZE);
@@ -431,7 +431,7 @@ uint64_t generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket
             // Compute Blake3 hash for record i
             uint8_t hash_i[HASH_SIZE];
             blake3_hasher hasher;
-            blake3_hasher_init(&hasher);
+            blake3_hasher_init_keyed(&hasher, hashed_key);
             blake3_hasher_update(&hasher, sorted_nonces[i].nonce, NONCE_SIZE);
             blake3_hasher_finalize(&hasher, hash_i, HASH_SIZE);
 
@@ -448,7 +448,7 @@ uint64_t generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket
                 // Compute Blake3 hash for record j
                 uint8_t hash_j[HASH_SIZE];
                 // blake3_hasher hasher_j;
-                blake3_hasher_init(&hasher);
+                blake3_hasher_init_keyed(&hasher, hashed_key);
                 blake3_hasher_update(&hasher, sorted_nonces[j].nonce, NONCE_SIZE);
                 blake3_hasher_finalize(&hasher, hash_j, HASH_SIZE);
 

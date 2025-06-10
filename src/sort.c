@@ -25,7 +25,7 @@ void sort_bucket_records_inplace(MemoRecord *records, size_t total_records)
         if (i )
         memcpy(all_records[i].nonce, records[i].nonce, NONCE_SIZE);
         blake3_hasher hasher;
-        blake3_hasher_init(&hasher);
+        blake3_hasher_init_keyed(&hasher, hashed_key);
         blake3_hasher_update(&hasher, all_records[i].nonce, NONCE_SIZE);
         blake3_hasher_finalize(&hasher, all_records[i].hash, HASH_SIZE);
     }

@@ -26,6 +26,9 @@ bool FULL_BUCKETS = false;
 size_t BATCH_SIZE = 1024; 
 size_t PREFIX_SEARCH_SIZE = 1;
 
+uint8_t plot_id[32];
+uint8_t hashed_key[32];
+
 Bucket *buckets;
 Bucket *buckets_phase2;
 BucketTable2 *buckets2;

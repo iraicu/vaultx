@@ -15,7 +15,7 @@ void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long
 
     // Generate Blake3 hash
     blake3_hasher hasher;
-    blake3_hasher_init(&hasher);
+    blake3_hasher_init_keyed(&hasher, hashed_key);
     blake3_hasher_update(&hasher, record->nonce, NONCE_SIZE);
     blake3_hasher_finalize(&hasher, record_hash, HASH_SIZE);
 }
@@ -162,7 +162,7 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
 
                 // Compute Blake3 hash of the nonce
                 blake3_hasher hasher;
-                blake3_hasher_init(&hasher);
+                blake3_hasher_init_keyed(&hasher, hashed_key);
                 blake3_hasher_update(&hasher, buffer[i].nonce, NONCE_SIZE);
                 blake3_hasher_finalize(&hasher, hash_output, HASH_SIZE);
 

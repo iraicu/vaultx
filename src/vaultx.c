@@ -26,7 +26,7 @@ void print_usage(char *prog_name)
     // printf("SEARCH:             %s -a for -t 8 -K 28 -m 1024 -f memo.t -j memo.x -s 000000\n", prog_name);
 }
 
-int generate_plot_id(uint8_t out_plot_id[32])
+int generate_plot_id()
 {
     uint8_t private_key[32];
     uint8_t pubkey_compressed[33];
@@ -55,7 +55,14 @@ int generate_plot_id(uint8_t out_plot_id[32])
     memcpy(combined + 33, private_key, 32);
 
     // compute SHA-256 of the combined buffer -> plot_id
-    crypto_hash_sha256(out_plot_id, combined, 65);
+    crypto_hash_sha256(plot_id, combined, 65);
+
+    // hash plot_id together with k-value to produce the key (unique plots)
+    uint8_t key[33];
+    memcpy(key, plot_id, 32);
+    key[32] = K;
+
+    crypto_hash_sha256(hashed_key, key, sizeof(key));
 
     secp256k1_context_destroy(ctx);
 
@@ -186,8 +193,6 @@ int main(int argc, char *argv[])
     char FILENAME_TMP[150];
     char FILENAME_TMP_TABLE2[150];
     char FILENAME_TABLE2[150];
-
-    uint8_t plot_id_bytes[32];
 
     // Define long options
     static struct option long_options[] = {
@@ -447,10 +452,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (generate_plot_id(plot_id_bytes) == 0)
+    if (generate_plot_id() == 0)
     {
         char hex_plot_id[65];
-        bytes_to_hex(plot_id_bytes, 32, hex_plot_id);
+        bytes_to_hex(plot_id, 32, hex_plot_id);
 
         sprintf(FILENAME_TMP, "%s%s.tmp", DIR_TMP, hex_plot_id);
         sprintf(FILENAME_TMP_TABLE2, "%s%s.tmp2", DIR_TMP_TABLE2, hex_plot_id);
