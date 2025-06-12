@@ -36,9 +36,11 @@ off_t getBucketIndex(const uint8_t* hash) {
 }
 
 // Function to convert bytes to unsigned long long
+// FIXME: This has unexpected behavior. It's assuming byte array is in big-endian format
+// But works for our use case of comparing distance with expected distance
 unsigned long long byteArrayToLongLong(const uint8_t* byteArray, size_t length) {
     unsigned long long result = 0;
-    for (ssize_t i = length - 1; i >= 0; i--) {
+    for (size_t i = 0; i < length; ++i) {
         result = (result << 8) | (unsigned long long)byteArray[i];
     }
     return result;
@@ -650,7 +652,8 @@ int main(int argc, char* argv[]) {
             //             }
 
             // FIXME: How to use a good bucket distance
-            uint64_t expected_distance = 1ULL << (62);
+            // Ideas: Average distance, multiply expected distance by a constant
+            uint64_t expected_distance = 1ULL << (64 - K);
 
 #pragma omp parallel for schedule(static)
             for (unsigned long long b = 0; b < total_buckets; b++) {
@@ -832,8 +835,175 @@ int main(int argc, char* argv[]) {
     }
 
     if (MERGE) {
-        printf("Merging!\n");
+        remove("merge.plot");
+
+        double start_time = omp_get_wtime();
+        printf("\n\nMemory Size: %lluMB\n", MEMORY_SIZE_MB);
+        printf("File Size: %.0fMB\n", file_size_gb * 1024);
+
+        unsigned long long records_per_global_bucket = TOTAL_FILES * num_records_in_bucket;
+        unsigned long long global_bucket_size = records_per_global_bucket * sizeof(MemoTable2Record);
+
+        // Number of global buckets that can be stored in memory
+        unsigned long long total_global_buckets = (unsigned long long)floor(MEMORY_SIZE_MB * 1024 * 1024 / global_bucket_size);
+
+        printf("Total Global Buckets Capacity in memory: %llu\n", total_global_buckets);
+
+        // Allocate memory
+        MemoTable2Record* mergedBuckets = (MemoTable2Record*)calloc(total_global_buckets * global_bucket_size, sizeof(MemoTable2Record));
+
+        if (mergedBuckets == NULL) {
+            fprintf(stderr, "Error: Unable to allocate memory for buckets.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        FILE* merge_fd = NULL;
+        // snprintf(FILENAME, sizeof(FILENAME), "file%llu.plot", f);
+
+        // double fileio_start_time = omp_get_wtime();
+
+        // Delete file if present initially
+
+        merge_fd = fopen("merge.plot", "ab");
+
+        if (merge_fd == NULL) {
+            perror("Error opening file");
+            return EXIT_FAILURE;
+        }
+
+        for (int i = 0; i < total_buckets; i += total_global_buckets) {
+            unsigned long long end = i + total_global_buckets;
+            if (end > total_buckets) {
+                end = total_buckets;
+            }
+
+            for (int f = 1; f <= TOTAL_FILES; f++) {
+                char filename[100];
+                snprintf(filename, sizeof(filename), "file%d.plot", f);
+
+                FILE* fd = fopen(filename, "rb");
+                if (!fd) {
+                    perror("Error opening file");
+                    return 1;
+                }
+
+                size_t merged_pos = (f - 1) * num_records_in_bucket;
+
+                for (unsigned long long bucketIndex = i; bucketIndex < end; bucketIndex++) {
+                    size_t offset = bucketIndex * num_records_in_bucket * sizeof(MemoTable2Record);
+
+                    if (fseek(fd, offset, SEEK_SET) != 0) {
+                        perror("fseek failed");
+                        fclose(fd);
+                        return 1;
+                    }
+
+                    size_t read_bytes = fread(&mergedBuckets[merged_pos], sizeof(MemoTable2Record), num_records_in_bucket, fd);
+                    if (read_bytes != num_records_in_bucket) {
+                        if (feof(fd)) {
+                            printf("Reached end of file after reading %zu bytes\n", read_bytes);
+                        } else {
+                            perror("fread failed");
+                            fclose(fd);
+                            return 1;
+                        }
+                    }
+
+                    merged_pos += records_per_global_bucket;
+                }
+
+                fclose(fd);
+            }
+
+            // Write data to file
+
+            size_t elements_written = fwrite(mergedBuckets, sizeof(MemoTable2Record), (end - i) * records_per_global_bucket, merge_fd);
+            if (elements_written != (end - i) * records_per_global_bucket) {
+                fprintf(stderr, "Error writing bucket to file");
+                fclose(merge_fd);
+                exit(EXIT_FAILURE);
+            }
+
+            // double fileio_end_time = omp_get_wtime();
+            // double fileio_time = fileio_end_time - fileio_start_time;
+            // file_time += fileio_time;
+
+            // Clear memory
+            if (end != total_buckets) {
+                memset(mergedBuckets, 0, total_global_buckets * global_bucket_size);
+            }
+        }
+
+        printf("Merge complete: %.2fs\n\n\n", omp_get_wtime() - start_time);
+
+        // Flush memory buffer to disk and close the file
+
+        if (fflush(merge_fd) != 0) {
+            perror("Failed to flush buffer");
+            fclose(merge_fd);
+            return EXIT_FAILURE;
+        }
+
+        fclose(merge_fd);
+
+        if (VERIFY) {
+            int bucketIndex = 100;
+            char* filename = "merge.plot";
+
+            printf("Bucket Index: %d (Prefix: %s)\n", bucketIndex, num_to_hex(bucketIndex));
+
+            FILE* fd = fopen(filename, "rb");
+            if (!fd) {
+                perror("Error opening file");
+                return 1;
+            }
+
+            size_t offset = bucketIndex * global_bucket_size;
+
+            if (fseek(fd, offset, SEEK_SET) != 0) {
+                perror("fseek failed");
+                fclose(fd);
+                return 1;
+            }
+
+            MemoTable2Record* global_bucket = (MemoTable2Record*)calloc(records_per_global_bucket, sizeof(MemoTable2Record));
+
+            if (global_bucket == NULL) {
+                perror("calloc failed");
+                fclose(fd);
+                return 1;
+            }
+
+            size_t elements_written = fread(global_bucket, sizeof(MemoTable2Record), records_per_global_bucket, fd);
+            if (elements_written != records_per_global_bucket) {
+                fprintf(stderr, "Error writing bucket to file");
+                fclose(fd);
+                exit(EXIT_FAILURE);
+            }
+
+            for (int i = 0; i < records_per_global_bucket; i++) {
+                uint8_t* nonce1;
+                uint8_t* nonce2;
+                int fID = (i / num_records_in_bucket) + 1;
+                uint8_t* fileID[FILEID_SIZE];
+                mempcpy(fileID, &fID, FILEID_SIZE);
+
+                //     memcpy(nonce1, global_bucket[i].nonce1, NONCE_SIZE);
+                //    memcpy(nonce2, global_bucket[i].nonce2, NONCE_SIZE);
+
+                uint8_t hash[HASH_SIZE];
+
+                g2(global_bucket[i].nonce1, global_bucket[i].nonce2, fileID, hash);
+
+                if (byteArrayToLongLong(global_bucket[i].nonce1, NONCE_SIZE) == 0 && byteArrayToLongLong(global_bucket[i].nonce2, NONCE_SIZE) == 0) {
+                    printf("Zero Nonce\n");
+                } else {
+                    printf("Hash: %s\n", byteArrayToHexString(hash, HASH_SIZE));
+                }
+            }
+        }
     }
+
     return 0;
 }
 
