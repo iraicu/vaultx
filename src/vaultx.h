@@ -32,7 +32,7 @@ size_t count_zero_memo_records(const char *filename);
 long get_file_size(const char *filename);
 size_t process_memo_records(const char *filename, const size_t BATCH_SIZE);
 uint8_t *convert_string_to_uint8_array(const char *SEARCH_STRING);
-uint8_t *hexStringToByteArray(const char *hexString);
+int hex_string_to_byte_array(const char *hex_string, uint8_t *out, size_t out_len);
 uint64_t largest_power_of_two_less_than(uint64_t number);
 int rename_file(const char *old_name, const char *new_name);
 void remove_file(const char *fileName);

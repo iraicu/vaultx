@@ -113,8 +113,14 @@ MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEA
 // not sure if the search of more than PREFIX_LENGTH works
 void search_memo_records(const char *filename, const char *SEARCH_STRING)
 {
-    uint8_t *SEARCH_UINT8 = hexStringToByteArray(SEARCH_STRING);
+    uint8_t *SEARCH_UINT8[HASH_SIZE];
     size_t SEARCH_LENGTH = strlen(SEARCH_STRING) / 2;
+
+    if (hex_string_to_byte_array(SEARCH_STRING, SEARCH_UINT8, SEARCH_LENGTH) != 0)
+    {
+        printf("Error: Invalid search string '%s'. Expected %zu bytes.\n", SEARCH_STRING, SEARCH_LENGTH);
+        return;
+    }
     off_t bucketIndex = getBucketIndex(SEARCH_UINT8);
     MemoTable2Record *buffer = NULL;
 
@@ -123,6 +129,23 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
     MemoTable2Record *fRecord = NULL;
 
     long filesize = get_file_size(filename);
+    
+    char plot_id_string[65];
+    strcpy(plot_id_string, filename);
+    plot_id_string[64] = '\0';
+    char *dot = strchr(plot_id_string, '.');
+    if (dot != NULL)
+    {
+        *dot = '\0';
+    }
+
+    if (hex_string_to_byte_array(plot_id_string, plot_id, 32) != 0)
+    {
+        printf("Error: Invalid plot ID in filename '%s'. Expected 32 bytes.\n", filename);
+        return EXIT_FAILURE;
+    }
+
+    compute_hashed_key_from_plot_id();
 
     if (filesize != -1)
     {

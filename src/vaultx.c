@@ -26,6 +26,15 @@ void print_usage(char *prog_name)
     // printf("SEARCH:             %s -a for -t 8 -K 28 -m 1024 -f memo.t -j memo.x -s 000000\n", prog_name);
 }
 
+void compute_hashed_key_from_plot_id()
+{
+    uint8_t key[33];
+    memcpy(key, plot_id, 32);
+    key[32] = K;
+
+    crypto_hash_sha256(hashed_key, key, sizeof(key));
+}
+
 int generate_plot_id()
 {
     uint8_t private_key[32];
@@ -58,11 +67,7 @@ int generate_plot_id()
     crypto_hash_sha256(plot_id, combined, 65);
 
     // hash plot_id together with k-value to produce the key (unique plots)
-    uint8_t key[33];
-    memcpy(key, plot_id, 32);
-    key[32] = K;
-
-    crypto_hash_sha256(hashed_key, key, sizeof(key));
+    compute_hashed_key_from_plot_id();
 
     secp256k1_context_destroy(ctx);
 
@@ -115,32 +120,23 @@ bool is_nonce_nonzero(const uint8_t *nonce, size_t nonce_size)
     return false;
 }
 
-uint8_t *hexStringToByteArray(const char *hexString)
+int hex_string_to_byte_array(const char *hex_string, uint8_t *out, size_t out_len)
 {
-    size_t hexLen = strlen(hexString);
-    uint8_t *byteArray = (uint8_t *)malloc(hexLen * sizeof(uint8_t));
-    // size_t hexLen = strlen(hexString);
-    if (hexLen % 2 != 0)
+    size_t hexLen = strlen(hex_string);
+    if (hexLen % 2 != 0 || out_len < hexLen / 2)
     {
-        return NULL; // Error: Invalid hexadecimal string length
+        return -1; // Invalid length or not enough space
     }
 
-    size_t byteLen = hexLen / 2;
-    size_t byteArraySize = byteLen;
-    if (byteLen > byteArraySize)
+    for (size_t i = 0; i < hexLen / 2; ++i)
     {
-        return NULL; // Error: Byte array too small
-    }
-
-    for (size_t i = 0; i < byteLen; ++i)
-    {
-        if (sscanf(&hexString[i * 2], "%2hhx", &byteArray[i]) != 1)
+        if (sscanf(&hex_string[i * 2], "%2hhx", &out[i]) != 1)
         {
-            return NULL; // Error: Failed to parse hexadecimal string
+            return -2; // Parsing error
         }
     }
 
-    return byteArray;
+    return 0; // success
 }
 
 void bytes_to_hex(const uint8_t *bytes, size_t len, char *out_hex)
@@ -446,20 +442,24 @@ int main(int argc, char *argv[])
     num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
     num_records_total = num_records_per_round * rounds;
 
-    if (sodium_init() < 0)
+    if (!SEARCH || !SEARCH_BATCH)
     {
-        printf("libsodium failed to initialize.\n");
-        return 1;
-    }
 
-    if (generate_plot_id() == 0)
-    {
-        char hex_plot_id[65];
-        bytes_to_hex(plot_id, 32, hex_plot_id);
+        if (sodium_init() < 0)
+        {
+            printf("libsodium failed to initialize.\n");
+            return 1;
+        }
 
-        sprintf(FILENAME_TMP, "%s%s.tmp", DIR_TMP, hex_plot_id);
-        sprintf(FILENAME_TMP_TABLE2, "%s%s.tmp2", DIR_TMP_TABLE2, hex_plot_id);
-        sprintf(FILENAME_TABLE2, "%s%s.plot", DIR_TABLE2, hex_plot_id);
+        if (generate_plot_id() == 0)
+        {
+            char hex_plot_id[65];
+            bytes_to_hex(plot_id, 32, hex_plot_id);
+
+            sprintf(FILENAME_TMP, "%s%s.tmp", DIR_TMP, hex_plot_id);
+            sprintf(FILENAME_TMP_TABLE2, "%s%s.tmp2", DIR_TMP_TABLE2, hex_plot_id);
+            sprintf(FILENAME_TABLE2, "%s%s.plot", DIR_TABLE2, hex_plot_id);
+        }
     }
 
     if (!BENCHMARK)
