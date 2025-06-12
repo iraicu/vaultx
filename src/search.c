@@ -113,7 +113,7 @@ MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEA
 // not sure if the search of more than PREFIX_LENGTH works
 void search_memo_records(const char *filename, const char *SEARCH_STRING)
 {
-    uint8_t *SEARCH_UINT8[HASH_SIZE];
+    uint8_t SEARCH_UINT8[HASH_SIZE];
     size_t SEARCH_LENGTH = strlen(SEARCH_STRING) / 2;
 
     if (hex_string_to_byte_array(SEARCH_STRING, SEARCH_UINT8, SEARCH_LENGTH) != 0)
@@ -142,7 +142,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
     if (hex_string_to_byte_array(plot_id_string, plot_id, 32) != 0)
     {
         printf("Error: Invalid plot ID in filename '%s'. Expected 32 bytes.\n", filename);
-        return EXIT_FAILURE;
+        return;
     }
 
     compute_hashed_key_from_plot_id();

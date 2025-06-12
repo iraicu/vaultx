@@ -203,12 +203,12 @@ void generate2Blake3(uint8_t *record_hash, MemoTable2Record *record, unsigned lo
 }
 
 // Function to insert a record into a bucket
-int insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t bucketIndex)
+void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t bucketIndex)
 {
     if (bucketIndex >= total_num_buckets)
     {
         fprintf(stderr, "Error: Bucket index %zu out of range (0 to %llu).\n", bucketIndex, total_num_buckets - 1);
-        return 0;
+        return;
     }
 
     BucketTable2 *bucket = &buckets2[bucketIndex];
@@ -226,7 +226,6 @@ int insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t buck
     {
         memcpy(bucket->records[idx].nonce1, record->nonce1, NONCE_SIZE);
         memcpy(bucket->records[idx].nonce2, record->nonce2, NONCE_SIZE);
-        return 1;
     }
     else
     {
@@ -240,7 +239,6 @@ int insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t buck
         }
         bucket->count_waste++;
         // Overflow handling can be added here if necessary.
-        return 0;
     }
 }
 
@@ -417,11 +415,10 @@ size_t process_memo_records_table2(
     return count_condition_met;
 }
 
-uint64_t generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
+void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 {
     // printf("Generating Table2 with %zu records in the bucket...\n", num_records_in_bucket);
     uint64_t expected_distance = 1ULL << (64 - K);
-    uint64_t hash_pass_count = 0;
 
     // num_records_in_bucket = num_records_in_shuffled_bucket = num_records_in_bucket * rounds
     for (size_t i = 0; i < num_records_in_bucket; ++i)
@@ -468,7 +465,7 @@ uint64_t generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket
                 if (MEMORY_WRITE)
                 {
                     off_t bucketIndex = getBucketIndex(hash_table2);
-                    hash_pass_count += insert_record2(buckets2, &record, bucketIndex);
+                    insert_record2(buckets2, &record, bucketIndex);
                 }
                 // buckets2_count[bucketIndex]++;
                 // printf("bucketIndex=%ld\n",bucketIndex);
@@ -491,6 +488,6 @@ uint64_t generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket
         //	bucket_not_full = true;
         // }
     }
-    return hash_pass_count;
+    return;
     // printf("hash_pass_count=%lu\ncompared to num_records_in_bucket(unshuffled bucket)=%llu\n\n", hash_pass_count, num_records_in_bucket / rounds);
 }

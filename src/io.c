@@ -35,8 +35,6 @@ int move_file_overwrite(const char *source_path, const char *destination_path)
     // Attempt to rename the file
     if (rename(source_path, destination_path) == 0)
     {
-        if (!BENCHMARK)
-            printf("rename success!\n");
         return 0;
     }
 
