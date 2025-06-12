@@ -27,6 +27,7 @@ void print_usage(char* prog_name) {
 }
 
 // Function to compute the bucket index based on hash prefix
+// FIXME: Same problem of little endian big endian
 off_t getBucketIndex(const uint8_t* hash) {
     off_t index = 0;
     for (size_t i = 0; i < PREFIX_SIZE && i < HASH_SIZE; i++) {
@@ -122,13 +123,17 @@ char* byteArrayToHexString(const unsigned char* bytes, size_t len) {
     return out;
 }
 
-char* num_to_hex(unsigned long long num) {
-    // Max digits for 64-bit hex is 16 + 1 for '\0'
-    char* hexstr = malloc(17);
+char* num_to_hex(unsigned long long num, size_t total_bytes) {
+    size_t hex_len = total_bytes * 2;
+
+    // Allocate space for hex digits + null terminator
+    char* hexstr = malloc(hex_len + 1);
     if (hexstr == NULL)
         return NULL;
 
-    sprintf(hexstr, "%llx", num); // lowercase hex, no 0x
+    // Format the number with leading zeroes to ensure fixed width
+    snprintf(hexstr, hex_len + 1, "%0*llx", (int)hex_len, num);
+
     return hexstr;
 }
 
@@ -946,61 +951,133 @@ int main(int argc, char* argv[]) {
 
         fclose(merge_fd);
 
+        // if (VERIFY) {
+        //     int bucketIndex = 100;
+        //     char* filename = "merge.plot";
+
+        //     printf("Bucket Index: %d (Prefix: %s)\n", bucketIndex, num_to_hex(bucketIndex, PREFIX_SIZE));
+
+        //     FILE* fd = fopen(filename, "rb");
+        //     if (!fd) {
+        //         perror("Error opening file");
+        //         return 1;
+        //     }
+
+        //     size_t offset = bucketIndex * global_bucket_size;
+
+        //     if (fseek(fd, offset, SEEK_SET) != 0) {
+        //         perror("fseek failed");
+        //         fclose(fd);
+        //         return 1;
+        //     }
+
+        //     MemoTable2Record* global_bucket = (MemoTable2Record*)calloc(records_per_global_bucket, sizeof(MemoTable2Record));
+
+        //     if (global_bucket == NULL) {
+        //         perror("calloc failed");
+        //         fclose(fd);
+        //         return 1;
+        //     }
+
+        //     size_t elements_written = fread(global_bucket, sizeof(MemoTable2Record), records_per_global_bucket, fd);
+        //     if (elements_written != records_per_global_bucket) {
+        //         fprintf(stderr, "Error writing bucket to file");
+        //         fclose(fd);
+        //         exit(EXIT_FAILURE);
+        //     }
+
+        //     for (int i = 0; i < records_per_global_bucket; i++) {
+        //         uint8_t* nonce1;
+        //         uint8_t* nonce2;
+        //         int fID = (i / num_records_in_bucket) + 1;
+        //         uint8_t* fileID[FILEID_SIZE];
+        //         mempcpy(fileID, &fID, FILEID_SIZE);
+
+        //         //     memcpy(nonce1, global_bucket[i].nonce1, NONCE_SIZE);
+        //         //    memcpy(nonce2, global_bucket[i].nonce2, NONCE_SIZE);
+
+        //         uint8_t hash[HASH_SIZE];
+
+        //         g2(global_bucket[i].nonce1, global_bucket[i].nonce2, fileID, hash);
+
+        //         if (byteArrayToLongLong(global_bucket[i].nonce1, NONCE_SIZE) == 0 && byteArrayToLongLong(global_bucket[i].nonce2, NONCE_SIZE) == 0) {
+        //             printf("Zero Nonce\n");
+        //         } else {
+        //             printf("Hash: %s\n", byteArrayToHexString(hash, HASH_SIZE));
+        //         }
+        //     }
+        // }
+
+        printf("Starting verification: \n");
         if (VERIFY) {
-            int bucketIndex = 100;
             char* filename = "merge.plot";
+            size_t verified_global_buckets = 0;
+            
+#pragma omp parallel for
+            for (unsigned long long i = 0; i < total_buckets; i += BATCH_SIZE) {
 
-            printf("Bucket Index: %d (Prefix: %s)\n", bucketIndex, num_to_hex(bucketIndex));
+                FILE* fd = fopen(filename, "rb");
+                if (!fd) {
+                    perror("Error opening file");
+                    // return 1;
+                }
 
-            FILE* fd = fopen(filename, "rb");
-            if (!fd) {
-                perror("Error opening file");
-                return 1;
-            }
+                MemoTable2Record* buffer = calloc(BATCH_SIZE * records_per_global_bucket, sizeof(MemoTable2Record));
 
-            size_t offset = bucketIndex * global_bucket_size;
+                size_t offset = i * global_bucket_size;
 
-            if (fseek(fd, offset, SEEK_SET) != 0) {
-                perror("fseek failed");
-                fclose(fd);
-                return 1;
-            }
+                fseek(fd, offset, SEEK_SET);
 
-            MemoTable2Record* global_bucket = (MemoTable2Record*)calloc(records_per_global_bucket, sizeof(MemoTable2Record));
+                size_t elements_written = fread(buffer, sizeof(MemoTable2Record), BATCH_SIZE * records_per_global_bucket, fd);
+                if (elements_written != BATCH_SIZE * records_per_global_bucket) {
+                    fprintf(stderr, "Error writing bucket to file");
+                    fclose(fd);
+                    exit(EXIT_FAILURE);
+                }
 
-            if (global_bucket == NULL) {
-                perror("calloc failed");
-                fclose(fd);
-                return 1;
-            }
+                size_t end = i + BATCH_SIZE;
+                if (end > total_buckets) {
+                    end = total_buckets;
+                }
 
-            size_t elements_written = fread(global_bucket, sizeof(MemoTable2Record), records_per_global_bucket, fd);
-            if (elements_written != records_per_global_bucket) {
-                fprintf(stderr, "Error writing bucket to file");
-                fclose(fd);
-                exit(EXIT_FAILURE);
-            }
-
-            for (int i = 0; i < records_per_global_bucket; i++) {
-                uint8_t* nonce1;
-                uint8_t* nonce2;
-                int fID = (i / num_records_in_bucket) + 1;
-                uint8_t* fileID[FILEID_SIZE];
-                mempcpy(fileID, &fID, FILEID_SIZE);
-
-                //     memcpy(nonce1, global_bucket[i].nonce1, NONCE_SIZE);
-                //    memcpy(nonce2, global_bucket[i].nonce2, NONCE_SIZE);
-
+                MemoTable2Record* record;
+                uint8_t fileId[FILEID_SIZE];
                 uint8_t hash[HASH_SIZE];
 
-                g2(global_bucket[i].nonce1, global_bucket[i].nonce2, fileID, hash);
+                for (unsigned long long j = i; j < end; j++) {
+                    bool flag = true;
 
-                if (byteArrayToLongLong(global_bucket[i].nonce1, NONCE_SIZE) == 0 && byteArrayToLongLong(global_bucket[i].nonce2, NONCE_SIZE) == 0) {
-                    printf("Zero Nonce\n");
-                } else {
-                    printf("Hash: %s\n", byteArrayToHexString(hash, HASH_SIZE));
+                    for (int k = 0; k < records_per_global_bucket; k++) {
+                        record = &buffer[(j - i) * records_per_global_bucket + k];
+                        int fId = (k / num_records_in_bucket) + 1;
+                        memcpy(fileId, &fId, FILEID_SIZE);
+
+                        if (byteArrayToLongLong(record->nonce1, NONCE_SIZE) == 0 && byteArrayToLongLong(record->nonce2, NONCE_SIZE) == 0) {
+                        } else {
+                            g2(record->nonce1, record->nonce2, fileId, hash);
+                            if (byteArrayToLongLong(hash, PREFIX_SIZE) != j) {
+                                flag = false;
+                                printf("Hash: %s, C: %llu, J: %llu\n", byteArrayToHexString(hash, HASH_SIZE), byteArrayToLL(hash, PREFIX_SIZE), j);
+                            }
+                        }
+
+                        if (!flag) {
+                            break;
+                        }
+                    }
+
+                    if (flag) {
+#pragma omp atomic
+                        verified_global_buckets++;
+                    } else {
+                        printf("J: %llu\n", j);
+                    }
                 }
+
+                fclose(fd);
             }
+
+            printf("Total Buckets: %llu\nVerified GBs: %llu\n", total_buckets, verified_global_buckets);
         }
     }
 
