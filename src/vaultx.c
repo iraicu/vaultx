@@ -894,15 +894,15 @@ int main(int argc, char* argv[]) {
 
                 size_t merged_pos = (f - 1) * num_records_in_bucket;
 
+                size_t offset = i * num_records_in_bucket * sizeof(MemoTable2Record);
+
+                if (fseek(fd, offset, SEEK_SET) != 0) {
+                    perror("fseek failed");
+                    fclose(fd);
+                    return 1;
+                }
+
                 for (unsigned long long bucketIndex = i; bucketIndex < end; bucketIndex++) {
-                    size_t offset = bucketIndex * num_records_in_bucket * sizeof(MemoTable2Record);
-
-                    if (fseek(fd, offset, SEEK_SET) != 0) {
-                        perror("fseek failed");
-                        fclose(fd);
-                        return 1;
-                    }
-
                     size_t read_bytes = fread(&mergedBuckets[merged_pos], sizeof(MemoTable2Record), num_records_in_bucket, fd);
                     if (read_bytes != num_records_in_bucket) {
                         if (feof(fd)) {
@@ -1012,7 +1012,7 @@ int main(int argc, char* argv[]) {
         if (VERIFY) {
             char* filename = "merge.plot";
             size_t verified_global_buckets = 0;
-            
+
 #pragma omp parallel for
             for (unsigned long long i = 0; i < total_buckets; i += BATCH_SIZE) {
 
@@ -1057,7 +1057,6 @@ int main(int argc, char* argv[]) {
                             g2(record->nonce1, record->nonce2, fileId, hash);
                             if (byteArrayToLongLong(hash, PREFIX_SIZE) != j) {
                                 flag = false;
-                                printf("Hash: %s, C: %llu, J: %llu\n", byteArrayToHexString(hash, HASH_SIZE), byteArrayToLL(hash, PREFIX_SIZE), j);
                             }
                         }
 
