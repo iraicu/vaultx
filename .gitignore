@@ -5,6 +5,6 @@ memo.t
 memo2.t
 memo.x
 memo.xx
-file*.plot
+plots/
 merge.plot
 .clang-format

@@ -1,9 +1,9 @@
 #include "table1.h"
 
 // Function to generate Blake3 hash
-void g(uint8_t* nonce, uint8_t* fileId, uint8_t* hash) {
+void g(uint8_t* nonce, uint8_t* key, uint8_t* hash) {
     // Ensure that the pointers are valid
-    if (nonce == NULL || fileId == NULL || hash == NULL) {
+    if (nonce == NULL || key == NULL || hash == NULL) {
         fprintf(stderr, "Error: NULL pointer passed to generateBlake3.\n");
         return;
     }
@@ -11,11 +11,7 @@ void g(uint8_t* nonce, uint8_t* fileId, uint8_t* hash) {
     // FIXME: Do i need a new one every single time????
     //  Generate Blake3 hash
     blake3_hasher hasher;
-    // FIXME: Which one to use???
-    // FIXME: RQUIRES 32 byte key
-    blake3_hasher_init(&hasher);
-    // blake3_hasher_init_keyed(&hasher, fileId);
-    blake3_hasher_update(&hasher, fileId, FILEID_SIZE);
+    blake3_hasher_init_keyed(&hasher, key);
     blake3_hasher_update(&hasher, nonce, NONCE_SIZE);
     blake3_hasher_finalize(&hasher, hash, HASH_SIZE);
 }

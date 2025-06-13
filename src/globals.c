@@ -25,6 +25,8 @@ bool SEARCH_BATCH = false;
 bool VERIFY = false;
 bool FULL_BUCKETS = false;
 
+uint8_t key[32];
+
 size_t BATCH_SIZE = 1024;
 size_t PREFIX_SEARCH_SIZE = 1;
 

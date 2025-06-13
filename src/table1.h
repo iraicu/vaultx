@@ -4,7 +4,7 @@
 #include "globals.h"
 #include "vaultx.h"
 
-void g(uint8_t* nonce, uint8_t* fileId, uint8_t* hash);
+void g(uint8_t* nonce, uint8_t* key, uint8_t* hash);
 
 void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long seed);
 void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex);

@@ -11,17 +11,25 @@
 #include <tbb/blocked_range.h>
 #endif
 
+#include "crypto.h"
 #include "globals.h"
-#include "search.h"
 #include "io.h"
+#include "search.h"
+#include "shuffle.h"
+#include "sort.h"
 #include "table1.h"
 #include "table2.h"
-#include "sort.h"
-#include "shuffle.h"
+#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 void print_usage(char *prog_name);
 off_t getBucketIndex(const uint8_t *hash);
 unsigned long long byteArrayToLongLong(const uint8_t *byteArray, size_t length);
+char* byteArrayToHexString(const unsigned char* bytes, size_t len);
 void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long seed);
 size_t writeBucketToDiskSequential(const Bucket *bucket, FILE *fd);
 void insert_record(Bucket *buckets, MemoRecord *record, size_t bucketIndex);

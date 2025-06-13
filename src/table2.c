@@ -1,7 +1,7 @@
 #include "table2.h"
 #include <stdio.h>
 
-void g2(uint8_t* nonce1, uint8_t* nonce2, uint8_t* fileId, uint8_t* hash) {
+void g2(uint8_t* nonce1, uint8_t* nonce2, uint8_t* key, uint8_t* hash) {
     // Ensure that the pointers are valid
     if (nonce1 == NULL || nonce2 == NULL || hash == NULL) {
         fprintf(stderr, "Error: NULL pointer passed to generateBlake3.\n");
@@ -9,15 +9,10 @@ void g2(uint8_t* nonce1, uint8_t* nonce2, uint8_t* fileId, uint8_t* hash) {
     }
 
     // Generate Blake3 hash
-
     blake3_hasher hasher;
-    blake3_hasher_init(&hasher);
-
-    blake3_hasher_update(&hasher, fileId, FILEID_SIZE);
+    blake3_hasher_init_keyed(&hasher, key);
     blake3_hasher_update(&hasher, nonce1, NONCE_SIZE);
-    blake3_hasher_update(&hasher, fileId, FILEID_SIZE);
     blake3_hasher_update(&hasher, nonce2, NONCE_SIZE);
-
     blake3_hasher_finalize(&hasher, hash, HASH_SIZE);
 }
 

@@ -162,6 +162,53 @@ void print_number_binary_bytes(uint64_t number, size_t size) {
     printf("\n");
 }
 
+void delete_contents(const char* folder_path) {
+    DIR* dir = opendir(folder_path);
+    if (!dir) {
+        perror("opendir failed");
+        return;
+    }
+
+    struct dirent* entry;
+    char path[1024];
+
+    while ((entry = readdir(dir)) != NULL) {
+        // Skip "." and ".."
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+
+        snprintf(path, sizeof(path), "%s/%s", folder_path, entry->d_name);
+
+        struct stat st;
+        if (stat(path, &st) == 0) {
+            if (S_ISDIR(st.st_mode)) {
+                // Recursively delete subdirectory
+                delete_contents(path);
+                if (rmdir(path) != 0)
+                    perror("rmdir failed");
+            } else {
+                if (remove(path) != 0)
+                    perror("remove failed");
+            }
+        }
+    }
+
+    closedir(dir);
+}
+
+void ensure_folder_exists(const char* path) {
+    struct stat st = { 0 };
+
+    if (stat(path, &st) == -1) {
+        // Folder doesn't exist, try to create it
+        if (mkdir(path, 0777) != 0) {
+            perror("mkdir failed");
+        }
+    } else if (!S_ISDIR(st.st_mode)) {
+        fprintf(stderr, "%s exists but is not a directory\n", path);
+    }
+}
+
 int main(int argc, char* argv[]) {
     // printf("size of MemoTable2Record: %zu\n", sizeof(MemoTable2Record));
     // printf("size of MemoRecord2: %zu\n", sizeof(MemoRecord2));
@@ -450,6 +497,10 @@ int main(int argc, char* argv[]) {
     }
 
     if (HASHGEN) {
+
+        delete_contents("plots");
+        ensure_folder_exists("plots");
+
         // Allocate memory
         buckets = (Bucket*)calloc(total_buckets, sizeof(Bucket));
         buckets_table2 = (BucketTable2*)calloc(total_buckets, sizeof(BucketTable2));
@@ -473,8 +524,28 @@ int main(int argc, char* argv[]) {
         for (unsigned long long f = 1; f <= TOTAL_FILES; f++) {
             double file_time = 0;
 
-            uint8_t fileId[FILEID_SIZE];
-            memcpy(fileId, &f, FILEID_SIZE);
+            // uint8_t fileId[FILEID_SIZE];
+            // memcpy(fileId, &f, FILEID_SIZE);
+
+            uint8_t plot_id[32];
+            generate_plot_id(plot_id);
+            derive_key(plot_id, key);
+
+            char* hex = byteArrayToHexString(key, 32);
+            if (hex != NULL) {
+                printf("Key: %s\n", hex);
+                free(hex); // Prevent memory leak
+            } else {
+                fprintf(stderr, "Failed to convert to hex string\n");
+            }
+
+            char* hex2 = byteArrayToHexString(plot_id, 32);
+            if (hex2 != NULL) {
+                printf("Plot Id: %s\n", hex2);
+                free(hex2); // Prevent memory leak
+            } else {
+                fprintf(stderr, "Failed to convert to hex string\n");
+            }
 
             double hashgen_start_time = omp_get_wtime();
 
@@ -575,7 +646,7 @@ int main(int argc, char* argv[]) {
                         // FIXME: Do i need a new one every single time????
                         // Generate Blake3 hash
                         memcpy(record.nonce, &j, NONCE_SIZE);
-                        g(record.nonce, fileId, hash);
+                        g(record.nonce, key, hash);
 
                         // TODO: Try combining fileid and nonce into one input vs two separate inputs for hash
                         off_t bucketIndex = getBucketIndex(hash);
@@ -634,19 +705,6 @@ int main(int argc, char* argv[]) {
             file_time += sort_time;
 
             printf("[File %llu] %-40s: %.3fs\n", f, "Sorting Complete", sort_time);
-            // Bucket* bucket = &buckets[100];
-            // for (int j = 0; j < bucket->count; j++) {
-
-            //     uint8_t hashA[HASH_SIZE];
-
-            //     blake3_hasher hasher;
-            //     blake3_hasher_init(&hasher);
-            //     blake3_hasher_update(&hasher, &current_file, FILEID_SIZE);
-            //     blake3_hasher_update(&hasher, bucket->records[j].nonce, NONCE_SIZE);
-            //     blake3_hasher_finalize(&hasher, hashA, HASH_SIZE);
-
-            //     printf("Hash: %s, Nonce: %llu\n", byteArrayToHexString(hashA, HASH_SIZE), byteArrayToLongLong(bucket->records[j].nonce, NONCE_SIZE));
-            // }
 
             double matching_start_time = omp_get_wtime();
 
@@ -678,12 +736,12 @@ int main(int argc, char* argv[]) {
                     uint8_t hash1[HASH_SIZE];
                     uint8_t hash2[HASH_SIZE];
 
-                    g(bucket->records[i].nonce, fileId, hash1);
+                    g(bucket->records[i].nonce, key, hash1);
 
                     unsigned long long j = i + 1;
 
                     while (j < bucket->count) {
-                        g(bucket->records[j].nonce, fileId, hash2);
+                        g(bucket->records[j].nonce, key, hash2);
 
                         uint64_t distance = compute_hash_distance(hash1, hash2, HASH_SIZE);
                         // printf("HashA: %s, Hashb: %s, Distance: %.2f\n", byteArrayToHexString(hash1, HASH_SIZE), byteArrayToHexString(hash2, HASH_SIZE), log2(distance));
@@ -697,7 +755,7 @@ int main(int argc, char* argv[]) {
                         memcpy(record.nonce2, bucket->records[j].nonce, NONCE_SIZE);
 
                         uint8_t hash[HASH_SIZE];
-                        g2(record.nonce1, record.nonce2, fileId, hash);
+                        g2(record.nonce1, record.nonce2, key, hash);
 
                         size_t bucketIndex = getBucketIndex(hash);
                         insert_record2(buckets_table2, &record, bucketIndex);
@@ -723,36 +781,9 @@ int main(int argc, char* argv[]) {
                 printf("[File %llu] %-40s: %.2f%%\n", current_file, "Table 2 Storage Efficiency", 100 * ((double)total_records / total_nonces));
             }
 
-            // for (int s = 0; s < total_buckets; s++) {
-            //     BucketTable2* b = &buckets_table2[s];
-            //     // printf("%d\n", b->count);
-            //     if (b->count > 0) {
-            //         printf("%d\n", b->count);
-            //         for (int j = 0; j < b->count; j++) {
-
-            //             uint8_t* nonce1 = b->records[j].nonce1;
-            //             uint8_t* nonce2 = b->records[j].nonce2;
-
-            //             uint8_t hash1[HASH_SIZE];
-            //             uint8_t hash2[HASH_SIZE];
-
-            //             g(nonce1, &current_file, hash1);
-            //             g(nonce2, &current_file, hash2);
-
-            //             uint8_t hash3[HASH_SIZE];
-
-            //             g2(nonce1, nonce2, fileId, hash3);
-
-            //             printf("HashA: %s, Hashb: %s, Hash3: %s\n", byteArrayToHexString(hash1, HASH_SIZE), byteArrayToHexString(hash2, HASH_SIZE), byteArrayToHexString(hash3, HASH_SIZE));
-            //         }
-
-            //         printf("\n\n");
-            //     }
-            // }
-
             // Write Table 2 to disk
             FILE* fd = NULL;
-            snprintf(FILENAME, sizeof(FILENAME), "file%llu.plot", f);
+            snprintf(FILENAME, sizeof(FILENAME), "plots/K%d_%s.plot", K, byteArrayToHexString(key, 32));
 
             double fileio_start_time = omp_get_wtime();
 
