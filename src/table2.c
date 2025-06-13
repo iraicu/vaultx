@@ -1,6 +1,17 @@
 #include <stdio.h>
 #include "table2.h"
 
+void generate_hash2(uint8_t *nonce1, uint8_t *nonce2, uint8_t *hash)
+{
+    // Generate Blake3 hash
+    blake3_hasher hasher;
+    blake3_hasher_init_keyed(&hasher, hashed_key);
+    // blake3_hasher_init(&hasher);
+    blake3_hasher_update(&hasher, nonce1, NONCE_SIZE);
+    blake3_hasher_update(&hasher, nonce2, NONCE_SIZE);
+    blake3_hasher_finalize(&hasher, hash, HASH_SIZE);
+}
+
 // // Comparison function for qsort(), comparing the hash fields.
 // int compare_memo_all_record(const void *a, const void *b)
 // {
@@ -65,7 +76,7 @@
 //     return sorted_nonces;
 // }
 
-int print_table2_entry(const uint8_t *nonce_output, const uint8_t *prev_nonce, const uint8_t *hash_output, const uint8_t *prev_hash, size_t hash_size)
+int print_table2_entry(uint8_t *nonce_output, uint8_t *prev_nonce, const uint8_t *hash_output, const uint8_t *prev_hash, size_t hash_size)
 {
     // Ensure there are at least 8 bytes in the hash
     if (hash_size < 8)
@@ -104,12 +115,7 @@ int print_table2_entry(const uint8_t *nonce_output, const uint8_t *prev_nonce, c
     // fprintf(stderr, "current - previous: %" PRIu64 "\n", distance);
 
     uint8_t hash_table2[hash_size];
-    blake3_hasher hasher;
-    blake3_hasher_init_keyed(&hasher, hashed_key);
-    blake3_hasher_update(&hasher, prev_nonce, NONCE_SIZE);
-    blake3_hasher_update(&hasher, nonce_output, NONCE_SIZE);
-
-    blake3_hasher_finalize(&hasher, hash_table2, HASH_SIZE);
+    generate_hash2(prev_nonce, nonce_output, hash_table2);
 
     // Print the first 8 bytes of hash_table2
     fprintf(stderr, "hash_table2 (first 8 bytes): ");
@@ -190,16 +196,13 @@ void generate2Blake3(uint8_t *record_hash, MemoTable2Record *record, unsigned lo
         return;
     }
 
+    // FIXME: Is it necessary to memcpy? Can we just use the values directly?
     // Store seed into the nonce
     memcpy(record->nonce1, &nonce1, NONCE_SIZE);
     memcpy(record->nonce2, &nonce2, NONCE_SIZE);
 
     // Generate Blake3 hash
-    blake3_hasher hasher;
-    blake3_hasher_init_keyed(&hasher, hashed_key);
-    blake3_hasher_update(&hasher, record->nonce1, NONCE_SIZE);
-    blake3_hasher_update(&hasher, record->nonce2, NONCE_SIZE);
-    blake3_hasher_finalize(&hasher, record_hash, HASH_SIZE);
+    generate_hash2(record->nonce1, record->nonce2, record_hash);
 }
 
 // Function to insert a record into a bucket
@@ -323,11 +326,7 @@ size_t process_memo_records_table2(
             {
                 // compute the hash
                 uint8_t hash_output[HASH_SIZE];
-                blake3_hasher hasher;
-                blake3_hasher_init_keyed(&hasher, hashed_key);
-                blake3_hasher_update(&hasher, buffer[i].nonce1, NONCE_SIZE);
-                blake3_hasher_update(&hasher, buffer[i].nonce2, NONCE_SIZE);
-                blake3_hasher_finalize(&hasher, hash_output, HASH_SIZE);
+                generate_hash2(buffer[i].nonce1, buffer[i].nonce2, hash_output);
 
                 // compare prefix to previous
                 if (memcmp(hash_output, prev_hash, PREFIX_SIZE) >= 0)
@@ -417,8 +416,8 @@ size_t process_memo_records_table2(
 
 void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 {
-    // printf("Generating Table2 with %zu records in the bucket...\n", num_records_in_bucket);
     uint64_t expected_distance = 1ULL << (64 - K);
+    // expected_distance = expected_distance * 10; 
 
     // num_records_in_bucket = num_records_in_shuffled_bucket = num_records_in_bucket * rounds
     for (size_t i = 0; i < num_records_in_bucket; ++i)
@@ -427,10 +426,7 @@ void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
         {
             // Compute Blake3 hash for record i
             uint8_t hash_i[HASH_SIZE];
-            blake3_hasher hasher;
-            blake3_hasher_init_keyed(&hasher, hashed_key);
-            blake3_hasher_update(&hasher, sorted_nonces[i].nonce, NONCE_SIZE);
-            blake3_hasher_finalize(&hasher, hash_i, HASH_SIZE);
+            generate_hash(sorted_nonces[i].nonce, hash_i);
 
             // Compare hash_i with all subsequent non-zero nonce records
             // could change the upper bound here to be b+2 to span multiple buckets
@@ -444,10 +440,7 @@ void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 
                 // Compute Blake3 hash for record j
                 uint8_t hash_j[HASH_SIZE];
-                // blake3_hasher hasher_j;
-                blake3_hasher_init_keyed(&hasher, hashed_key);
-                blake3_hasher_update(&hasher, sorted_nonces[j].nonce, NONCE_SIZE);
-                blake3_hasher_finalize(&hasher, hash_j, HASH_SIZE);
+                generate_hash(sorted_nonces[j].nonce, hash_j);
 
                 // Compute the distance between hash_i and hash_j
                 uint64_t distance = compute_hash_distance(hash_i, hash_j, HASH_SIZE);

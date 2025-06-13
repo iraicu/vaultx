@@ -42,7 +42,7 @@ int generate_plot_id()
     size_t public_key_len = sizeof(pubkey_compressed);
 
     // generate 32 random bytes for the private key
-    randombytes_buf(&private_key, 32);
+    randombytes_buf(private_key, 32);
 
     // create a secp256k1 context for signing
     secp256k1_context *ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
@@ -60,7 +60,7 @@ int generate_plot_id()
 
     // concat public and private keys
     uint8_t combined[65];
-    memcpy(combined, pubkey_compressed, 32);
+    memcpy(combined, pubkey_compressed, 33);
     memcpy(combined + 33, private_key, 32);
 
     // compute SHA-256 of the combined buffer -> plot_id
@@ -527,6 +527,17 @@ int main(int argc, char *argv[])
 
     if (HASHGEN)
     {
+        // uint8_t hash1[12] = {0x00, 0x00, 0x05, 0x01, 0x85, 0xe7, 0x53, 0x2a, 0xea, 0x2f, 0xa6, 0x9c};
+        // uint8_t hash2[12] = {0x00, 0x00, 0x05, 0x94,
+        //                      0xd1, 0x95, 0x7e, 0xc2,
+        //                      0xd9, 0xe2, 0x60, 0xf5};
+        // uint64_t expected_distance = 1ULL << (64 - K);
+        // uint64_t distance = compute_hash_distance(hash1, hash2, 12);
+        // printf("%ld\n", expected_distance);
+        // printf("%ld\n", distance);
+
+        // return -1;
+
         if (!writeDataTmp)
         {
             fprintf(stderr, "Error: Table1 file name (-f) is required for hash generation.\n");
@@ -553,11 +564,14 @@ int main(int argc, char *argv[])
 
         // Allocate memory for the array of Buckets
         buckets = (Bucket *)calloc(total_num_buckets, sizeof(Bucket));
-        if (buckets == NULL)
+        buckets2 = (BucketTable2 *)calloc(total_num_buckets, sizeof(BucketTable2));
+
+        if (buckets == NULL || buckets2 == NULL)
         {
-            fprintf(stderr, "Error: Unable to allocate memory for buckets.\n");
+            fprintf(stderr, "Error: Unable to allocate memory for buckets2.\n");
             exit(EXIT_FAILURE);
         }
+
         for (unsigned long long i = 0; i < total_num_buckets; i++)
         {
             buckets[i].records = (MemoRecord *)calloc(num_records_in_bucket, sizeof(MemoRecord));
@@ -566,16 +580,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Error: Unable to allocate memory for records.\n");
                 exit(EXIT_FAILURE);
             }
-        }
 
-        buckets2 = (BucketTable2 *)calloc(total_num_buckets, sizeof(BucketTable2));
-        if (buckets2 == NULL)
-        {
-            fprintf(stderr, "Error: Unable to allocate memory for buckets2.\n");
-            exit(EXIT_FAILURE);
-        }
-        for (unsigned long long i = 0; i < total_num_buckets; i++)
-        {
             buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
             if (buckets2[i].records == NULL)
             {
@@ -612,6 +617,11 @@ int main(int argc, char *argv[])
                 buckets[i].count_waste = 0;
                 buckets[i].full = false;
                 buckets[i].flush = 0;
+
+                buckets2[i].count = 0;
+                buckets2[i].count_waste = 0;
+                buckets2[i].full = false;
+                buckets2[i].flush = 0;
             }
 
             unsigned long long MAX_NUM_HASHES = 1ULL << (NONCE_SIZE * 8);
@@ -771,7 +781,7 @@ int main(int argc, char *argv[])
                 start_time_io = omp_get_wtime();
 
                 // Seek to the correct position in the file
-                off_t offset = r * num_records_in_bucket * total_num_buckets * sizeof(MemoTable2Record); // total_num_buckets that fit in memory
+                off_t offset = r * total_num_buckets * num_records_in_bucket * sizeof(MemoTable2Record); // total_num_buckets that fit in memory
                 if (fseeko(fd_tmp, offset, SEEK_SET) < 0)
                 {
                     perror("Error seeking in file");
@@ -827,6 +837,38 @@ int main(int argc, char *argv[])
 
                 if (!BENCHMARK)
                     printf("record_counts=%llu storage_efficiency_table2=%.2f full_buckets=%llu bucket_efficiency=%.2f nonce_max=%llu record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (total_num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / total_num_buckets, nonce_max, record_counts_waste, total_num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + total_num_buckets * num_records_in_bucket));
+
+                off_t bucket_idx = 5;
+                // print contents of a bucket
+                for (unsigned long long i = 0; i < num_records_in_bucket; i++)
+                {
+                    printf("Nonce1 : ");
+
+                    for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+                    {
+                        printf("%02x", buckets2[bucket_idx].records[i].nonce1[j]);
+                    }
+                    printf(" | Nonce2 : ");
+                    for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+                    {
+                        printf("%02x", buckets2[bucket_idx].records[i].nonce2[j]);
+                    }
+                    printf(" | Hash : ");
+                    uint8_t hash[HASH_SIZE];
+                    MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
+                    if (record == NULL)
+                    {
+                        fprintf(stderr, "Error: Unable to allocate memory for record.\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    generate_hash2(buckets2[bucket_idx].records[i].nonce1, buckets2[bucket_idx].records[i].nonce2, hash);
+
+                    for (unsigned long long j = 0; j < HASH_SIZE; j++)
+                    {
+                        printf("%02x", hash[j]);
+                    }
+                    printf("\n");
+                }
             }
             // if tmp file is specified and data does not fit in memory, write table1 to tmp file
             else if (rounds > 1)
@@ -895,11 +937,14 @@ int main(int argc, char *argv[])
                 if (VERIFY)
                 {
                     unsigned long long num_zero = 0;
+                    unsigned long long avg_num_records_in_bucket = 0;
                     for (unsigned long long i = 0; i < total_num_buckets; i++)
                     {
                         num_zero += num_records_in_bucket - buckets[i].count;
+                        avg_num_records_in_bucket += buckets[i].count;
                     }
-                    printf("[%.2f] Table1 Storage efficiency : %.2f%%, Zero nonces : %llu / %llu\n", omp_get_wtime() - start_time, 100 * (1 - ((double)num_zero / num_records_per_round)), num_zero, total_num_buckets * num_records_in_bucket);
+                    avg_num_records_in_bucket /= total_num_buckets;
+                    printf("[%.2f] Table1 Storage efficiency : %.2f%%, Zero nonces : %llu / %llu, Avg num records in a bucket : %llu\n", omp_get_wtime() - start_time, 100 * (1 - ((double)num_zero / num_records_per_round)), num_zero, total_num_buckets * num_records_in_bucket, avg_num_records_in_bucket);
                 }
             }
             // end of loop

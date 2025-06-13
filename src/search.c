@@ -37,11 +37,7 @@ MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEA
                     uint8_t hash_output[HASH_SIZE_SEARCH];
 
                     // Compute Blake3 hash of the nonce
-                    blake3_hasher hasher;
-                    blake3_hasher_init_keyed(&hasher, hashed_key);
-                    blake3_hasher_update(&hasher, buffer[i].nonce1, NONCE_SIZE);
-                    blake3_hasher_update(&hasher, buffer[i].nonce2, NONCE_SIZE);
-                    blake3_hasher_finalize(&hasher, hash_output, HASH_SIZE_SEARCH);
+                    generate_hash2(buffer[i].nonce1, buffer[i].nonce2, hash_output);
 
                     // print bucket contents
                     if (DEBUG)

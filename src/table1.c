@@ -1,5 +1,15 @@
 #include "table1.h"
 
+void generate_hash(uint8_t *nonce, uint8_t *hash)
+{
+    // Generate Blake3 hash
+    blake3_hasher hasher;
+    blake3_hasher_init_keyed(&hasher, hashed_key);
+    // blake3_hasher_init(&hasher);
+    blake3_hasher_update(&hasher, nonce, NONCE_SIZE);
+    blake3_hasher_finalize(&hasher, hash, HASH_SIZE);
+}
+
 // Function to generate Blake3 hash
 void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long seed)
 {
@@ -13,11 +23,7 @@ void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long
     // Store seed into the nonce
     memcpy(record->nonce, &seed, NONCE_SIZE);
 
-    // Generate Blake3 hash
-    blake3_hasher hasher;
-    blake3_hasher_init_keyed(&hasher, hashed_key);
-    blake3_hasher_update(&hasher, record->nonce, NONCE_SIZE);
-    blake3_hasher_finalize(&hasher, record_hash, HASH_SIZE);
+    generate_hash(record->nonce, record_hash);;
 }
 
 // Function to insert a record into a bucket
@@ -161,10 +167,7 @@ size_t process_memo_records(const char *filename, const size_t BATCH_SIZE)
                 uint8_t hash_output[HASH_SIZE];
 
                 // Compute Blake3 hash of the nonce
-                blake3_hasher hasher;
-                blake3_hasher_init_keyed(&hasher, hashed_key);
-                blake3_hasher_update(&hasher, buffer[i].nonce, NONCE_SIZE);
-                blake3_hasher_finalize(&hasher, hash_output, HASH_SIZE);
+                generate_hash(buffer[i].nonce, hash_output);
 
                 // Compare the first PREFIX_SIZE bytes of the current hash to the previous hash prefix
                 if (memcmp(hash_output, prev_hash, PREFIX_SIZE) >= 0)
