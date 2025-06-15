@@ -99,6 +99,11 @@ typedef struct
     size_t flush; // Number of flushes of bucket
 } BucketTable2;
 
+typedef struct {
+    uint8_t key[32];
+    int K;
+} PlotData;
+
 extern Bucket* buckets;
 extern Bucket* buckets_phase2;
 extern BucketTable2* buckets2;

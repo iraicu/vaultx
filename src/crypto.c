@@ -70,12 +70,11 @@ void generate_plot_id(uint8_t* plot_id_out) {
 
 // hash plot_id together with k-value to produce the key (unique plots)
 
-void derive_key(uint8_t* plot_id, uint8_t* key_out) {
-
+void derive_key(int k, uint8_t* plot_id, uint8_t* key_out) {
     uint8_t temp_input[33];
 
     memcpy(temp_input, plot_id, 32);
-    temp_input[32] = K;
+    temp_input[32] = k;
 
     crypto_hash_sha256(key_out, temp_input, sizeof(temp_input));
 }

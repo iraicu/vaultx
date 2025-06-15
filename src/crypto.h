@@ -10,4 +10,4 @@
 #include "vaultx.h"
 
 void generate_plot_id(uint8_t* plot_id_out);
-void derive_key(uint8_t* plot_id, uint8_t* key_out);
+void derive_key(int k, uint8_t* plot_id, uint8_t* key_out);
