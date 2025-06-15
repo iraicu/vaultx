@@ -1102,6 +1102,109 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if (SEARCH) {
+        double start_time = omp_get_wtime();
+
+        printf("Searching: %s\n", SEARCH_STRING);
+
+        int k, total_files;
+
+        DIR* dir = opendir(".");
+        FILE* fd;
+        struct dirent* entry;
+
+        if (!dir) {
+            perror("opendir");
+            return 1;
+        }
+
+        while ((entry = readdir(dir)) != NULL) {
+            const char* filename = entry->d_name;
+
+            // Check if filename starts with "merge_"
+            if (strncmp(filename, "merge_", 6) != 0)
+                continue;
+
+            // Remove ".plot" from the end
+            char temp[512];
+            strncpy(temp, filename, sizeof(temp) - 1);
+            temp[sizeof(temp) - 1] = '\0';
+            temp[strlen(temp) - 5] = '\0'; // Remove ".plot"
+
+            // Extract val1 and val2
+            if (sscanf(temp, "merge_%d_%d", &k, &total_files) == 2) {
+                printf("Filename   : %s\n", filename);
+                printf("K          : %d\n", k);
+                printf("Total files: %d\n", total_files);
+            }
+
+            fd = fopen(filename, "rb");
+            if (!fd) {
+                perror("fopen failed");
+                continue;
+            }
+        }
+
+        closedir(dir);
+
+        PlotData plotData[total_files];
+
+        off_t offset = sizeof(PlotData) * total_files;
+
+        if (fseek(fd, -offset, SEEK_END) != 0) {
+            perror("fseek failed");
+            fclose(fd);
+            return 1;
+        }
+
+        size_t nread = fread(plotData, sizeof(PlotData), total_files, fd);
+        if (nread != total_files) {
+            fprintf(stderr, "fread failed: expected %zu elements, got %zu\n", total_files, nread);
+            fclose(fd);
+            return 1;
+        }
+
+        const char* start = SEARCH_STRING;
+        while (*start && !isdigit((unsigned char)*start)) {
+            start++;
+        }
+
+        unsigned long long bucketIndex = byteArrayToLongLong(hexStringToByteArray((SEARCH_STRING)), PREFIX_SIZE);
+        printf("bucket: %llu\n", bucketIndex);
+
+        // FIXME: Recompute all values and reuse those variables
+        size_t off = bucketIndex * num_records_in_bucket * total_files * sizeof(MemoTable2Record);
+
+        if (fseek(fd, off, SEEK_SET) != 0) {
+            perror("fseek failed");
+            fclose(fd);
+            return 1;
+        }
+
+        MemoTable2Record bucket[num_records_in_bucket * total_files];
+
+        size_t records_read = fread(bucket, sizeof(MemoTable2Record), num_records_in_bucket * total_files, fd);
+        if (records_read != num_records_in_bucket * total_files) {
+            fprintf(stderr, "fread failed: expected %zu elements, got %zu\n", total_files, nread);
+            fclose(fd);
+            return 1;
+        }
+
+        uint8_t hash[HASH_SIZE];
+
+        for (int i = 0; i < num_records_in_bucket * total_files; i++) {
+            if (byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE) != 0 || byteArrayToLongLong(bucket[i].nonce2, NONCE_SIZE) != 0) {
+                g2(bucket[i].nonce1, bucket[i].nonce2, plotData[i / num_records_in_bucket].key, hash);
+
+                if (memcmp(hash, hexStringToByteArray(SEARCH_STRING), strlen(SEARCH_STRING) / 2) == 0) {
+                    printf("Hash Match Found: %s, Nonce1: %llu, Nonce2: %llu, Key: %s\n", byteArrayToHexString(hash, HASH_SIZE), byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE), byteArrayToLongLong(bucket[i].nonce2, NONCE_SIZE), byteArrayToHexString(plotData[i / num_records_in_bucket].key, 32));
+                }
+            }
+        }
+
+        printf("Search Complete: %.4fs\n", omp_get_wtime() - start_time);
+    }
+
     return 0;
 }
 
