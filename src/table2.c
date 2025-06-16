@@ -414,7 +414,7 @@ size_t process_memo_records_table2(
     return count_condition_met;
 }
 
-void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
+void generate_table2(MemoRecord *sorted_records, size_t num_records_in_bucket)
 {
     uint64_t expected_distance = 1ULL << (64 - K);
     // expected_distance = expected_distance * 10; 
@@ -422,25 +422,25 @@ void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
     // num_records_in_bucket = num_records_in_shuffled_bucket = num_records_in_bucket * rounds
     for (size_t i = 0; i < num_records_in_bucket; ++i)
     {
-        if (is_nonce_nonzero(sorted_nonces[i].nonce, NONCE_SIZE))
+        if (is_nonce_nonzero(sorted_records[i].nonce, NONCE_SIZE))
         {
             // Compute Blake3 hash for record i
             uint8_t hash_i[HASH_SIZE];
-            generate_hash(sorted_nonces[i].nonce, hash_i);
+            generate_hash(sorted_records[i].nonce, hash_i);
 
             // Compare hash_i with all subsequent non-zero nonce records
             // could change the upper bound here to be b+2 to span multiple buckets
             for (size_t j = i + 1; j < num_records_in_bucket; ++j)
             {
                 // Skip records with zero nonce
-                if (!is_nonce_nonzero(sorted_nonces[j].nonce, NONCE_SIZE))
+                if (!is_nonce_nonzero(sorted_records[j].nonce, NONCE_SIZE))
                 {
                     continue;
                 }
 
                 // Compute Blake3 hash for record j
                 uint8_t hash_j[HASH_SIZE];
-                generate_hash(sorted_nonces[j].nonce, hash_j);
+                generate_hash(sorted_records[j].nonce, hash_j);
 
                 // Compute the distance between hash_i and hash_j
                 uint64_t distance = compute_hash_distance(hash_i, hash_j, HASH_SIZE);
@@ -453,7 +453,7 @@ void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket)
 
                 MemoTable2Record record;
                 uint8_t hash_table2[HASH_SIZE];
-                generate2Blake3(hash_table2, &record, (unsigned long long)sorted_nonces[i].nonce, (unsigned long long)sorted_nonces[j].nonce);
+                generate2Blake3(hash_table2, &record, (unsigned long long)sorted_records[i].nonce, (unsigned long long)sorted_records[j].nonce);
 
                 if (MEMORY_WRITE)
                 {

@@ -505,10 +505,10 @@ int main(int argc, char *argv[])
 
     if (HASHGEN)
     {
-        // uint8_t hash1[12] = {0x00, 0x00, 0x05, 0x01, 0x85, 0xe7, 0x53, 0x2a, 0xea, 0x2f, 0xa6, 0x9c};
-        // uint8_t hash2[12] = {0x00, 0x00, 0x05, 0x94,
-        //                      0xd1, 0x95, 0x7e, 0xc2,
-        //                      0xd9, 0xe2, 0x60, 0xf5};
+        // uint8_t hash1[12] = {0xdd, 0x31, 0xcc, 0x6b, 0x83, 0x3b, 0x11, 0xa8, 0xae, 0xeb, 0x1d, 0x77};
+        // uint8_t hash2[12] = {0x43, 0x9c, 0x40, 0x26,
+        //                      0x90, 0xb4, 0xc9, 0xf8,
+        //                      0x67, 0x4b, 0x99, 0xb8};
         // uint64_t expected_distance = 1ULL << (64 - K);
         // uint64_t distance = compute_hash_distance(hash1, hash2, 12);
         // printf("%ld\n", expected_distance);
@@ -816,36 +816,39 @@ int main(int argc, char *argv[])
                 if (!BENCHMARK)
                     printf("record_counts=%llu storage_efficiency_table2=%.2f full_buckets=%llu bucket_efficiency=%.2f nonce_max=%llu record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (total_num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / total_num_buckets, nonce_max, record_counts_waste, total_num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + total_num_buckets * num_records_in_bucket));
 
-                off_t bucket_idx = 5;
-                // print contents of a bucket
-                for (unsigned long long i = 0; i < num_records_in_bucket; i++)
+                if (!BENCHMARK)
                 {
-                    printf("Nonce1 : ");
+                    off_t bucket_idx = 5;
+                    // print contents of a bucket
+                    for (unsigned long long i = 0; i < num_records_in_bucket; i++)
+                    {
+                        printf("Nonce1 : ");
 
-                    for (unsigned long long j = 0; j < NONCE_SIZE; j++)
-                    {
-                        printf("%02x", buckets2[bucket_idx].records[i].nonce1[j]);
-                    }
-                    printf(" | Nonce2 : ");
-                    for (unsigned long long j = 0; j < NONCE_SIZE; j++)
-                    {
-                        printf("%02x", buckets2[bucket_idx].records[i].nonce2[j]);
-                    }
-                    printf(" | Hash : ");
-                    uint8_t hash[HASH_SIZE];
-                    MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
-                    if (record == NULL)
-                    {
-                        fprintf(stderr, "Error: Unable to allocate memory for record.\n");
-                        exit(EXIT_FAILURE);
-                    }
-                    generate_hash2(buckets2[bucket_idx].records[i].nonce1, buckets2[bucket_idx].records[i].nonce2, hash);
+                        for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+                        {
+                            printf("%02x", buckets2[bucket_idx].records[i].nonce1[j]);
+                        }
+                        printf(" | Nonce2 : ");
+                        for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+                        {
+                            printf("%02x", buckets2[bucket_idx].records[i].nonce2[j]);
+                        }
+                        printf(" | Hash : ");
+                        uint8_t hash[HASH_SIZE];
+                        MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
+                        if (record == NULL)
+                        {
+                            fprintf(stderr, "Error: Unable to allocate memory for record.\n");
+                            exit(EXIT_FAILURE);
+                        }
+                        generate_hash2(buckets2[bucket_idx].records[i].nonce1, buckets2[bucket_idx].records[i].nonce2, hash);
 
-                    for (unsigned long long j = 0; j < HASH_SIZE; j++)
-                    {
-                        printf("%02x", hash[j]);
+                        for (unsigned long long j = 0; j < HASH_SIZE; j++)
+                        {
+                            printf("%02x", hash[j]);
+                        }
+                        printf("\n");
                     }
-                    printf("\n");
                 }
             }
             // if tmp file is specified and data does not fit in memory, write table1 to tmp file
@@ -1099,38 +1102,41 @@ int main(int argc, char *argv[])
 
                 // unsigned long long bucket_idx = 0;
                 // print contents of a bucket
-                printf("Buckets (Table1) before sorting and generating table2:\n");
-                for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
+                if (!BENCHMARK)
                 {
-                    printf("Bucket %llu:\n", bucket_idx);
-                    for (unsigned long long i = 0; i < num_records_in_shuffled_bucket; i++)
+                    printf("Buckets (Table1) before sorting and generating table2:\n");
+                    for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
                     {
-                        printf("Nonce1 : ");
+                        printf("Bucket %llu:\n", bucket_idx);
+                        for (unsigned long long i = 0; i < num_records_in_shuffled_bucket; i++)
+                        {
+                            printf("Nonce1 : ");
 
-                        for (unsigned long long j = 0; j < NONCE_SIZE; j++)
-                        {
-                            printf("%02x", buckets[bucket_idx].records[i].nonce[j]);
-                        }
-                        // printf(" | Nonce2 : ");
-                        // for (unsigned long long j = 0; j < NONCE_SIZE; j++)
-                        // {
-                        //     printf("%02x", buckets[bucket_idx].records[i].nonce2[j]);
-                        // }
-                        printf(" | Hash : ");
-                        uint8_t hash[HASH_SIZE];
-                        MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
-                        if (record == NULL)
-                        {
-                            fprintf(stderr, "Error: Unable to allocate memory for record.\n");
-                            exit(EXIT_FAILURE);
-                        }
-                        generate_hash(buckets[bucket_idx].records[i].nonce, hash);
+                            for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+                            {
+                                printf("%02x", buckets[bucket_idx].records[i].nonce[j]);
+                            }
+                            // printf(" | Nonce2 : ");
+                            // for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+                            // {
+                            //     printf("%02x", buckets[bucket_idx].records[i].nonce2[j]);
+                            // }
+                            printf(" | Hash : ");
+                            uint8_t hash[HASH_SIZE];
+                            MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
+                            if (record == NULL)
+                            {
+                                fprintf(stderr, "Error: Unable to allocate memory for record.\n");
+                                exit(EXIT_FAILURE);
+                            }
+                            generate_hash(buckets[bucket_idx].records[i].nonce, hash);
 
-                        for (unsigned long long j = 0; j < HASH_SIZE; j++)
-                        {
-                            printf("%02x", hash[j]);
+                            for (unsigned long long j = 0; j < HASH_SIZE; j++)
+                            {
+                                printf("%02x", hash[j]);
+                            }
+                            printf("\n");
                         }
-                        printf("\n");
                     }
                 }
 
@@ -1141,78 +1147,85 @@ int main(int argc, char *argv[])
                     generate_table2(buckets[b].records, num_records_in_shuffled_bucket);
                 }
 
-                printf("Buckets (Table1) after sorting and generating Table2:\n");
-                for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
+                if (!BENCHMARK)
                 {
-                    printf("Bucket %llu:\n", bucket_idx);
-                    for (unsigned long long i = 0; i < num_records_in_shuffled_bucket; i++)
+                    printf("Buckets (Table1) after sorting and generating Table2:\n");
                     {
-                        printf("Nonce1 : ");
+                        for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
+                        {
+                            printf("Bucket %llu:\n", bucket_idx);
+                            for (unsigned long long i = 0; i < num_records_in_shuffled_bucket; i++)
+                            {
+                                printf("Nonce1 : ");
 
-                        for (unsigned long long j = 0; j < NONCE_SIZE; j++)
-                        {
-                            printf("%02x", buckets[bucket_idx].records[i].nonce[j]);
-                        }
-                        // printf(" | Nonce2 : ");
-                        // for (unsigned long long j = 0; j < NONCE_SIZE; j++)
-                        // {
-                        //     printf("%02x", buckets[bucket_idx].records[i].nonce2[j]);
-                        // }
-                        printf(" | Hash : ");
-                        uint8_t hash[HASH_SIZE];
-                        MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
-                        if (record == NULL)
-                        {
-                            fprintf(stderr, "Error: Unable to allocate memory for record.\n");
-                            exit(EXIT_FAILURE);
-                        }
-                        generate_hash(buckets[bucket_idx].records[i].nonce, hash);
+                                for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+                                {
+                                    printf("%02x", buckets[bucket_idx].records[i].nonce[j]);
+                                }
+                                // printf(" | Nonce2 : ");
+                                // for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+                                // {
+                                //     printf("%02x", buckets[bucket_idx].records[i].nonce2[j]);
+                                // }
+                                printf(" | Hash : ");
+                                uint8_t hash[HASH_SIZE];
+                                MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
+                                if (record == NULL)
+                                {
+                                    fprintf(stderr, "Error: Unable to allocate memory for record.\n");
+                                    exit(EXIT_FAILURE);
+                                }
+                                generate_hash(buckets[bucket_idx].records[i].nonce, hash);
 
-                        for (unsigned long long j = 0; j < HASH_SIZE; j++)
-                        {
-                            printf("%02x", hash[j]);
+                                for (unsigned long long j = 0; j < HASH_SIZE; j++)
+                                {
+                                    printf("%02x", hash[j]);
+                                }
+                                printf("\n");
+                            }
                         }
-                        printf("\n");
                     }
                 }
 
                 // unsigned long long bucket_idx = 0;
                 // print contents of a bucket
-                printf("Buckets (Table2) after generating Table2:\n");
-                for (unsigned long long bucket_idx = 0; bucket_idx < total_num_buckets; bucket_idx++)
+                if (!BENCHMARK)
                 {
-                    printf("Bucket %llu:\n", bucket_idx);
-                    for (unsigned long long i = 0; i < num_records_in_bucket; i++)
+                    printf("Buckets (Table2) after generating Table2:\n");
+                    for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
                     {
-                        printf("Nonce1 : ");
+                        printf("Bucket %llu:\n", bucket_idx);
+                        for (unsigned long long i = 0; i < num_records_in_bucket; i++)
+                        {
+                            printf("Nonce1 : ");
 
-                        for (unsigned long long j = 0; j < NONCE_SIZE; j++)
-                        {
-                            printf("%02x", buckets2[bucket_idx].records[i].nonce1[j]);
-                        }
-                        printf(" | Nonce2 : ");
-                        for (unsigned long long j = 0; j < NONCE_SIZE; j++)
-                        {
-                            printf("%02x", buckets2[bucket_idx].records[i].nonce2[j]);
-                        }
-                        printf(" | Hash : ");
-                        uint8_t hash[HASH_SIZE];
-                        MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
-                        if (record == NULL)
-                        {
-                            fprintf(stderr, "Error: Unable to allocate memory for record.\n");
-                            exit(EXIT_FAILURE);
-                        }
-                        generate_hash2(buckets2[bucket_idx].records[i].nonce1, buckets2[bucket_idx].records[i].nonce2, hash);
+                            for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+                            {
+                                printf("%02x", buckets2[bucket_idx].records[i].nonce1[j]);
+                            }
+                            printf(" | Nonce2 : ");
+                            for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+                            {
+                                printf("%02x", buckets2[bucket_idx].records[i].nonce2[j]);
+                            }
+                            printf(" | Hash : ");
+                            uint8_t hash[HASH_SIZE];
+                            MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
+                            if (record == NULL)
+                            {
+                                fprintf(stderr, "Error: Unable to allocate memory for record.\n");
+                                exit(EXIT_FAILURE);
+                            }
+                            generate_hash2(buckets2[bucket_idx].records[i].nonce1, buckets2[bucket_idx].records[i].nonce2, hash);
 
-                        for (unsigned long long j = 0; j < HASH_SIZE; j++)
-                        {
-                            printf("%02x", hash[j]);
+                            for (unsigned long long j = 0; j < HASH_SIZE; j++)
+                            {
+                                printf("%02x", hash[j]);
+                            }
+                            printf("\n");
                         }
-                        printf("\n");
                     }
                 }
-
                 for (unsigned long long b = 0; b < total_num_buckets; b++)
                 {
                     size_t elements_written = fwrite(buckets2[b].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
@@ -1237,7 +1250,10 @@ int main(int argc, char *argv[])
                     memset(buckets2[b].records, 0, num_records_in_bucket * sizeof(MemoTable2Record));
                 }
 
-                printf("[%.2f] Table2Gen %.2f%%\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / total_num_buckets);
+                if (!BENCHMARK)
+                {
+                    printf("[%.2f] Table2Gen %.2f%%\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / total_num_buckets);
+                }
             }
             for (unsigned long long i = 0; i < num_buckets_to_read * rounds; i++)
             {

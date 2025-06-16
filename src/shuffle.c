@@ -130,14 +130,17 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
             else if (!is_nonce_nonzero(buffer_table2[k].nonce1, NONCE_SIZE) ||
                      !is_nonce_nonzero(buffer_table2[k].nonce2, NONCE_SIZE))
             {
-                fprintf(stderr, "Warning: Record with one zero nonce at index %lu\n", k);
-                fprintf(stderr, "nonce1: ");
-                for (int b = 0; b < NONCE_SIZE; b++)
-                    fprintf(stderr, "%02x", buffer_table2[k].nonce1[b]);
-                fprintf(stderr, "\nnonce2: ");
-                for (int b = 0; b < NONCE_SIZE; b++)
-                    fprintf(stderr, "%02x", buffer_table2[k].nonce2[b]);
-                fprintf(stderr, "\n");
+                if (!BENCHMARK)
+                {
+                    fprintf(stderr, "Warning: Record with one zero nonce at index %lu\n", k);
+                    fprintf(stderr, "nonce1: ");
+                    for (int b = 0; b < NONCE_SIZE; b++)
+                        fprintf(stderr, "%02x", buffer_table2[k].nonce1[b]);
+                    fprintf(stderr, "\nnonce2: ");
+                    for (int b = 0; b < NONCE_SIZE; b++)
+                        fprintf(stderr, "%02x", buffer_table2[k].nonce2[b]);
+                    fprintf(stderr, "\n");
+                }
             }
         }
 
@@ -208,8 +211,11 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
     free(buffer_table2);
     free(buffer_table2_shuffled);
 
-    printf("Zero unshuffled nonces found: %llu out of %llu total records processed.\n",
-           zero_nonce_count_unshuffled, total_records_unshuffled);
-    printf("Zero nonces found: %llu out of %llu total records processed.\n",
-           zero_nonce_count, total_records_processed);
+    if (!BENCHMARK)
+    {
+        printf("Zero unshuffled nonces found: %llu out of %llu total records processed.\n",
+               zero_nonce_count_unshuffled, total_records_unshuffled);
+        printf("Zero nonces found: %llu out of %llu total records processed.\n",
+               zero_nonce_count, total_records_processed);
+    }
 }
