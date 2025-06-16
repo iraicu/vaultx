@@ -1179,7 +1179,7 @@ int main(int argc, char *argv[])
                 // unsigned long long bucket_idx = 0;
                 // print contents of a bucket
                 printf("Buckets (Table2) after generating Table2:\n");
-                for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
+                for (unsigned long long bucket_idx = 0; bucket_idx < total_num_buckets; bucket_idx++)
                 {
                     printf("Bucket %llu:\n", bucket_idx);
                     for (unsigned long long i = 0; i < num_records_in_bucket; i++)
