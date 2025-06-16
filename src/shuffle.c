@@ -68,6 +68,41 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
                     printf("read %zu records from disk...\n", records_read);
             }
 
+            // printf("Buckets (Table2) during shuffling:\n");
+            // for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
+            // {
+            //     printf("Bucket %llu:\n", bucket_idx);
+            //     for (unsigned long long i = 0; i < num_records_in_bucket; i++)
+            //     {
+            //         printf("Nonce1 : ");
+
+            //         for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+            //         {
+            //             printf("%02x", buckets2[bucket_idx].records[i].nonce1[j]);
+            //         }
+            //         printf(" | Nonce2 : ");
+            //         for (unsigned long long j = 0; j < NONCE_SIZE; j++)
+            //         {
+            //             printf("%02x", buckets2[bucket_idx].records[i].nonce2[j]);
+            //         }
+            //         printf(" | Hash : ");
+            //         uint8_t hash[HASH_SIZE];
+            //         MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
+            //         if (record == NULL)
+            //         {
+            //             fprintf(stderr, "Error: Unable to allocate memory for record.\n");
+            //             exit(EXIT_FAILURE);
+            //         }
+            //         generate_hash2(buckets2[bucket_idx].records[i].nonce1, buckets2[bucket_idx].records[i].nonce2, hash);
+
+            //         for (unsigned long long j = 0; j < HASH_SIZE; j++)
+            //         {
+            //             printf("%02x", hash[j]);
+            //         }
+            //         printf("\n");
+            //     }
+            // }
+
             off_t offset_dest = i * num_records_in_shuffled_bucket * sizeof(MemoTable2Record);
             if (DEBUG)
                 printf("write data: offset_dest=%lu bytes=%llu\n", offset_dest, num_records_in_shuffled_bucket * sizeof(MemoTable2Record) * num_buckets_to_read);
