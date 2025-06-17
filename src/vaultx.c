@@ -11,45 +11,20 @@ void print_usage(char *prog_name)
     printf("  -K, --exponent NUM                    Exponent K to compute 2^K number of records (default: 4)\n");
     printf("  -m, --memory NUM                      Memory size in MB (default: 1)\n");
     printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
-    printf("  -f, --file tmp NAME                   Temporary table1 (out-of-memory)/table2 (in-memory) file name\n");
-    printf("  -g, --file tmp table2 NAME            Temporary table2 file name (only for out-of-memory)\n");
-    printf("  -j, --file table2 NAME                Table2 file name\n");
+    printf("  -f, --dir tmp NAME                    Temporary table1 (out-of-memory)/table2 (in-memory) directory name\n");
+    printf("  -g, --dir tmp table2 NAME             Temporary table2 directory name (only for out-of-memory)\n");
+    printf("  -j, --dir table2 NAME                 Table2 directory name\n");
     // printf("  -2, --table2 file NAME                Use Table2 approach (should specify -f (table1 file), if table1 was created previously, turn off HASHGEN)\n");
     printf("  -s, --search STRING                   Search for a specific hash prefix in the file\n");
     printf("  -S, --search-batch NUM                Search for a specific hash prefix in the file in batch mode\n");
-    printf("  -x, --benchmark                       Enable benchmark mode (default: false)\n");
+    printf("  -v, --verify [true|false]             Enable verification mode (default: false)\n");
+    printf("  -x, --benchmark [true|false]          Enable benchmark mode (default: false)\n");
     printf("  -h, --help                            Display this help message\n");
     printf("\nExample:\n");
-    printf("IN-MEMORY:          %s -a for -t 8 -i 8 -K 28 -m 1024 -f memo.t -j memo.x\n", prog_name);
-    printf("IN-MEMORY BENCH:    %s -a for -t 8 -i 8 -K 28 -m 1024 -f memo.t -j memo.x -x true (Only prints time)\n", prog_name);
-    printf("OUT-OF-MEMORY:      %s -a for -t 8 -K 28 -m 512 -f memo.t -g memo2.t -j memo.x\n", prog_name);
+    printf("IN-MEMORY:          %s -a for -t 8 -i 8 -K 28 -m 1024 -f /home/vaults/ -j /home/vaults/\n", prog_name);
+    printf("IN-MEMORY BENCH:    %s -a for -t 8 -i 8 -K 28 -m 1024 -f /home/vaults/ -j /home/vaults/ -x true (Only prints time)\n", prog_name);
+    printf("OUT-OF-MEMORY:      %s -a for -t 8 -K 28 -m 512 -f /home/vaults/ -g /home/vaults/ -j /home/vaults/\n", prog_name);
     // printf("SEARCH:             %s -a for -t 8 -K 28 -m 1024 -f memo.t -j memo.x -s 000000\n", prog_name);
-}
-
-void compute_hashed_key_from_plot_id()
-{
-    uint8_t key[33];
-    memcpy(key, plot_id, 32);
-    key[32] = K;
-
-    crypto_hash_sha256(hashed_key, key, sizeof(key));
-}
-
-int generate_plot_id()
-{
-    // NOTE: we could also generate a priv key and derive a pub key from it. But why?
-    uint8_t public_key[32];
-
-    // generate 32 random bytes for the private key
-    randombytes_buf(public_key, 32);
-
-    // compute SHA-256 of the combined buffer -> plot_id
-    crypto_hash_sha256(plot_id, public_key, sizeof(public_key));
-
-    // hash plot_id together with k-value to produce the key (unique plots)
-    compute_hashed_key_from_plot_id();
-
-    return 0;
 }
 
 // Function to compute the bucket index based on hash prefix

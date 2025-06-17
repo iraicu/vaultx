@@ -125,7 +125,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
     MemoTable2Record *fRecord = NULL;
 
     long filesize = get_file_size(filename);
-    
+
     char plot_id_string[65];
     strcpy(plot_id_string, filename);
     plot_id_string[64] = '\0';
@@ -141,7 +141,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
         return;
     }
 
-    compute_hashed_key_from_plot_id();
+    derive_key();
 
     if (filesize != -1)
     {
