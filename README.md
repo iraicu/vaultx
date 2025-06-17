@@ -32,6 +32,15 @@ program_name = ...
 ```
 
 
-## Authors
-The work is part of research done at Datasys Lab at IIT that aims to build a decentralized, secure, and scalable blockchain [source](https://vitalik.eth.limo/general/2017/12/31/sharding_faq.html#this-sounds-like-theres-some-kind-of-scalability-trilemma-at-play.-what-is-this-trilemma-and-can-we-break-through-it). 
+## Publications
+**Bondarenko, Varvara, Renato Diaz, Lan Nguyen, and Ioan Raicu**, _"Improving the Performance of Proof-of-Space in Blockchain Systems"_, **Proceedings of The International Conference for High Performance Computing, Networking, Storage, and Analysis (SC ’24)**, 2024. [PDF](https://sc24.supercomputing.org/proceedings/poster/poster_files/post276s2-file3.pdf) | [Poster](https://sc24.supercomputing.org/proceedings/poster/poster_files/post276s2-file2.pdf)
 
+
+## Authors and Contributors
+The work is part of research done at Datasys Lab at IIT that aims to build a [decentralized, secure, and scalable blockchain](https://vitalik.eth.limo/general/2017/12/31/sharding_faq.html#this-sounds-like-theres-some-kind-of-scalability-trilemma-at-play.-what-is-this-trilemma-and-can-we-break-through-it). 
+
+- Arnav Sirigere 
+- Renato Diaz
+- Varvara Bondarenko
+- Lan Nguyen
+- Ioan Raicu
