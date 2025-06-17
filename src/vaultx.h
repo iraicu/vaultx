@@ -18,6 +18,7 @@
 #include "table2.h"
 #include "sort.h"
 #include "shuffle.h"
+#include "crypto.h"
 
 void print_usage(char *prog_name);
 off_t getBucketIndex(const uint8_t *hash);

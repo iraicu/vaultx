@@ -8,6 +8,8 @@ int compare_memo_all_record(const void *a, const void *b)
     return memcmp(recA->hash, recB->hash, HASH_SIZE);
 }
 
+
+// why? 
 // memory overhead
 void sort_bucket_records_inplace(MemoRecord *records, size_t total_records)
 {

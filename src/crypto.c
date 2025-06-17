@@ -22,7 +22,7 @@ int generate_plot_id()
     crypto_hash_sha256(plot_id, public_key, sizeof(public_key));
 
     // hash plot_id together with k-value to produce the key (unique plots)
-    compute_hashed_key_from_plot_id();
+    derive_key();
 
     return 0;
 }

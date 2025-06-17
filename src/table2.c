@@ -415,6 +415,7 @@ size_t process_memo_records_table2(
 }
 
 void generate_table2(MemoRecord *sorted_records, size_t num_records_in_bucket)
+// void generate_table2(Bucket *bucket, size_t num_records_in_bucket)
 {
     uint64_t expected_distance = 1ULL << (64 - K);
     // expected_distance = expected_distance * 10; 

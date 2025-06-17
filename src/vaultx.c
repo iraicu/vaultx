@@ -1118,7 +1118,11 @@ int main(int argc, char *argv[])
 #pragma omp parallel for schedule(static)
                 for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read; b++)
                 {
+                    // Sort by hash
+                    // qsort(buckets[b].records, num_records_in_shuffled_bucket, sizeof(MemoAllRecord), compare_memo_all_record);
                     sort_bucket_records_inplace(buckets[b].records, num_records_in_shuffled_bucket);
+                    // Bucket bucket = buckets[b];
+                    // generate_table2(bucket, num_records_in_shuffled_bucket);
                     generate_table2(buckets[b].records, num_records_in_shuffled_bucket);
                 }
 
