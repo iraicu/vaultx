@@ -36,9 +36,9 @@ To use an SSH connection, first add your public SSH key to GitHub.
 ```
 
 `program_name` options:
-  - `vaultx_x86_c` -- for x86 architecture
-  - `vaultx_arm_c` -- for ARM architecture
-  - `vaultx_mac_c` -- for macOS systems
+  - `vaultx_x86_c` — for x86 architecture
+  - `vaultx_arm_c` — for ARM architecture
+  - `vaultx_mac_c` — for macOS systems
 
 
 ## Running
