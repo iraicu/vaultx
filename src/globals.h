@@ -104,6 +104,11 @@ typedef struct {
     int K;
 } PlotData;
 
+typedef struct
+{
+    MemoTable2Record* records;
+} FileRecords;
+
 extern Bucket* buckets;
 extern Bucket* buckets_phase2;
 extern BucketTable2* buckets2;
