@@ -17,6 +17,8 @@ Vaults are files stored on users' machines and later used for fast leader electi
 ## Libraries Used
 
 - [`BLAKE3`](https://github.com/BLAKE3-team/BLAKE3) — for fast cryptographic hash functions
+- [`OpenMP`](https://www.openmp.org/) — for parallel programming
+- [`Sodium`](https://github.com/jedisct1/libsodium) — for secure hashing with SHA-256 and generating random unpredictable data (public key)
 
 
 ## Installation
@@ -39,6 +41,14 @@ To use an SSH connection, first add your public SSH key to GitHub.
   - `vaultx_x86_c` — for x86 architecture
   - `vaultx_arm_c` — for ARM architecture
   - `vaultx_mac_c` — for macOS systems
+
+3. **Install libraries**
+
+```bash
+  sudo apt install libomp-dev libsodium-dev
+```
+
+**Blake3 is already installed in the directory
 
 
 ## Running
