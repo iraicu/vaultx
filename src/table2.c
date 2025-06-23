@@ -387,9 +387,15 @@ size_t process_memo_records_table2(
                         (double)(count_condition_met + count_condition_not_met);
 
     // printf("Progress: 100.00%% (%zu/%zu)\n", total_records, total_recs_in_file);
-    printf("[%.2f] Verify %.2f%%: Sorted %.2f%% : Storage Efficiency %.2f%%\n",
-           elapsed, pct, pct_sorted, pct_met);
-
+    if (!BENCHMARK)
+    {
+        printf("[%.2f] Verify %.2f%%: Sorted %.2f%% : Storage Efficiency %.2f%%\n",
+               elapsed, pct, pct_sorted, pct_met);
+    }
+    else
+    {
+        printf("%.2f%%\n", pct_met);
+    }
     // --- cleanup ---
     free(buffer);
     fclose(file);

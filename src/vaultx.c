@@ -340,6 +340,9 @@ int main(int argc, char *argv[])
         omp_set_num_threads(num_threads);
     }
 
+    int max_threads = omp_get_max_threads();
+    printf("Max threads OpenMP will use: %d\n", max_threads);
+
     if (num_threads_io == 0)
     {
         num_threads_io = 1;
@@ -397,7 +400,6 @@ int main(int argc, char *argv[])
 
     if (!SEARCH || !SEARCH_BATCH)
     {
-
         if (sodium_init() < 0)
         {
             printf("libsodium failed to initialize.\n");
@@ -762,6 +764,9 @@ int main(int argc, char *argv[])
                 }
 
                 end_time_hash2 = omp_get_wtime();
+                elapsed_time_hash2 = end_time_hash2 - start_time_hash2;
+                elapsed_time_hash2_total += elapsed_time_hash2;
+
                 start_time_io = omp_get_wtime();
 
                 // Write table2 to disk
@@ -840,7 +845,6 @@ int main(int argc, char *argv[])
             else if (rounds > 1)
             {
                 // Write data to disk if required
-                start_time_io = omp_get_wtime();
 
                 // No need to seek because we are writing to the beginning of the file and then write moves it to the end of the piece that was written
                 // off_t offset = r * num_records_in_bucket * total_num_buckets * sizeof(MemoRecord); // total_num_buckets that fit in memory
@@ -853,10 +857,13 @@ int main(int argc, char *argv[])
 
                 size_t bytesWritten = 0;
                 // Set the number of threads if specified
-                if (num_threads_io > 0)
-                {
-                    omp_set_num_threads(num_threads);
-                }
+                // NOTE: why are we checking num_threads_io but setting num_threads to num_threads?
+                // if (num_threads_io > 0)
+                // {
+                //     omp_set_num_threads(num_threads);
+                // }
+
+                start_time_io = omp_get_wtime();
 
                 // write table1
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
@@ -872,15 +879,15 @@ int main(int argc, char *argv[])
                     bytesWritten += elements_written * sizeof(MemoRecord);
                 }
 
-                for (unsigned long long i = 0; i < total_num_buckets; i++)
-                {
-                    memset(buckets[i].records, 0, num_records_in_bucket * sizeof(MemoRecord));
-                }
-
                 // End I/O time measurement
                 end_time_io = omp_get_wtime();
                 elapsed_time_io = end_time_io - start_time_io;
                 elapsed_time_io_total += elapsed_time_io;
+
+                for (unsigned long long i = 0; i < total_num_buckets; i++)
+                {
+                    memset(buckets[i].records, 0, num_records_in_bucket * sizeof(MemoRecord));
+                }
             }
 
             // Calculate throughput (hashes per second)
@@ -1087,6 +1094,10 @@ int main(int argc, char *argv[])
                     }
                 }
 
+                end_time_io = omp_get_wtime();
+                elapsed_time_io = end_time_io - start_time_io;
+                elapsed_time_io_total += elapsed_time_io;
+
                 // unsigned long long bucket_idx = 0;
                 // print contents of a bucket
                 if (!BENCHMARK)
@@ -1139,8 +1150,10 @@ int main(int argc, char *argv[])
                     // generate_table2(bucket, num_records_in_shuffled_bucket);
                     generate_table2(buckets[b].records, num_records_in_shuffled_bucket);
                 }
-                
+
                 end_time_hash2 = omp_get_wtime();
+                elapsed_time_hash2 = end_time_hash2 - start_time_hash2;
+                elapsed_time_hash2_total += elapsed_time_hash2;
 
                 if (!BENCHMARK)
                 {
@@ -1223,6 +1236,7 @@ int main(int argc, char *argv[])
                 }
 
                 start_time_io = omp_get_wtime();
+
                 for (unsigned long long b = 0; b < total_num_buckets; b++)
                 {
                     size_t elements_written = fwrite(buckets2[b].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
@@ -1354,7 +1368,10 @@ int main(int argc, char *argv[])
                     omp_set_num_threads(num_threads_io);
                 }
 
+                // shuffle table uses io2 time
                 shuffle_table2(fd_table2_tmp, fd_table2, buffer_size, records_per_batch, num_buckets_to_read, start_time, elapsed_time_io2, elapsed_time_io2_total);
+
+                start_time_io = omp_get_wtime();
 
                 // Flush and close the file
                 if (writeDataTmpTable2)
@@ -1390,10 +1407,16 @@ int main(int argc, char *argv[])
 
                 fclose(fd_table2);
                 remove_file(FILENAME_TMP_TABLE2);
+
+                end_time_io = omp_get_wtime();
+                elapsed_time_io = end_time_io - start_time_io;
+                elapsed_time_io_total += elapsed_time_io;
             }
         }
         else if (writeDataTable2 && rounds == 1)
         {
+            start_time_io = omp_get_wtime();
+
             // Call the rename_file function
             if (move_file_overwrite(FILENAME_TMP, FILENAME_TABLE2) == 0)
             {
@@ -1408,12 +1431,17 @@ int main(int argc, char *argv[])
                 // Additional handling can be done here if necessary
                 // return 1;
             }
+            end_time_io = omp_get_wtime();
+            elapsed_time_io = end_time_io - start_time_io;
+            elapsed_time_io_total += elapsed_time_io;
         }
 
         // will need to check on MacOS with a spinning hdd if we need to call sync() to flush all filesystems
 #ifdef __linux__
         if (writeDataTable2)
         {
+            start_time_io = omp_get_wtime();
+
             if (DEBUG)
                 printf("Final flush in progress...\n");
             int fd2 = open(FILENAME_TABLE2, O_RDWR);
@@ -1432,11 +1460,15 @@ int main(int argc, char *argv[])
                 close(fd2);
                 return EXIT_FAILURE;
             }
+
+            end_time_io = omp_get_wtime();
+            elapsed_time_io = end_time_io - start_time_io;
+            elapsed_time_io_total += elapsed_time_io;
         }
 #endif
-        end_time_io = omp_get_wtime();
-        elapsed_time_io = end_time_io - start_time_io;
-        elapsed_time_io_total += elapsed_time_io;
+        // end_time_io = omp_get_wtime();
+        // elapsed_time_io = end_time_io - start_time_io;
+        // elapsed_time_io_total += elapsed_time_io;
 
         // End total time measurement
         double end_time = omp_get_wtime();
@@ -1451,7 +1483,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
+            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
             return 0;
         }
     }

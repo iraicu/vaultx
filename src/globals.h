@@ -17,7 +17,7 @@
 #include <math.h>
 #include <errno.h>
 #include <sodium.h>
-#include <secp256k1.h> 
+// #include <secp256k1.h> 
 
 #include "../blake3/blake3.h" // Include Blake3 header
 

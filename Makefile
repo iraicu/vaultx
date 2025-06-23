@@ -9,7 +9,8 @@ XCC=/home/wwang/xgcc/bin/xgcc
 CFLAGS=-g -O3 -DBLAKE3_USE_NEON=0 -Wall -Wextra -pedantic -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -fvisibility=hidden 
 
 #CFLAGS=-O3 -Wall -Wextra -pedantic -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -fvisibility=hidden
-LDFLAGS=-lm -lpthread -pie -Wl,-z,relro,-z,now -lsecp256k1 -lsodium
+LDFLAGS=-lm -lpthread -pie -Wl,-z,relro,-z,now -lsodium
+# -lsecp256k1
 TARGETS=
 ASM_TARGETS=
 EXTRAFLAGS=-Wa,--noexecstack
