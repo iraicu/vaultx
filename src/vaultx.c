@@ -552,8 +552,12 @@ int main(int argc, char *argv[])
         double start_time_hash = 0.0;
         double end_time_hash = 0.0;
         double elapsed_time_hash = 0.0;
+        double start_time_hash2 = 0.0;
+        double end_time_hash2 = 0.0;
+        double elapsed_time_hash2 = 0.0;
 
         double elapsed_time_hash_total = 0.0;
+        double elapsed_time_hash2_total = 0.0;
         double elapsed_time_io_total = 0.0;
         double elapsed_time_io2_total = 0.0;
 
@@ -731,7 +735,7 @@ int main(int argc, char *argv[])
             if (rounds == 1)
             {
                 printf("--------------------In-memory Table 2 generation started------------------\n");
-                start_time_io = omp_get_wtime();
+                start_time_hash2 = omp_get_wtime();
 
                 // No need to seek because we are writing to the beginning of the file
                 // off_t offset = r * total_num_buckets * num_records_in_bucket * sizeof(MemoTable2Record); // total_num_buckets that fit in memory
@@ -757,6 +761,9 @@ int main(int argc, char *argv[])
                     generate_table2(buckets[i].records, num_records_in_bucket);
                 }
 
+                end_time_hash2 = omp_get_wtime();
+                start_time_io = omp_get_wtime();
+
                 // Write table2 to disk
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
                 {
@@ -775,6 +782,9 @@ int main(int argc, char *argv[])
                 end_time_io = omp_get_wtime();
                 elapsed_time_io = end_time_io - start_time_io;
                 elapsed_time_io_total += elapsed_time_io;
+
+                elapsed_time_hash2 = end_time_hash2 - start_time_hash2;
+                elapsed_time_hash2_total += elapsed_time_hash2;
 
                 // count how many full buckets , this works for rounds == 1
                 unsigned long long full_buckets = 0;
@@ -874,16 +884,16 @@ int main(int argc, char *argv[])
             }
 
             // Calculate throughput (hashes per second)
-            throughput_hash = (num_records_per_round / (elapsed_time_hash + elapsed_time_io)) / (1e6);
+            throughput_hash = (num_records_per_round / (elapsed_time_hash + elapsed_time_hash2 + elapsed_time_io)) / (1e6);
 
             // Calculate I/O throughput
             if (rounds > 1)
             {
-                throughput_io = (num_records_per_round * sizeof(MemoRecord)) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
+                throughput_io = (num_records_per_round * sizeof(MemoRecord)) / ((elapsed_time_hash + elapsed_time_hash2 + elapsed_time_io) * 1024 * 1024);
             }
             else
             {
-                throughput_io = (num_records_per_round * sizeof(MemoTable2Record)) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
+                throughput_io = (num_records_per_round * sizeof(MemoTable2Record)) / ((elapsed_time_hash + elapsed_time_hash2 + elapsed_time_io) * 1024 * 1024);
             }
 
             // Check Table1 Efficiency for this round
@@ -1048,6 +1058,8 @@ int main(int argc, char *argv[])
                     buckets2[b].flush = 0;
                 }
 
+                start_time_io = omp_get_wtime();
+
                 for (unsigned long long r = 0; r < rounds; r++)
                 {
                     // NOTE: Could it work without seeking?
@@ -1115,6 +1127,8 @@ int main(int argc, char *argv[])
                     }
                 }
 
+                start_time_hash2 = omp_get_wtime();
+
 #pragma omp parallel for schedule(static)
                 for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read; b++)
                 {
@@ -1125,12 +1139,14 @@ int main(int argc, char *argv[])
                     // generate_table2(bucket, num_records_in_shuffled_bucket);
                     generate_table2(buckets[b].records, num_records_in_shuffled_bucket);
                 }
+                
+                end_time_hash2 = omp_get_wtime();
 
                 if (!BENCHMARK)
                 {
                     printf("Buckets (Table1) after sorting and generating Table2:\n");
                     {
-                        for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
+                        for (unsigned long long bucket_idx = 0; bucket_idx < 4; bucket_idx++)
                         {
                             printf("Bucket %llu:\n", bucket_idx);
                             for (unsigned long long i = 0; i < num_records_in_shuffled_bucket; i++)
@@ -1171,7 +1187,7 @@ int main(int argc, char *argv[])
                 if (!BENCHMARK)
                 {
                     printf("Buckets (Table2) after generating Table2:\n");
-                    for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
+                    for (unsigned long long bucket_idx = 100; bucket_idx < 104; bucket_idx++)
                     {
                         printf("Bucket %llu:\n", bucket_idx);
                         for (unsigned long long i = 0; i < num_records_in_bucket; i++)
@@ -1205,6 +1221,8 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
+
+                start_time_io = omp_get_wtime();
                 for (unsigned long long b = 0; b < total_num_buckets; b++)
                 {
                     size_t elements_written = fwrite(buckets2[b].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_table2_tmp);
@@ -1218,6 +1236,10 @@ int main(int argc, char *argv[])
                         return EXIT_FAILURE;
                     }
                 }
+
+                end_time_io = omp_get_wtime();
+                elapsed_time_io = end_time_io - start_time_io;
+                elapsed_time_io_total += elapsed_time_io;
 
                 for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read; b++)
                 {
@@ -1429,7 +1451,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("%s %d %lu %d %llu %.2f %zu %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
+            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
             return 0;
         }
     }
@@ -1458,7 +1480,7 @@ int main(int argc, char *argv[])
             printf("------------------------Verifying started------------------------\n");
 
         // process_memo_records(FILENAME_FINAL, MEMORY_SIZE_bytes / sizeof(MemoRecord));
-        process_memo_records_table2(FILENAME_TABLE2, num_records_in_bucket * rounds);
+        process_memo_records_table2(FILENAME_TABLE2, num_records_in_shuffled_bucket);
     }
 
     if (DEBUG)

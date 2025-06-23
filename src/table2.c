@@ -187,23 +187,23 @@ int print_table2_entry(uint8_t *nonce_output, uint8_t *prev_nonce, const uint8_t
 // }
 
 // Function to generate Blake3 hash
-void generate2Blake3(uint8_t *record_hash, MemoTable2Record *record, unsigned long long nonce1, unsigned long long nonce2)
-{
-    // Ensure that the pointers are valid
-    if (record_hash == NULL || record->nonce1 == NULL || record->nonce2 == NULL)
-    {
-        fprintf(stderr, "Error: NULL pointer passed to generateBlake3.\n");
-        return;
-    }
+// void generate2Blake3(uint8_t *record_hash, MemoTable2Record *record, uint8_t *nonce1, uint8_t *nonce2)
+// {
+//     // Ensure that the pointers are valid
+//     if (record_hash == NULL || record->nonce1 == NULL || record->nonce2 == NULL)
+//     {
+//         fprintf(stderr, "Error: NULL pointer passed to generateBlake3.\n");
+//         return;
+//     }
 
-    // FIXME: Is it necessary to memcpy? Can we just use the values directly?
-    // Store seed into the nonce
-    memcpy(record->nonce1, &nonce1, NONCE_SIZE);
-    memcpy(record->nonce2, &nonce2, NONCE_SIZE);
+//     // FIXME: Is it necessary to memcpy? Can we just use the values directly?
+//     // Store seed into the nonce
+//     memcpy(record->nonce1, nonce1, NONCE_SIZE);
+//     memcpy(record->nonce2, nonce2, NONCE_SIZE);
 
-    // Generate Blake3 hash
-    generate_hash2(record->nonce1, record->nonce2, record_hash);
-}
+//     // Generate Blake3 hash
+//     generate_hash2(record->nonce1, record->nonce2, record_hash);
+// }
 
 // Function to insert a record into a bucket
 void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t bucketIndex)
@@ -418,7 +418,7 @@ void generate_table2(MemoRecord *sorted_records, size_t num_records_in_bucket)
 // void generate_table2(Bucket *bucket, size_t num_records_in_bucket)
 {
     uint64_t expected_distance = 1ULL << (64 - K);
-    // expected_distance = expected_distance * 10; 
+    // expected_distance = expected_distance * 10;
 
     // num_records_in_bucket = num_records_in_shuffled_bucket = num_records_in_bucket * rounds
     for (size_t i = 0; i < num_records_in_bucket; ++i)
@@ -454,7 +454,10 @@ void generate_table2(MemoRecord *sorted_records, size_t num_records_in_bucket)
 
                 MemoTable2Record record;
                 uint8_t hash_table2[HASH_SIZE];
-                generate2Blake3(hash_table2, &record, (unsigned long long)sorted_records[i].nonce, (unsigned long long)sorted_records[j].nonce);
+                memcpy(record.nonce1, sorted_records[i].nonce, NONCE_SIZE);
+                memcpy(record.nonce2, sorted_records[j].nonce, NONCE_SIZE);
+
+                generate_hash2(record.nonce1, record.nonce2, hash_table2);
 
                 if (MEMORY_WRITE)
                 {

@@ -40,6 +40,8 @@ To use an SSH connection, first add your public SSH key to GitHub.
   - `vaultx_arm_c` — for ARM architecture
   - `vaultx_mac_c` — for macOS systems
 
+`nonce_size=4` if `25<=k<=32`
+`nonce_size=5` if `33<=k<=40`
 
 ## Running
 
