@@ -340,6 +340,9 @@ int main(int argc, char *argv[])
         omp_set_num_threads(num_threads);
     }
 
+    int max_threads = omp_get_max_threads();
+    printf("Max threads OpenMP will use: %d\n", max_threads);
+
     if (num_threads_io == 0)
     {
         num_threads_io = 1;
@@ -852,10 +855,11 @@ int main(int argc, char *argv[])
 
                 size_t bytesWritten = 0;
                 // Set the number of threads if specified
-                if (num_threads_io > 0)
-                {
-                    omp_set_num_threads(num_threads);
-                }
+                // NOTE: why are we checking num_threads_io but setting num_threads to num_threads?
+                // if (num_threads_io > 0)
+                // {
+                //     omp_set_num_threads(num_threads);
+                // }
 
                 start_time_io = omp_get_wtime();
 
