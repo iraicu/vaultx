@@ -792,7 +792,7 @@ int main(int argc, char *argv[])
                 if (!BENCHMARK)
                     printf("record_counts=%llu storage_efficiency_table2=%.2f full_buckets=%llu bucket_efficiency=%.2f nonce_max=%llu record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (total_num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / total_num_buckets, nonce_max, record_counts_waste, total_num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + total_num_buckets * num_records_in_bucket));
 
-                if (!BENCHMARK)
+                if (!BENCHMARK && DEBUG)
                 {
                     off_t bucket_idx = 5;
                     // print contents of a bucket
@@ -1086,7 +1086,7 @@ int main(int argc, char *argv[])
 
                 // unsigned long long bucket_idx = 0;
                 // print contents of a bucket
-                if (!BENCHMARK)
+                if (!BENCHMARK && DEBUG)
                 {
                     printf("Buckets (Table1) before sorting and generating table2:\n");
                     for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
@@ -1141,7 +1141,7 @@ int main(int argc, char *argv[])
                 elapsed_time_hash2 = end_time_hash2 - start_time_hash2;
                 elapsed_time_hash2_total += elapsed_time_hash2;
 
-                if (!BENCHMARK)
+                if (!BENCHMARK && DEBUG)
                 {
                     printf("Buckets (Table1) after sorting and generating Table2:\n");
                     {
@@ -1183,7 +1183,7 @@ int main(int argc, char *argv[])
 
                 // unsigned long long bucket_idx = 0;
                 // print contents of a bucket
-                if (!BENCHMARK)
+                if (!BENCHMARK && DEBUG)
                 {
                     printf("Buckets (Table2) after generating Table2:\n");
                     for (unsigned long long bucket_idx = 100; bucket_idx < 104; bucket_idx++)
