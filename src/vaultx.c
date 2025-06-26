@@ -498,8 +498,8 @@ int main(int argc, char* argv[]) {
 
     if (HASHGEN) {
 
-        delete_contents("plots");
-        ensure_folder_exists("plots");
+        // delete_contents("plots");
+        // ensure_folder_exists("plots");
 
         // Allocate memory
         buckets = (Bucket*)calloc(total_buckets, sizeof(Bucket));
@@ -1100,6 +1100,8 @@ int main(int argc, char* argv[]) {
     // TODO: Latency vs bandwidth
 
     // TODO: Small tests on data/fast2
+
+    //TODO: Data-l parallel logic works pretty well
     if (MERGE) {
         int MAX_FILENAME_LEN = 100;
         char filenames[TOTAL_FILES][MAX_FILENAME_LEN];
