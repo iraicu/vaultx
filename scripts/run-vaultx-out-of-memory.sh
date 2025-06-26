@@ -97,7 +97,7 @@ for disk in "${disks[@]}"; do
 
     data_file="data/vaultx-$HOSTNAME-$disk-out-of-memory.csv"
 
-    echo "APPROACH,K,sizeof(MemoRecord),num_threads,MEMORY_SIZE(MB),file_size(GB),BATCH_SIZE,total_throughput(MH/s),total_throughput(MB/s),elapsed_time_hash_total,elapsed_time_io_total,elapsed_time_io2_total,elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total,elapsed_time,storage_efficiency" > "$data_file"
+    echo "APPROACH,K,sizeof(MemoRecord),num_threads,MEMORY_SIZE(MB),file_size(GB),BATCH_SIZE,total_throughput(MH/s),total_throughput(MB/s),elapsed_time_hash_total,elapsed_time_hash2_total,elapsed_time_io_total,elapsed_time_shuffle_total,other_time,elapsed_time,storage_efficiency" > "$data_file"
 
     # Run tests for NONCE_SIZE=4
     if [ $max_k -le 32 ]; then

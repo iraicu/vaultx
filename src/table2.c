@@ -355,7 +355,7 @@ size_t process_memo_records_table2(
 
             // --- progress update every second ---
             double now = omp_get_wtime();
-            if (now - last_print_time >= 1.0)
+            if (!BENCHMARK && (now - last_print_time >= 1.0))
             {
                 last_print_time = now;
                 double elapsed = now - start_time;

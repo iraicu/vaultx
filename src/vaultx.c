@@ -7,7 +7,7 @@ void print_usage(char *prog_name)
     printf("\nOptions:\n");
     printf("  -a, --approach [xtask|task|for|tbb]   Select parallelization approach (default: for)\n");
     printf("  -t, --threads NUM                     Number of threads to use (default: number of available cores)\n");
-    printf("  -i, --threads_io NUM                  Number of I/O threads (default: number of available cores)\n");
+    printf("  -i, --threads_io NUM                  Number of I/O threads (default: 1)\n");
     printf("  -K, --exponent NUM                    Exponent K to compute 2^K number of records (default: 4)\n");
     printf("  -m, --memory NUM                      Memory size in MB (default: 1)\n");
     printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
@@ -129,8 +129,8 @@ int main(int argc, char *argv[])
     // printf("size of MemoRecord2: %zu\n", sizeof(MemoRecord2));
     // Default values
     const char *approach = "for"; // Default approach
-    int num_threads = 0;          // 0 means OpenMP chooses
-    int num_threads_io = 0;
+    int num_threads = 0;          // 0 means OpenMP chooses the max num of cores available
+    int num_threads_io = 1;
     unsigned long long num_records_total = 1ULL << K; // 2^K iterations
     unsigned long long num_records_per_round = num_records_total;
     unsigned long long MEMORY_SIZE_MB = 1;
@@ -334,20 +334,6 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    // Set the number of threads if specified
-    if (num_threads > 0)
-    {
-        omp_set_num_threads(num_threads);
-    }
-
-    int max_threads = omp_get_max_threads();
-    printf("Max threads OpenMP will use: %d\n", max_threads);
-
-    if (num_threads_io == 0)
-    {
-        num_threads_io = 1;
-    }
-
     // Display selected configurations
     if (!BENCHMARK)
     {
@@ -372,33 +358,36 @@ int main(int argc, char *argv[])
     else
         MEMORY_SIZE_bytes = MEMORY_SIZE_MB * 1024 * 1024;
 
-    // printf("Memory Size (MB)            : %llu\n", MEMORY_SIZE_MB);
-    // printf("Memory Size (bytes)            : %llu\n", MEMORY_SIZE_bytes);
-
     rounds = ceil(file_size_bytes / MEMORY_SIZE_bytes);
     MEMORY_SIZE_bytes = file_size_bytes / rounds;
     num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
+
     MEMORY_SIZE_bytes = num_records_per_round * NONCE_SIZE;
     file_size_bytes = MEMORY_SIZE_bytes * rounds;
     file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
-
     MEMORY_SIZE_MB = (unsigned long long)(MEMORY_SIZE_bytes / (1024 * 1024));
 
     num_records_per_round = MEMORY_SIZE_bytes / NONCE_SIZE;
-
     total_num_buckets = 1ULL << (PREFIX_SIZE * 8);
-
     num_records_in_bucket = num_records_per_round / total_num_buckets;
     num_records_in_shuffled_bucket = num_records_in_bucket * rounds;
 
     MEMORY_SIZE_bytes = total_num_buckets * num_records_in_bucket * sizeof(MemoRecord);
     MEMORY_SIZE_MB = (unsigned long long)(MEMORY_SIZE_bytes / (1024 * 1024));
+
     file_size_bytes = MEMORY_SIZE_bytes * rounds;
     file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
     num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
     num_records_total = num_records_per_round * rounds;
 
-    if (!SEARCH || !SEARCH_BATCH)
+    // Set the number of threads for all operations
+    if (num_threads > 0)
+    {
+        omp_set_num_threads(num_threads);
+    }
+
+    // Generate vault ID
+    if (HASHGEN)
     {
         if (sodium_init() < 0)
         {
@@ -411,12 +400,13 @@ int main(int argc, char *argv[])
             char hex_plot_id[65];
             bytes_to_hex(plot_id, 32, hex_plot_id);
 
-            sprintf(FILENAME_TMP, "%s%s.tmp", DIR_TMP, hex_plot_id);
-            sprintf(FILENAME_TMP_TABLE2, "%s%s.tmp2", DIR_TMP_TABLE2, hex_plot_id);
-            sprintf(FILENAME_TABLE2, "%s%s.plot", DIR_TABLE2, hex_plot_id);
+            sprintf(FILENAME_TMP, "%sk%d-%s.tmp", DIR_TMP, K, hex_plot_id);
+            sprintf(FILENAME_TMP_TABLE2, "%sk%d-%s.tmp2", DIR_TMP_TABLE2, K, hex_plot_id);
+            sprintf(FILENAME_TABLE2, "%sk%d-%s.plot", DIR_TABLE2, K, hex_plot_id);
         }
     }
 
+    // Print out configuration
     if (!BENCHMARK)
     {
         if (SEARCH)
@@ -480,22 +470,18 @@ int main(int argc, char *argv[])
         }
     }
 
+    // Vault generation
     if (HASHGEN)
     {
-        // uint8_t hash1[12] = {0xdd, 0x31, 0xcc, 0x6b, 0x83, 0x3b, 0x11, 0xa8, 0xae, 0xeb, 0x1d, 0x77};
-        // uint8_t hash2[12] = {0x43, 0x9c, 0x40, 0x26,
-        //                      0x90, 0xb4, 0xc9, 0xf8,
-        //                      0x67, 0x4b, 0x99, 0xb8};
-        // uint64_t expected_distance = 1ULL << (64 - K);
-        // uint64_t distance = compute_hash_distance(hash1, hash2, 12);
-        // printf("%ld\n", expected_distance);
-        // printf("%ld\n", distance);
-
-        // return -1;
-
-        if (!writeDataTmp)
+        if (rounds == 1 && (!writeDataTmp || !writeDataTable2))
         {
-            fprintf(stderr, "Error: Table1 file name (-f) is required for hash generation.\n");
+            fprintf(stderr, "Error: Table1 file name (-f) and Table2 file name (-j) are required for hash generation.\n");
+            print_usage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+        if (rounds > 1 && (!writeDataTmp || !writeDataTmpTable2 || !writeDataTable2))
+        {
+            fprintf(stderr, "Error: Table1 file name (-f), Table2 tmp file name (-g), and Table2 file name (-j) are required for hash generation.\n");
             print_usage(argv[0]);
             exit(EXIT_FAILURE);
         }
@@ -1483,35 +1469,29 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, elapsed_time_hash_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
-            return 0;
+            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * sizeof(MemoRecord), elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
+            // return 0;
         }
     }
-    // end of HASHGEN
 
-    // omp_set_num_threads(num_threads);
-
+    // Search for a single record
     if (SEARCH && !SEARCH_BATCH)
     {
         search_memo_records(FILENAME_TABLE2, SEARCH_STRING);
     }
 
+    // Search for a batch of random records of size PREFIX_SEARCH_SIZE
     if (SEARCH_BATCH)
     {
         search_memo_records_batch(FILENAME_TABLE2, BATCH_SIZE, PREFIX_SEARCH_SIZE);
     }
 
-    // Call the function to count zero-value MemoRecords
-    // printf("verifying efficiency of final stored file...\n");
-    // count_zero_memo_records(FILENAME_FINAL);
-
-    // Call the function to process MemoRecords
+    // Check if data within the file is sorted and what is the storage efficiency
     if (VERIFY)
     {
         if (!BENCHMARK)
             printf("------------------------Verifying started------------------------\n");
 
-        // process_memo_records(FILENAME_FINAL, MEMORY_SIZE_bytes / sizeof(MemoRecord));
         process_memo_records_table2(FILENAME_TABLE2, num_records_in_shuffled_bucket);
     }
 
