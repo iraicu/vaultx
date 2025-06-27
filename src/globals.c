@@ -2,6 +2,8 @@
 #include <stdbool.h>
 
 int K = 24; // Default exponent
+int MERGE_APPROACH = 0;
+// 0: Merge on SSD
 
 unsigned long long num_records_in_bucket = 1;
 unsigned long long num_records_in_shuffled_bucket = 1;

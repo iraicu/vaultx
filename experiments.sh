@@ -2,8 +2,8 @@
 
 # Help message
 usage() {
-  echo "Usage: $0 -f <num_files> -t \"<thread_counts>\" -b \"<batch_sizes>\" -n <num_runs> [-d <output_folder>]"
-  echo "Example: $0 -f 256 -t \"4 8\" -b \"2 4 8 16 32\" -n 3 -d myfolder"
+  echo "Usage: $0 -f <num_files> -t \"<thread_counts>\" -b \"<batch_sizes>\" -n <num_runs> [-d <output_folder>] [-M <M_flag_value>]"
+  echo "Example: $0 -f 256 -t \"4 8\" -b \"2 4 8 16 32\" -n 3 -d myfolder -M true"
   exit 1
 }
 
@@ -13,15 +13,17 @@ BATCH_SIZES=()
 FILES=""
 OUTDIR=""
 NUM_RUNS=1
+M_FLAG=""
 
 # Parse options
-while getopts "f:t:b:d:n:" opt; do
+while getopts "f:t:b:d:n:M:" opt; do
   case "$opt" in
     f) FILES="$OPTARG" ;;
     t) IFS=' ' read -r -a THREADS <<< "$OPTARG" ;;
     b) IFS=' ' read -r -a BATCH_SIZES <<< "$OPTARG" ;;
     d) OUTDIR="$OPTARG" ;;
     n) NUM_RUNS="$OPTARG" ;;
+    M) M_FLAG="$OPTARG" ;;
     *) usage ;;
   esac
 done
@@ -38,6 +40,7 @@ fi
 
 # Create main output directory
 mkdir -p "$OUTDIR"
+sudo chown -R asirigere:asirigere "$OUTDIR"
 
 echo "=== Starting vaultx benchmark at $(date) ==="
 echo "Running $NUM_RUNS repetitions into $OUTDIR"
@@ -62,7 +65,13 @@ for run in $(seq 1 "$NUM_RUNS"); do
 
     for t in "${THREADS[@]}"; do
       OUTPUT_FILE="${RUN_DIR}/vaultx_t${t}_m${m}.log"
-      CMD="./vaultx -f memo.t -g memo.x -j memo.xx -a for -K 28 -v true -M true -n $FILES -t $t -m $m"
+      CMD="./vaultx -f memo.t -g memo.x -j memo.xx -a for -K 28 -v true"
+
+      if [ -n "$M_FLAG" ]; then
+        CMD="$CMD -M $M_FLAG"
+      fi
+
+      CMD="$CMD -n $FILES -t $t -m $m"
 
       echo -e "\n>>> Run $run: Threads=$t, BatchSize=${m}MB"
       echo "Output: $OUTPUT_FILE"

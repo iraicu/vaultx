@@ -392,12 +392,9 @@ int main(int argc, char* argv[]) {
             }
             break;
         case 'M':
-            if (strcmp(optarg, "true") == 0) {
-                MERGE = true;
-                HASHGEN = false;
-            } else {
-                MERGE = false;
-            }
+            MERGE_APPROACH = atoi(optarg);
+            MERGE = true;
+            HASHGEN = false;
             break;
         case 'h':
         default:
@@ -1101,7 +1098,7 @@ int main(int argc, char* argv[]) {
 
     // TODO: Small tests on data/fast2
 
-    //TODO: Data-l parallel logic works pretty well
+    // TODO: Data-l parallel logic works pretty well
     if (MERGE) {
         int MAX_FILENAME_LEN = 100;
         char filenames[TOTAL_FILES][MAX_FILENAME_LEN];
@@ -1183,14 +1180,10 @@ int main(int argc, char* argv[]) {
         }
 
         // Merge file
-        // FILE* merge_fd = NULL;
-
         char merge_filename[100];
         snprintf(merge_filename, sizeof(merge_filename), "merge_%d_%d.plot", K, TOTAL_FILES);
 
         remove(merge_filename);
-
-        // merge_fd = fopen(merge_filename, "ab");
 
         int merge_fd = open(merge_filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
 
@@ -1218,85 +1211,150 @@ int main(int argc, char* argv[]) {
         double start_time = omp_get_wtime();
 
         // FIXME: Parallelism in double loop
+
+        switch (MERGE_APPROACH) {
+
+        // Parallel Read & Merge
+        case 0: {
+
 #pragma omp parallel
-        {
-            for (unsigned long long i = 0; i < total_buckets; i += total_global_buckets) {
+            {
+                for (unsigned long long i = 0; i < total_buckets; i += total_global_buckets) {
 
-                int tid = omp_get_thread_num();
+                    int tid = omp_get_thread_num();
 
-                if (tid == 0) {
-                    end = i + total_global_buckets;
-                    if (end > total_buckets) {
-                        end = total_buckets;
+                    if (tid == 0) {
+                        end = i + total_global_buckets;
+                        if (end > total_buckets) {
+                            end = total_buckets;
+                        }
+
+                        s = omp_get_wtime();
                     }
-
-                    s = omp_get_wtime();
-                }
 
 #pragma omp barrier
 
 #pragma omp for
 
-                for (int f = 0; f < TOTAL_FILES; f++) {
-                    FILE* fd = files[f];
+                    for (int f = 0; f < TOTAL_FILES; f++) {
+                        FILE* fd = files[f];
 
-                    size_t read_bytes = fread(file_records[f].records, sizeof(MemoTable2Record), (end - i) * num_records_in_bucket, fd);
-                    if (read_bytes != num_records_in_bucket * (end - i)) {
-                        if (feof(fd)) {
-                            printf("Reached end of file after reading %zu bytes\n", read_bytes);
-                        } else {
-                            perror("fread failed");
-                            fclose(fd);
-                            // return 1;
+                        size_t read_bytes = fread(file_records[f].records, sizeof(MemoTable2Record), (end - i) * num_records_in_bucket, fd);
+                        if (read_bytes != num_records_in_bucket * (end - i)) {
+                            if (feof(fd)) {
+                                printf("Reached end of file after reading %zu bytes\n", read_bytes);
+                            } else {
+                                perror("fread failed");
+                                fclose(fd);
+                                // return 1;
+                            }
+                        }
+
+                        FileRecords* file_record = &file_records[f];
+                        unsigned long long off = f * num_records_in_bucket;
+                        for (unsigned long long k = 0; k < end - i; k++) {
+                            memcpy(&mergedBuckets[k * records_per_global_bucket + off], &file_record->records[k * num_records_in_bucket], num_records_in_bucket * sizeof(MemoTable2Record));
                         }
                     }
 
-                    FileRecords* file_record = &file_records[f];
-                    unsigned long long off = f * num_records_in_bucket;
-                    for (unsigned long long k = 0; k < end - i; k++) {
-                        memcpy(&mergedBuckets[k * records_per_global_bucket + off], &file_record->records[k * num_records_in_bucket], num_records_in_bucket * sizeof(MemoTable2Record));
+                    if (tid == 0) {
+                        //   printf("Read: %.4f\n", omp_get_wtime() - s);
+                        double fs = omp_get_wtime();
+                        size_t total_bytes = (end - i) * records_per_global_bucket * sizeof(MemoTable2Record);
+                        size_t bytes_written = 0;
+
+                        while (bytes_written < total_bytes) {
+                            ssize_t res = write(merge_fd, (char*)mergedBuckets + bytes_written, total_bytes - bytes_written);
+                            if (res < 0) {
+                                perror("Error writing to merge file");
+                                close(merge_fd);
+                                exit(EXIT_FAILURE);
+                            }
+                            bytes_written += res;
+                        }
+                        // printf("O Time: %.2f\n", omp_get_wtime() - fs);
+
+                        printf("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n", ((double)end / total_buckets) * 100, omp_get_wtime() - s, omp_get_wtime() - start_time);
                     }
                 }
+            }
 
-                // Write data to file
+            break;
+        }
 
-                // if (tid == 0) {
-                //     size_t elements_written = fwrite(mergedBuckets, sizeof(MemoTable2Record), (end - i) * records_per_global_bucket, merge_fd);
-                //     if (elements_written != (end - i) * records_per_global_bucket) {
-                //         fprintf(stderr, "Error writing bucket to file");
-                //         fclose(merge_fd);
-                //         exit(EXIT_FAILURE);
-                //     }
+        // Parallel Merge
+        case 1: {
 
-                //     printf("[%.2f%%] | Batch Time: %.2fs | Total Time: %.2fs\n", ((double)end / total_buckets) * 100, omp_get_wtime() - s, omp_get_wtime() - start_time);
-                // }
+#pragma omp parallel
+            {
 
-                if (tid == 0) {
-                    //   printf("Read: %.4f\n", omp_get_wtime() - s);
-                    double fs = omp_get_wtime();
-                    size_t total_bytes = (end - i) * records_per_global_bucket * sizeof(MemoTable2Record);
-                    size_t bytes_written = 0;
+                for (unsigned long long i = 0; i < total_buckets; i += total_global_buckets) {
 
-                    while (bytes_written < total_bytes) {
-                        ssize_t res = write(merge_fd, (char*)mergedBuckets + bytes_written, total_bytes - bytes_written);
-                        if (res < 0) {
-                            perror("Error writing to merge file");
-                            close(merge_fd);
-                            exit(EXIT_FAILURE);
+#pragma omp single
+
+                    {
+                        end = i + total_global_buckets;
+                        if (end > total_buckets) {
+                            end = total_buckets;
                         }
-                        bytes_written += res;
-                    }
-                    // printf("O Time: %.2f\n", omp_get_wtime() - fs);
 
-                    printf("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n", ((double)end / total_buckets) * 100, omp_get_wtime() - s, omp_get_wtime() - start_time);
+                        s = omp_get_wtime();
+
+                        for (int f = 0; f < TOTAL_FILES; f++) {
+                            FILE* fd = files[f];
+
+                            size_t read_bytes = fread(file_records[f].records, sizeof(MemoTable2Record), (end - i) * num_records_in_bucket, fd);
+                            if (read_bytes != num_records_in_bucket * (end - i)) {
+                                if (feof(fd)) {
+                                    printf("Reached end of file after reading %zu bytes\n", read_bytes);
+                                } else {
+                                    perror("fread failed");
+                                    fclose(fd);
+                                    // return 1;
+                                }
+                            }
+                        }
+                    }
+
+#pragma omp for
+                    for (int f = 0; f < TOTAL_FILES; f++) {
+                        FileRecords* file_record = &file_records[f];
+                        unsigned long long off = f * num_records_in_bucket;
+                        for (unsigned long long k = 0; k < end - i; k++) {
+                            memcpy(&mergedBuckets[k * records_per_global_bucket + off], &file_record->records[k * num_records_in_bucket], num_records_in_bucket * sizeof(MemoTable2Record));
+                        }
+                    }
+
+#pragma omp single
+                    {
+                        double fs = omp_get_wtime();
+                        size_t total_bytes = (end - i) * records_per_global_bucket * sizeof(MemoTable2Record);
+                        size_t bytes_written = 0;
+
+                        while (bytes_written < total_bytes) {
+                            ssize_t res = write(merge_fd, (char*)mergedBuckets + bytes_written, total_bytes - bytes_written);
+                            if (res < 0) {
+                                perror("Error writing to merge file");
+                                close(merge_fd);
+                                exit(EXIT_FAILURE);
+                            }
+                            bytes_written += res;
+                        }
+                        // printf("O Time: %.2f\n", omp_get_wtime() - fs);
+
+                        printf("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n", ((double)end / total_buckets) * 100, omp_get_wtime() - s, omp_get_wtime() - start_time);
+                        // }
+                    }
                 }
             }
         }
 
-        // Write metadata to footer
-        // fseek(merge_fd, 0, SEEK_END);
-        // fwrite(plotData, sizeof(PlotData), TOTAL_FILES, merge_fd);
+        default: {
+            break;
+        }
+        }
 
+        // Write metadata to footer
         size_t total_bytes = sizeof(PlotData) * TOTAL_FILES;
         size_t bytes_written = 0;
 
@@ -1315,22 +1373,7 @@ int main(int argc, char* argv[]) {
 
         // TODO: Profiling
 
-        // if (fflush(merge_fd) != 0) {
-        //     perror("Failed to flush buffer");
-        //     fclose(merge_fd);
-        //     return EXIT_FAILURE;
-        // }
-
-        // int fd = fileno(merge_fd);
-
-        // if (fsync(fd) != 0) {
-        //     perror("Failed to fsync");
-        //     fclose(merge_fd);
-        //     return EXIT_FAILURE;
-        // }
-
-        // fclose(merge_fd);
-
+        // Sync disk
         if (fsync(merge_fd) != 0) {
             perror("Failed to fsync");
             close(merge_fd);

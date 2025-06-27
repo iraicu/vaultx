@@ -33,6 +33,7 @@
 #define FILEID_SIZE 2
 
 extern int K;
+extern int MERGE_APPROACH;
 
 extern unsigned long long num_records_in_bucket;
 extern unsigned long long num_records_in_shuffled_bucket;
