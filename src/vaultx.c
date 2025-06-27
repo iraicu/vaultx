@@ -1099,6 +1099,11 @@ int main(int argc, char* argv[]) {
     // TODO: Small tests on data/fast2
 
     // TODO: Data-l parallel logic works pretty well
+
+    // TODO: Optimizations in makefile
+
+    // TODO: Try new merging approaches
+
     if (MERGE) {
         int MAX_FILENAME_LEN = 100;
         char filenames[TOTAL_FILES][MAX_FILENAME_LEN];
@@ -1158,6 +1163,7 @@ int main(int argc, char* argv[]) {
 
         printf("Memory Size: %lluMB\n", MEMORY_SIZE_MB);
         printf("Threads: %d\n\n\n", num_threads);
+        printf("Files: %d\n\n\n", TOTAL_FILES);
 
         unsigned long long records_per_global_bucket = TOTAL_FILES * num_records_in_bucket;
         unsigned long long global_bucket_size = records_per_global_bucket * sizeof(MemoTable2Record);
