@@ -1353,6 +1353,8 @@ int main(int argc, char* argv[]) {
                     }
                 }
             }
+
+            break;
         }
 
         default: {
