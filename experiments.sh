@@ -2,8 +2,8 @@
 
 # Help message
 usage() {
-  echo "Usage: $0 -f <num_files> -t \"<thread_counts>\" -b \"<batch_sizes>\" -n <num_runs> [-d <output_folder>] [-M <M_flag_value>]"
-  echo "Example: $0 -f 256 -t \"4 8\" -b \"2 4 8 16 32\" -n 3 -d myfolder -M true"
+  echo "Usage: $0 -f <num_files> -t \"<thread_counts>\" -b \"<batch_sizes>\" -n <num_runs> [-d <full_output_path>] [-M <M_flag_value>]"
+  echo "Example: $0 -f 256 -t \"4 8\" -b \"2 4 8 16 32\" -n 3 -d /full/path/to/folder -M true"
   exit 1
 }
 
@@ -35,10 +35,10 @@ fi
 
 # Set default output directory if not provided
 if [ -z "$OUTDIR" ]; then
-  OUTDIR="vaultx_${FILES}_tests"
+  OUTDIR="./vaultx_${FILES}_tests"
 fi
 
-# Create main output directory
+# Create full output directory if it doesn't exist
 mkdir -p "$OUTDIR"
 sudo chown -R asirigere:asirigere "$OUTDIR"
 

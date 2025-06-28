@@ -1162,7 +1162,7 @@ int main(int argc, char* argv[]) {
         //   closedir(dir);
 
         printf("Memory Size: %lluMB\n", MEMORY_SIZE_MB);
-        printf("Threads: %d\n\n\n", num_threads);
+        printf("Threads: %d\n", num_threads);
         printf("Files: %d\n\n\n", TOTAL_FILES);
 
         unsigned long long records_per_global_bucket = TOTAL_FILES * num_records_in_bucket;
@@ -1264,7 +1264,7 @@ int main(int argc, char* argv[]) {
                     }
 
                     if (tid == 0) {
-                        //   printf("Read: %.4f\n", omp_get_wtime() - s);
+                        printf("Read: %.4f\n", omp_get_wtime() - s);
                         double fs = omp_get_wtime();
                         size_t total_bytes = (end - i) * records_per_global_bucket * sizeof(MemoTable2Record);
                         size_t bytes_written = 0;
@@ -1278,7 +1278,7 @@ int main(int argc, char* argv[]) {
                             }
                             bytes_written += res;
                         }
-                        // printf("O Time: %.2f\n", omp_get_wtime() - fs);
+                        printf("Write: %.4f\n", omp_get_wtime() - fs);
 
                         printf("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n", ((double)end / total_buckets) * 100, omp_get_wtime() - s, omp_get_wtime() - start_time);
                     }
@@ -1333,6 +1333,7 @@ int main(int argc, char* argv[]) {
 
 #pragma omp single
                     {
+                        printf("Read: %.4f\n", omp_get_wtime() - s);
                         double fs = omp_get_wtime();
                         size_t total_bytes = (end - i) * records_per_global_bucket * sizeof(MemoTable2Record);
                         size_t bytes_written = 0;
@@ -1346,10 +1347,8 @@ int main(int argc, char* argv[]) {
                             }
                             bytes_written += res;
                         }
-                        // printf("O Time: %.2f\n", omp_get_wtime() - fs);
-
+                        printf("Write: %.4f\n", omp_get_wtime() - fs);
                         printf("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n", ((double)end / total_buckets) * 100, omp_get_wtime() - s, omp_get_wtime() - start_time);
-                        // }
                     }
                 }
             }
