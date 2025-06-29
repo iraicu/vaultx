@@ -45,6 +45,7 @@ run_tests() {
     local mem_max=$((2**k*$nonce_size/1024/1024))
     if  [ $mem_max -gt $max_ram ]; then
         mem_max=$max_ram
+        return
     fi
 
     local memory=$mem_min
