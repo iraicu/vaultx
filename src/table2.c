@@ -229,9 +229,11 @@ void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t buc
     {
         memcpy(bucket->records[idx].nonce1, record->nonce1, NONCE_SIZE);
         memcpy(bucket->records[idx].nonce2, record->nonce2, NONCE_SIZE);
+        // count_condition_met++;
     }
     else
     {
+        // count_condition_not_met++;
         // Ensure count doesn't exceed the maximum allowed
         bucket->count = num_records_in_bucket;
         if (!bucket->full)
@@ -262,9 +264,7 @@ uint64_t compute_hash_distance(const uint8_t *hash_output, const uint8_t *prev_h
     return previous - current;
 }
 
-size_t process_memo_records_table2(
-    const char *filename,
-    const size_t BATCH_SIZE)
+size_t process_memo_records_table2(const char *filename, const size_t BATCH_SIZE)
 {
     // --- open file & figure out how many records are in it ---
     FILE *file = fopen(filename, "rb");
@@ -386,7 +386,6 @@ size_t process_memo_records_table2(
     double pct_sorted = (double)count_condition_met * 100.0 /
                         (double)(count_condition_met + count_condition_not_met);
 
-    // printf("Progress: 100.00%% (%zu/%zu)\n", total_records, total_recs_in_file);
     if (!BENCHMARK)
     {
         printf("[%.2f] Verify %.2f%%: Sorted %.2f%% : Storage Efficiency %.2f%%\n",
@@ -442,6 +441,7 @@ void generate_table2(MemoRecord *sorted_records, size_t num_records_in_bucket)
                 // Skip records with zero nonce
                 if (!is_nonce_nonzero(sorted_records[j].nonce, NONCE_SIZE))
                 {
+                    // zero_nonce_count++;
                     continue;
                 }
 

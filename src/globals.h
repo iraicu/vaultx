@@ -17,7 +17,7 @@
 #include <math.h>
 #include <errno.h>
 #include <sodium.h>
-// #include <secp256k1.h> 
+// #include <secp256k1.h>
 
 #include "../blake3/blake3.h" // Include Blake3 header
 
@@ -56,6 +56,11 @@ extern bool FULL_BUCKETS;
 
 extern size_t BATCH_SIZE;
 extern size_t PREFIX_SEARCH_SIZE;
+
+// --- state & counters ---
+// extern size_t zero_nonce_count;
+// extern size_t count_condition_met;
+// extern size_t count_condition_not_met;
 
 extern uint8_t plot_id[32]; // Plot ID for the vault
 extern uint8_t hashed_key[32];
