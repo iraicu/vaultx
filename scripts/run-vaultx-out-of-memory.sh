@@ -3,24 +3,25 @@
 mkdir -p data
 
 HOSTNAME=$(hostname)
+max_k=36
 
 case $HOSTNAME in 
     "epycbox")
-        max_k=34
+        # max_k=34
         max_ram=262144
         thread_num=128
         disks=("/ssd-raid0" "/data-l" "/data-fast2")
         make_name="vaultx_x86_c"
         ;;
     "orangepi5plus")
-        max_k=31
+        # max_k=31
         max_ram=32768
         thread_num=8
         disks=("/data-fast" "data-a")
         make_name="vaultx_arm_c"
         ;;
     "raspberrypi5")
-        max_k=28
+        # max_k=28
         max_ram=4096
         thread_num=4
         disks=("/data-fast" "data-a")
@@ -45,6 +46,7 @@ run_tests() {
     local mem_max=$((2**k*$nonce_size/1024/1024))
     if  [ $mem_max -gt $max_ram ]; then
         mem_max=$max_ram
+        return
     fi
 
     local memory=$mem_min
