@@ -722,7 +722,8 @@ int main(int argc, char *argv[])
             // If tmp file is specified and data fits in memory, generate table2 and write to tmp file
             if (rounds == 1)
             {
-                printf("--------------------In-memory Table 2 generation started------------------\n");
+                if (!BENCHMARK)
+                    printf("--------------------In-memory Table 2 generation started------------------\n");
                 start_time_hash2 = omp_get_wtime();
 
                 // No need to seek because we are writing to the beginning of the file
@@ -747,7 +748,7 @@ int main(int argc, char *argv[])
                 // count_condition_not_met = 0;
 
 // Generate Table2
-#pragma omp parallel for schedule(static) 
+#pragma omp parallel for schedule(static)
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
                 {
                     sort_bucket_records_inplace(buckets[i].records, num_records_in_bucket);
