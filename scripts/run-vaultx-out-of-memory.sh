@@ -5,7 +5,7 @@ mkdir -p data
 HOSTNAME=$(hostname)
 max_k=36
 
-case $HOSTNAME in 
+case $HOSTNAME in
     "epycbox")
         # max_k=34
         max_ram=262144
@@ -56,7 +56,7 @@ run_tests() {
             echo "Running vaultx with K=$k, memory=$memory MB, run $i ..."
             ./scripts/drop-all-caches.sh
             ./vaultx -a for -t $thread_num -K $k -m $memory -b 1024 -f "$mount_path/" -g "$mount_path/" -j "$mount_path/" -x true -v true >> "$data_file"
-            rm -r "$mount_path/*.plot"
+            rm -r "$mount_path/*"
         done
         memory=$((memory * 2))
     done
