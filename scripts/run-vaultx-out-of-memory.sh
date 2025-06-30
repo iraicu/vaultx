@@ -39,9 +39,6 @@ run_tests() {
     local k=$2
     local mount_path=$3
 
-    make clean
-    make $make_name NONCE_SIZE=$nonce_size RECORD_SIZE=16
-
     local mem_min=512
     local mem_max=$((2**k*$nonce_size/1024/1024))
     if  [ $mem_max -gt $max_ram ]; then
@@ -123,6 +120,10 @@ for disk in "${disks[@]}"; do
 
     for K in $(seq 28 $k); do
         echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
+
+        make clean
+        make $make_name NONCE_SIZE=4 RECORD_SIZE=16
+
         run_tests 4 $K $mount_path
     done
 
@@ -130,6 +131,10 @@ for disk in "${disks[@]}"; do
     if [ $max_k -ge 33 ]; then
         for K in $(seq 33 $max_k); do
             echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
+
+            make clean
+            make $make_name NONCE_SIZE=5 RECORD_SIZE=16
+
             run_tests 5 $K $mount_path
         done
     fi
