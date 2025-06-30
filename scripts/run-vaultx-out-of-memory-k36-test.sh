@@ -8,8 +8,8 @@ max_k=36
 case $HOSTNAME in
     "epycbox")
         # max_k=34
-        max_ram=262144
-        thread_num=128
+        max_ram=131072
+        thread_num=64
         disks=("/ssd-raid0" "/data-l" "/data-fast2")
         make_name="vaultx_x86_c"
         ;;
@@ -46,16 +46,17 @@ run_tests() {
     fi
 
     local memory=$mem_min
-    while [ $memory -le $mem_max ]; do
-        for i in $(seq 1 3)
-        do
+    #while [ $memory -le $mem_max ]; do
+    for memory in 1280 20480; do 
+        #for i in $(seq 1 3)
+        #do
             echo "Running vaultx with K=$k, memory=$memory MB, run $i ..."
             ./scripts/drop-all-caches.sh
 
             ./vaultx -a for -t $thread_num -K $k -m $memory -b 1024 -f "$mount_path/" -g "$mount_path/" -j "$mount_path/" -x true -v true >> "$data_file" & 
             vaultx_pid=$!
 
-            pidstat_log="logs/k${k}_m${memory}_pidstat.log"
+            pidstat_log="logs/disk${disk_name}_k${k}_m${memory}_pidstat.log"
             echo "----Run $i for K=$k, memory=$memory MB----" >> "$pidstat_log"
             pidstat -h -r -u -d -p $vaultx_pid 1 >> "$pidstat_log" &
 
@@ -65,8 +66,8 @@ run_tests() {
             fi
 
             rm -r "$mount_path/*"
-        done
-        memory=$((memory * 2))
+        #done
+        #memory=$((memory * 2))
     done
 }
 
@@ -116,21 +117,23 @@ for disk in "${disks[@]}"; do
     #     k=32
     # fi
 
-    make clean
-    make $make_name NONCE_SIZE=4 RECORD_SIZE=16
+    #make clean
+    #make $make_name NONCE_SIZE=4 RECORD_SIZE=16
 
     # Run tests for NONCE_SIZE=4
-    for K in $(seq 28 32); do
-        echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
-        run_tests 4 $K $mount_path
-    done
+    #for K in $(seq 28 32); do
+    #    echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
+    #    run_tests 4 $K $mount_path
+    #done
 
     make clean
     make $make_name NONCE_SIZE=5 RECORD_SIZE=16
 
+    run_tests 5 36 $mount_path
+
     # Run tests for NONCE_SIZE=5
-    for K in $(seq 33 $max_k); do
-        echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
-        run_tests 5 $K $mount_path
-    done
+    #for K in $(seq 33 $max_k); do
+    #    echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
+    #    run_tests 5 $K $mount_path
+    #done
 done
