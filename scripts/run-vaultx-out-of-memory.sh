@@ -56,7 +56,7 @@ run_tests() {
             echo "Running vaultx with K=$k, memory=$memory MB, run $i ..."
             ./scripts/drop-all-caches.sh
             ./vaultx -a for -t $thread_num -K $k -m $memory -b 1024 -f "$mount_path/" -g "$mount_path/" -j "$mount_path/" -x true -v true >> "$data_file"
-            rm -f "$mount_path/*.plot"
+            rm -r "$mount_path/*.plot"
         done
         memory=$((memory * 2))
     done
