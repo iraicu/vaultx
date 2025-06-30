@@ -15,7 +15,7 @@ case $HOSTNAME in
         ;;
     "orangepi5plus")
         # max_k=31
-        max_ram=16384
+        max_ram=8192
         thread_num=8
         disks=("/data-fast" "/data-a")
         make_name="vaultx_arm_c"
