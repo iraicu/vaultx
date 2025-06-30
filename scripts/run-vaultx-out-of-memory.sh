@@ -53,7 +53,7 @@ run_tests() {
     while [ $memory -le $mem_max ]; do
         for i in $(seq 1 3)
         do
-            echo "Running vaultx with K=$k, run $i ..."
+            echo "Running vaultx with K=$k, memory=$memory MB, run $i ..."
             ./scripts/drop-all-caches.sh
             ./vaultx -a for -t $thread_num -K $k -m $memory -b 1024 -f "$mount_path/" -g "$mount_path/" -j "$mount_path/" -x true -v true >> "$data_file"
             rm -f "$mount_path/*.plot"
