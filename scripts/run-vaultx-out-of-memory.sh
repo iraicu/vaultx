@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p data
+mkdir -p data logs
 
 HOSTNAME=$(hostname)
 max_k=36
@@ -39,9 +39,6 @@ run_tests() {
     local k=$2
     local mount_path=$3
 
-    make clean
-    make $make_name NONCE_SIZE=$nonce_size RECORD_SIZE=16
-
     local mem_min=512
     local mem_max=$((2**k*$nonce_size/1024/1024))
     if  [ $mem_max -gt $max_ram ]; then
@@ -55,7 +52,19 @@ run_tests() {
         do
             echo "Running vaultx with K=$k, memory=$memory MB, run $i ..."
             ./scripts/drop-all-caches.sh
-            ./vaultx -a for -t $thread_num -K $k -m $memory -b 1024 -f "$mount_path/" -g "$mount_path/" -j "$mount_path/" -x true -v true >> "$data_file"
+
+            ./vaultx -a for -t $thread_num -K $k -m $memory -b 1024 -f "$mount_path/" -g "$mount_path/" -j "$mount_path/" -x true -v true >> "$data_file" & 
+            vaultx_pid=$!
+
+            pidstat_log="logs/k${k}_m${memory}_pidstat.log"
+            echo "----Run $i for K=$k, memory=$memory MB----" >> "$pidstat_log"
+            pidstat -h -r -u -d -p $vaultx_pid 1 >> "$pidstat_log" &
+
+            wait $vaultx_pid
+            if [ $? -ne 0 ]; then
+                echo "vaultx failed with K=$k, memory=$memory MB, run $i"
+            fi
+
             rm -r "$mount_path/*"
         done
         memory=$((memory * 2))
@@ -111,6 +120,10 @@ for disk in "${disks[@]}"; do
 
     for K in $(seq 28 $k); do
         echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
+
+        make clean
+        make $make_name NONCE_SIZE=4 RECORD_SIZE=16
+
         run_tests 4 $K $mount_path
     done
 
@@ -118,6 +131,10 @@ for disk in "${disks[@]}"; do
     if [ $max_k -ge 33 ]; then
         for K in $(seq 33 $max_k); do
             echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
+
+            make clean
+            make $make_name NONCE_SIZE=5 RECORD_SIZE=16
+
             run_tests 5 $K $mount_path
         done
     fi
