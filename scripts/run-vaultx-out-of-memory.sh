@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p data
+mkdir -p data logs
 
 HOSTNAME=$(hostname)
 max_k=36
@@ -55,7 +55,19 @@ run_tests() {
         do
             echo "Running vaultx with K=$k, memory=$memory MB, run $i ..."
             ./scripts/drop-all-caches.sh
-            ./vaultx -a for -t $thread_num -K $k -m $memory -b 1024 -f "$mount_path/" -g "$mount_path/" -j "$mount_path/" -x true -v true >> "$data_file"
+
+            ./vaultx -a for -t $thread_num -K $k -m $memory -b 1024 -f "$mount_path/" -g "$mount_path/" -j "$mount_path/" -x true -v true >> "$data_file" & 
+            vaultx_pid=$!
+
+            pidstat_log="logs/k${k}_m${memory}_pidstat.log"
+            echo "----Run $i for K=$k, memory=$memory MB----" >> "$pidstat_log"
+            pidstat -h -r -u -d -p $vaultx_pid 1 >> "$pidstat_log" &
+
+            wait $vaultx_pid
+            if [ $? -ne 0 ]; then
+                echo "vaultx failed with K=$k, memory=$memory MB, run $i"
+            fi
+
             rm -r "$mount_path/*.plot"
         done
         memory=$((memory * 2))
