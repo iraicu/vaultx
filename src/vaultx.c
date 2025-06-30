@@ -741,13 +741,21 @@ int main(int argc, char *argv[])
                     omp_set_num_threads(num_threads);
                 }
 
+                // --- state & counters ---
+                // zero_nonce_count = 0;
+                // count_condition_met = 0;
+                // count_condition_not_met = 0;
+
 // Generate Table2
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) 
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
                 {
                     sort_bucket_records_inplace(buckets[i].records, num_records_in_bucket);
                     generate_table2(buckets[i].records, num_records_in_bucket);
                 }
+
+                // double pct_met = (double)count_condition_met * 100.0 /
+                //                  (double)(count_condition_met + count_condition_not_met + zero_nonce_count);
 
                 end_time_hash2 = omp_get_wtime();
                 elapsed_time_hash2 = end_time_hash2 - start_time_hash2;
@@ -1126,6 +1134,10 @@ int main(int argc, char *argv[])
 
                 start_time_hash2 = omp_get_wtime();
 
+                // zero_nonce_count = 0;
+                // count_condition_met = 0;
+                // count_condition_not_met = 0;
+
 #pragma omp parallel for schedule(static)
                 for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read; b++)
                 {
@@ -1256,6 +1268,11 @@ int main(int argc, char *argv[])
                     printf("[%.2f] Table2Gen %.2f%%\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / total_num_buckets);
                 }
             }
+
+            // double pct_met = (double)count_condition_met * 100.0 /
+            //                  (double)(count_condition_met + count_condition_not_met + zero_nonce_count);
+            // printf("pct_met = %.2f%%\n", pct_met);
+
             for (unsigned long long i = 0; i < num_buckets_to_read * rounds; i++)
             {
                 free(buckets[i].records);

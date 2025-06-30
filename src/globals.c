@@ -6,25 +6,30 @@ int K = 24; // Default exponent
 unsigned long long num_records_in_bucket = 1;
 unsigned long long num_records_in_shuffled_bucket = 1;
 unsigned long long total_num_buckets = 1;
-unsigned long long rounds = 1; // filesize : memorysize 
+unsigned long long rounds = 1; // filesize : memorysize
 unsigned long long num_buckets_to_read = 1;
 unsigned long long full_buckets_global = 0;
 
 bool DEBUG = false;
-bool BENCHMARK = false; 
+bool BENCHMARK = false;
 bool CIRCULAR_ARRAY = false;
 bool HASHGEN = true;
 bool MEMORY_WRITE = true;
-bool writeDataTmp = false; 
+bool writeDataTmp = false;
 bool writeDataTmpTable2 = false;
-bool writeDataTable2 = false; 
+bool writeDataTable2 = false;
 bool SEARCH = false;
 bool SEARCH_BATCH = false;
 bool VERIFY = false;
 bool FULL_BUCKETS = false;
 
-size_t BATCH_SIZE = 1024; 
+size_t BATCH_SIZE = 1024;
 size_t PREFIX_SEARCH_SIZE = 1;
+
+// --- state & counters ---
+// size_t zero_nonce_count = 0;
+// size_t count_condition_met = 0;
+// size_t count_condition_not_met = 0;
 
 uint8_t plot_id[32];
 uint8_t hashed_key[32];
