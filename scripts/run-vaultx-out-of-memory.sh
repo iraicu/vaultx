@@ -5,7 +5,7 @@ mkdir -p data logs
 HOSTNAME=$(hostname)
 max_k=36
 
-case $HOSTNAME in 
+case $HOSTNAME in
     "epycbox")
         # max_k=34
         max_ram=262144
@@ -65,7 +65,7 @@ run_tests() {
                 echo "vaultx failed with K=$k, memory=$memory MB, run $i"
             fi
 
-            rm -r "$mount_path/*.plot"
+            rm -r "$mount_path/*"
         done
         memory=$((memory * 2))
     done
