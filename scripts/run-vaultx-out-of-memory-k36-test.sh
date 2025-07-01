@@ -9,7 +9,7 @@ case $HOSTNAME in
     "epycbox")
         # max_k=34
         max_ram=131072
-        thread_num=128
+        thread_num=64
         disks=("/ssd-raid0" "/data-l" "/data-fast2")
         make_name="vaultx_x86_c"
         ;;
@@ -47,9 +47,10 @@ run_tests() {
     fi
 
     local memory=$mem_min
-    while [ $memory -le $mem_max ]; do
-        for i in $(seq 1 3)
-        do
+    #while [ $memory -le $mem_max ]; do
+    #    for i in $(seq 1 3)
+    #    do
+    for memory in 1080 20480; do 
             echo "Running vaultx with K=$k, memory=$memory MB, run $i ..."
             ./scripts/drop-all-caches.sh
 
@@ -132,6 +133,6 @@ for disk in "${disks[@]}"; do
     # Run tests for NONCE_SIZE=5
     #for K in $(seq 33 $max_k); do
     #    echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
-        run_tests 5 $K $mount_path
+    run_tests 5 36 $mount_path
     #done
 done
