@@ -17,14 +17,14 @@ case $HOSTNAME in
         # max_k=31
         max_ram=32768
         thread_num=8
-        disks=("/data-fast" "data-a")
+        disks=("/data-fast" "/data-a")
         make_name="vaultx_arm_c"
         ;;
     "raspberrypi5")
         # max_k=28
         max_ram=4096
         thread_num=4
-        disks=("/data-fast" "data-a")
+        disks=("/data-fast" "/data-a")
         make_name="vaultx_arm_c"
         ;;
     *)
