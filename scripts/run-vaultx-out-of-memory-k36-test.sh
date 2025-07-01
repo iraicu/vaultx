@@ -50,14 +50,14 @@ run_tests() {
     #while [ $memory -le $mem_max ]; do
     #    for i in $(seq 1 3)
     #    do
-    for memory in 1080 20480; do 
+    for memory in 1280 20480; do 
             echo "Running vaultx with K=$k, memory=$memory MB, run $i ..."
             ./scripts/drop-all-caches.sh
 
             ./vaultx -a for -t $thread_num -K $k -m $memory -b 1024 -f "$mount_path/" -g "$mount_path/" -j "$mount_path/" -x true -v true >> "$data_file" & 
             vaultx_pid=$!
 
-	    pidstat_log="logs/${disk_type}_k${k}_m${memory}_pidstat.log"
+	    pidstat_log="logs/${disk_name}_k${k}_m${memory}_pidstat.log"
             echo "----Run $i for K=$k, memory=$memory MB----" >> "$pidstat_log"
             pidstat -h -r -u -d -p $vaultx_pid 1 >> "$pidstat_log" &
 
