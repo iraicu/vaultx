@@ -7,4 +7,4 @@ sync
 sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
 
 # Display memory usage
-free -h
+# free -h

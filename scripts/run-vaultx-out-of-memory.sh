@@ -43,7 +43,6 @@ run_tests() {
     local mem_max=$((2**k*$nonce_size/1024/1024))
     if  [ $mem_max -gt $max_ram ]; then
         mem_max=$max_ram
-        return
     fi
 
     local memory=$mem_min
@@ -111,31 +110,27 @@ for disk in "${disks[@]}"; do
 
     echo "APPROACH,K,sizeof(MemoRecord),num_threads,MEMORY_SIZE(MB),file_size(GB),BATCH_SIZE,total_throughput(MH/s),total_throughput(MB/s),elapsed_time_hash_total,elapsed_time_hash2_total,elapsed_time_io_total,elapsed_time_shuffle_total,other_time,elapsed_time,storage_efficiency" > "$data_file"
 
+    # if [ $max_k -le 32 ]; then
+    #     k=$max_k
+    # else
+    #     k=32
+    # fi
+
+    make clean
+    make $make_name NONCE_SIZE=4 RECORD_SIZE=16
+
     # Run tests for NONCE_SIZE=4
-    if [ $max_k -le 32 ]; then
-        k=$max_k
-    else
-        k=32
-    fi
-
-    for K in $(seq 28 $k); do
+    for K in $(seq 28 32); do
         echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
-
-        make clean
-        make $make_name NONCE_SIZE=4 RECORD_SIZE=16
-
         run_tests 4 $K $mount_path
     done
 
+    make clean
+    make $make_name NONCE_SIZE=5 RECORD_SIZE=16
+
     # Run tests for NONCE_SIZE=5
-    if [ $max_k -ge 33 ]; then
-        for K in $(seq 33 $max_k); do
-            echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
-
-            make clean
-            make $make_name NONCE_SIZE=5 RECORD_SIZE=16
-
-            run_tests 5 $K $mount_path
-        done
-    fi
+    for K in $(seq 33 $max_k); do
+        echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
+        run_tests 5 $K $mount_path
+    done
 done
