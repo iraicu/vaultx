@@ -66,8 +66,8 @@ run_tests() {
             fi
 
             rm -r plots/*.plot 
-        done
-        memory=$((memory * 2))
+        #done
+        #memory=$((memory * 2))
     done
 }
 
@@ -117,21 +117,21 @@ for disk in "${disks[@]}"; do
     #     k=32
     # fi
 
-    make clean
-    make $make_name NONCE_SIZE=4 RECORD_SIZE=16
+    #make clean
+    #make $make_name NONCE_SIZE=4 RECORD_SIZE=16
 
     # Run tests for NONCE_SIZE=4
-    for K in $(seq 28 32); do
-        echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
-        run_tests 4 $K $mount_path
-    done
+    #for K in $(seq 28 32); do
+    #    echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
+    #    run_tests 4 $K $mount_path
+    #done
 
     make clean
     make $make_name NONCE_SIZE=5 RECORD_SIZE=16
 
     # Run tests for NONCE_SIZE=5
-    for K in $(seq 33 $max_k); do
-        echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
+    #for K in $(seq 33 $max_k); do
+    #    echo "Running tests for K=$K with $thread_num threads on $disk_name disk"
         run_tests 5 $K $mount_path
-    done
+    #done
 done
