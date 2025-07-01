@@ -1,0 +1,461 @@
+
+Starting plotting progress into temporary dirs: /mnt/ram/varvara/plot and /mnt/ram/varvara/plot
+ID: 8ed930e20367e821493f22d8c389bf816fb7f2ca0d3e43686b3e0f71df43a38f
+Plot size is: 32
+Buffer size is: 262144MiB
+Using 16 buckets
+Final Directory is: /ssd-raid0/varvara/plot
+Using 64 threads of stripe size 65536
+Process ID is: 881889
+
+Starting phase 1/4: Forward Propagation into tmp files... Thu May  8 15:50:20 2025
+Computing table 1
+Progress update: 0.01
+F1 complete, time: 339.168 seconds. CPU (157.58%) Thu May  8 15:56:00 2025
+Computing table 2
+Progress update: 0.06
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 4.500GiB, qs min: 2.250GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 4.500GiB, qs min: 2.250GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.250GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 4.500GiB, qs min: 2.250GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.250GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 4.500GiB, qs min: 2.250GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 4.500GiB, qs min: 2.250GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.250GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 4.500GiB, qs min: 2.250GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 4.500GiB, qs min: 2.250GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.250GiB.
+	Bucket 11 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.250GiB.
+	Bucket 12 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.250GiB.
+	Bucket 13 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.250GiB.
+	Bucket 14 uniform sort. Ram: 255.729GiB, u_sort min: 4.500GiB, qs min: 2.250GiB.
+	Bucket 15 uniform sort. Ram: 255.729GiB, u_sort min: 4.500GiB, qs min: 2.250GiB.
+	Total matches: 4295095069
+Forward propagation table time: 1355.939 seconds. CPU (416.600%) Thu May  8 16:18:35 2025
+Computing table 3
+Progress update: 0.120
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.501GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 4.500GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.500GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 4.500GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.500GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 4.500GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.500GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.500GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.500GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.500GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.500GiB.
+	Bucket 11 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 4.500GiB.
+	Bucket 12 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.500GiB.
+	Bucket 13 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 4.500GiB.
+	Bucket 14 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 4.500GiB.
+	Bucket 15 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.500GiB.
+	Total matches: 4295235314
+Forward propagation table time: 1632.204 seconds. CPU (356.770%) Thu May  8 16:45:48 2025
+Computing table 4
+Progress update: 0.200
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Bucket 11 uniform sort. Ram: 255.729GiB, u_sort min: 13.000GiB, qs min: 6.500GiB.
+	Bucket 12 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Bucket 13 uniform sort. Ram: 255.729GiB, u_sort min: 13.000GiB, qs min: 6.500GiB.
+	Bucket 14 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 15 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Total matches: 4295504312
+Forward propagation table time: 2845.571 seconds. CPU (260.880%) Thu May  8 17:33:13 2025
+Computing table 5
+Progress update: 0.280
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.502GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 11 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 12 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Bucket 13 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 14 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.501GiB.
+	Bucket 15 uniform sort. Ram: 255.729GiB, u_sort min: 26.000GiB, qs min: 6.500GiB.
+	Total matches: 4295990469
+Forward propagation table time: 3099.588 seconds. CPU (245.670%) Thu May  8 18:24:53 2025
+Computing table 6
+Progress update: 0.360
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.502GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.502GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 11 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.502GiB.
+	Bucket 12 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 13 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.501GiB.
+	Bucket 14 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.502GiB.
+	Bucket 15 uniform sort. Ram: 255.729GiB, u_sort min: 22.000GiB, qs min: 5.502GiB.
+	Total matches: 4297008795
+Forward propagation table time: 1940.539 seconds. CPU (331.390%) Thu May  8 18:57:13 2025
+Computing table 7
+Progress update: 0.420
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.501GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 11 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 12 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 13 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 14 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Bucket 15 uniform sort. Ram: 255.729GiB, u_sort min: 18.000GiB, qs min: 4.502GiB.
+	Total matches: 4299007752
+Forward propagation table time: 1766.085 seconds. CPU (328.630%) Thu May  8 19:26:39 2025
+Time for phase 1 = 12979.112 seconds. CPU (302.640%) Thu May  8 19:26:39 2025
+
+Starting phase 2/4: Backpropagation into tmp files... Thu May  8 19:26:39 2025
+Backpropagating on table 7
+Progress update: 0.430
+scanned table 7
+scanned time =  54.300 seconds. CPU (99.990%) Thu May  8 19:27:34 2025
+sorting table 7
+Backpropagating on table 6
+Progress update: 0.480
+scanned table 6
+scanned time =  200.880 seconds. CPU (99.970%) Thu May  8 19:33:32 2025
+sorting table 6
+sort time =  686.655 seconds. CPU (99.970%) Thu May  8 19:44:59 2025
+Backpropagating on table 5
+Progress update: 0.510
+scanned table 5
+scanned time =  192.535 seconds. CPU (99.950%) Thu May  8 19:48:17 2025
+sorting table 5
+sort time =  653.245 seconds. CPU (99.940%) Thu May  8 19:59:10 2025
+Backpropagating on table 4
+Progress update: 0.550
+scanned table 4
+scanned time =  189.378 seconds. CPU (99.950%) Thu May  8 20:02:25 2025
+sorting table 4
+sort time =  640.674 seconds. CPU (99.940%) Thu May  8 20:13:06 2025
+Backpropagating on table 3
+Progress update: 0.580
+scanned table 3
+scanned time =  188.166 seconds. CPU (99.960%) Thu May  8 20:16:19 2025
+sorting table 3
+sort time =  636.718 seconds. CPU (99.950%) Thu May  8 20:26:56 2025
+Backpropagating on table 2
+Progress update: 0.610
+scanned table 2
+scanned time =  188.432 seconds. CPU (99.970%) Thu May  8 20:30:09 2025
+sorting table 2
+sort time =  637.571 seconds. CPU (99.970%) Thu May  8 20:40:47 2025
+table 1 new size: 3425272895
+Time for phase 2 = 4452.800 seconds. CPU (99.950%) Thu May  8 20:40:52 2025
+Wrote: 268
+
+Starting phase 3/4: Compression from tmp files into "/mnt/ram/varvara/plot/plot-k32-2025-05-08-15-50-8ed930e20367e821493f22d8c389bf816fb7f2ca0d3e43686b3e0f71df43a38f.plot.2.tmp" ... Thu May  8 20:40:52 2025
+Compressing tables 1 and 2
+Progress update: 0.660
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 11 uniform sort. Ram: 255.729GiB, u_sort min: 10.000GiB, qs min: 2.503GiB.
+	Bucket 12 QS. Ram: 255.729GiB, u_sort min: 5.000GiB, qs min: 1.903GiB. force_qs: 1
+	First computation pass time: 1093.146 seconds. CPU (99.960%) Thu May  8 20:59:05 2025
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.469GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.375GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.423GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.427GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.374GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.370GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.381GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.393GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.420GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.376GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.363GiB.
+	Bucket 11 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.400GiB.
+	Bucket 12 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.402GiB.
+	Bucket 13 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.387GiB.
+	Bucket 14 uniform sort. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.375GiB.
+	Bucket 15 QS. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 2.392GiB. force_qs: 1
+	Second computation pass time: 624.900 seconds. CPU (99.950%) Thu May  8 21:09:34 2025
+	Wrote 3429627264 entries
+Total compress table time: 1721.435 seconds. CPU (99.950%) Thu May  8 21:09:34 2025
+Compressing tables 2 and 3
+Progress update: 0.730
+	Bucket 0 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 0 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 1 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 1 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 2 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 2 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 3 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 3 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 4 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 4 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 5 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 5 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 6 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 6 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 7 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 7 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 8 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 8 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 9 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 9 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 10 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 10 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 11 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.508GiB.
+	Bucket 11 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 12 QS. Ram: 127.864GiB, u_sort min: 5.000GiB, qs min: 1.947GiB. force_qs: 1
+	Bucket 12 QS. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 1.553GiB. force_qs: 1
+	First computation pass time: 1629.642 seconds. CPU (99.960%) Thu May  8 21:36:43 2025
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.769GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.769GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.769GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.768GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.769GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.769GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.769GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.769GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.769GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.769GiB.
+	Bucket 10 QS. Ram: 255.729GiB, u_sort min: 3.000GiB, qs min: 0.762GiB. force_qs: 1
+	Second computation pass time: 728.333 seconds. CPU (99.940%) Thu May  8 21:48:52 2025
+	Wrote 3440328011 entries
+Total compress table time: 2357.981 seconds. CPU (99.950%) Thu May  8 21:48:52 2025
+Compressing tables 3 and 4
+Progress update: 0.790
+	Bucket 0 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 0 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 1 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 1 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 2 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 2 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 3 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 3 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 4 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 4 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 5 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 5 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 6 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 6 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 7 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 7 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 8 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 8 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 9 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 9 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 10 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 10 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 11 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.519GiB.
+	Bucket 11 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 12 QS. Ram: 127.864GiB, u_sort min: 5.000GiB, qs min: 2.057GiB. force_qs: 1
+	Bucket 12 QS. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 1.632GiB. force_qs: 1
+	First computation pass time: 1600.267 seconds. CPU (99.940%) Thu May  8 22:15:32 2025
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.774GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.774GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.774GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.774GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.774GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.774GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.774GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.774GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.774GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.774GiB.
+	Bucket 10 QS. Ram: 255.729GiB, u_sort min: 3.000GiB, qs min: 1.004GiB. force_qs: 1
+	Second computation pass time: 712.667 seconds. CPU (99.950%) Thu May  8 22:27:25 2025
+	Wrote 3466924580 entries
+Total compress table time: 2312.944 seconds. CPU (99.940%) Thu May  8 22:27:25 2025
+Compressing tables 4 and 5
+Progress update: 0.850
+	Bucket 0 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.549GiB.
+	Bucket 0 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 1 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.549GiB.
+	Bucket 1 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 2 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.549GiB.
+	Bucket 2 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 3 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.548GiB.
+	Bucket 3 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 4 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.549GiB.
+	Bucket 4 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 5 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.548GiB.
+	Bucket 5 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 6 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.549GiB.
+	Bucket 6 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 7 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.549GiB.
+	Bucket 7 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 8 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.549GiB.
+	Bucket 8 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 9 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.549GiB.
+	Bucket 9 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 10 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.549GiB.
+	Bucket 10 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 11 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.548GiB.
+	Bucket 11 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 12 QS. Ram: 127.864GiB, u_sort min: 5.000GiB, qs min: 2.333GiB. force_qs: 1
+	Bucket 12 QS. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 1.831GiB. force_qs: 1
+	First computation pass time: 1598.702 seconds. CPU (99.950%) Thu May  8 22:54:03 2025
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.789GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.789GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.789GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.789GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.789GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.789GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.789GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.789GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.789GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.789GiB.
+	Bucket 10 QS. Ram: 255.729GiB, u_sort min: 6.000GiB, qs min: 1.611GiB. force_qs: 1
+	Second computation pass time: 708.097 seconds. CPU (99.950%) Thu May  8 23:05:51 2025
+	Wrote 3534329587 entries
+Total compress table time: 2306.806 seconds. CPU (99.950%) Thu May  8 23:05:51 2025
+Compressing tables 5 and 6
+Progress update: 0.920
+	Bucket 0 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.629GiB.
+	Bucket 0 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 1 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.628GiB.
+	Bucket 1 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 2 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.629GiB.
+	Bucket 2 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 3 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.629GiB.
+	Bucket 3 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 4 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.629GiB.
+	Bucket 4 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 5 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.629GiB.
+	Bucket 5 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 6 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.629GiB.
+	Bucket 6 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 7 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.628GiB.
+	Bucket 7 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 8 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.628GiB.
+	Bucket 8 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 9 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.628GiB.
+	Bucket 9 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 10 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.629GiB.
+	Bucket 10 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 11 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.628GiB.
+	Bucket 11 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 12 uniform sort. Ram: 127.864GiB, u_sort min: 10.000GiB, qs min: 2.629GiB.
+	Bucket 12 uniform sort. Ram: 127.864GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 13 QS. Ram: 127.864GiB, u_sort min: 1.250GiB, qs min: 0.437GiB. force_qs: 1
+	Bucket 13 QS. Ram: 127.864GiB, u_sort min: 1.000GiB, qs min: 0.333GiB. force_qs: 1
+	First computation pass time: 1382.944 seconds. CPU (99.960%) Thu May  8 23:28:54 2025
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.833GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.833GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.833GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.833GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.833GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.833GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.833GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.833GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.833GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.833GiB.
+	Bucket 10 QS. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.199GiB. force_qs: 1
+	Second computation pass time: 706.667 seconds. CPU (99.940%) Thu May  8 23:40:41 2025
+	Wrote 3716014010 entries
+Total compress table time: 2089.618 seconds. CPU (99.950%) Thu May  8 23:40:41 2025
+Compressing tables 6 and 7
+Progress update: 0.980
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 11 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 12 uniform sort. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 2.000GiB.
+	Bucket 13 QS. Ram: 255.729GiB, u_sort min: 4.000GiB, qs min: 1.686GiB. force_qs: 1
+	First computation pass time: 798.761 seconds. CPU (99.940%) Thu May  8 23:54:00 2025
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.011GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.011GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.012GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.011GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.012GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.011GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.011GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.012GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.011GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.012GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 4.011GiB.
+	Bucket 11 QS. Ram: 255.729GiB, u_sort min: 12.000GiB, qs min: 3.920GiB. force_qs: 1
+	Second computation pass time: 960.925 seconds. CPU (99.950%) Fri May  9 00:10:01 2025
+	Wrote 4299007752 entries
+Total compress table time: 1759.695 seconds. CPU (99.950%) Fri May  9 00:10:01 2025
+Time for phase 3 = 12548.484 seconds. CPU (99.950%) Fri May  9 00:10:01 2025
+
+Starting phase 4/4: Write Checkpoint tables into "/mnt/ram/varvara/plot/plot-k32-2025-05-08-15-50-8ed930e20367e821493f22d8c389bf816fb7f2ca0d3e43686b3e0f71df43a38f.plot.2.tmp" ... Fri May  9 00:10:01 2025
+	Starting to write C1 and C3 tables
+	Bucket 0 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 1 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 2 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 3 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 4 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 5 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 6 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 7 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 8 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 9 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 10 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 11 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 12 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 13 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 14 uniform sort. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB.
+	Bucket 15 QS. Ram: 255.729GiB, u_sort min: 9.000GiB, qs min: 2.252GiB. force_qs: 1
+	Finished writing C1 and C3 tables
+	Writing C2 table
+	Finished writing C2 table
+	Final table pointers:
+	P1: 0x10c
+	P2: 0x37490336e
+	P3: 0x6b61e50f6
+	P4: 0x9fe1e29a5
+	P5: 0xd5672cd24
+	P6: 0x10dacc99d0
+	P7: 0x14ec673ad9
+	C1: 0x190d658fd9
+	C2: 0x190d7fcd11
+	C3: 0x190d7fcdc1
+Time for phase 4 = 815.554 seconds. CPU (99.960%) Fri May  9 00:23:36 2025
+Approximate working space used (without final file): 269.449 GiB
+Final File size: 101.412 GiB
+Total time = 30795.951 seconds. CPU (185.370%) Fri May  9 00:23:36 2025
+Copied final file from "/mnt/ram/varvara/plot/plot-k32-2025-05-08-15-50-8ed930e20367e821493f22d8c389bf816fb7f2ca0d3e43686b3e0f71df43a38f.plot.2.tmp" to "/ssd-raid0/varvara/plot/plot-k32-2025-05-08-15-50-8ed930e20367e821493f22d8c389bf816fb7f2ca0d3e43686b3e0f71df43a38f.plot.2.tmp"
+Copy time = 307.149 seconds. CPU (99.540%) Fri May  9 00:28:54 2025
+Removed temp2 file "/mnt/ram/varvara/plot/plot-k32-2025-05-08-15-50-8ed930e20367e821493f22d8c389bf816fb7f2ca0d3e43686b3e0f71df43a38f.plot.2.tmp"? 1
+Renamed final file from "/ssd-raid0/varvara/plot/plot-k32-2025-05-08-15-50-8ed930e20367e821493f22d8c389bf816fb7f2ca0d3e43686b3e0f71df43a38f.plot.2.tmp" to "/ssd-raid0/varvara/plot/plot-k32-2025-05-08-15-50-8ed930e20367e821493f22d8c389bf816fb7f2ca0d3e43686b3e0f71df43a38f.plot"
+Path already added: /ssd-raid0/varvara/plot
