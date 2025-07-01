@@ -65,7 +65,7 @@ run_tests() {
                 echo "vaultx failed with K=$k, memory=$memory MB, run $i"
             fi
 
-            rm -r "$mount_path/*"
+            rm -r plots/*.plot 
         done
         memory=$((memory * 2))
     done
