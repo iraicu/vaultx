@@ -8,14 +8,14 @@ max_k=36
 case $HOSTNAME in
     "epycbox")
         # max_k=34
-        max_ram=262144
+        max_ram=131072
         thread_num=128
         disks=("/ssd-raid0" "/data-l" "/data-fast2")
         make_name="vaultx_x86_c"
         ;;
     "orangepi5plus")
         # max_k=31
-        max_ram=32768
+        max_ram=8192
         thread_num=8
         disks=("/data-a")
 	#disks=("/data-fast" "/data-a")
@@ -23,7 +23,7 @@ case $HOSTNAME in
         ;;
     "raspberrypi5")
         # max_k=28
-        max_ram=4096
+        max_ram=2048
         thread_num=4
         disks=("/data-fast" "/data-a")
         make_name="vaultx_arm_c"
