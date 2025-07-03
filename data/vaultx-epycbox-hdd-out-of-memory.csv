@@ -1,0 +1,3 @@
+APPROACH,K,sizeof(MemoRecord),num_threads,MEMORY_SIZE(MB),file_size(GB),BATCH_SIZE,total_throughput(MH/s),total_throughput(MB/s),elapsed_time_hash_total,elapsed_time_hash2_total,elapsed_time_io_total,elapsed_time_shuffle_total,other_time,elapsed_time,storage_efficiency
+for,36,5,64,1280,320.00,1024,4.17,20.85,1150.14,1719.28,5797.26,0.00,9531.89,16479.29,78.36%
+for,36,5,64,20480,320.00,1024,4.85,24.25,1181.35,2041.47,3826.49,0.00,9163.66,14171.50,94.28%
