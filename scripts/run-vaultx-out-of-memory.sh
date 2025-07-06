@@ -23,7 +23,7 @@ case $HOSTNAME in
         ;;
     "raspberrypi5")
         # max_k=28
-        max_ram=2048
+        max_ram=1024
         thread_num=4
         disks=("/data-fast" "/data-a")
         make_name="vaultx_arm_c"
