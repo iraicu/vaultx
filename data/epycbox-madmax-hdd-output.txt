@@ -1,0 +1,77 @@
+Multi-threaded pipelined Chia k32 plotter - 2092041
+Network Port: 8444
+Final Directory: /data-l/varvara/plot/
+Number of Plots: 1
+Crafting plot 1 out of 1 (2025/05/08 04:11:41)
+Process ID: 445716
+Number of Threads: 64
+Number of Buckets P1:    2^8 (256)
+Number of Buckets P3+P4: 2^8 (256)
+Pool Public Key:   b403d3c00ff9c9274e01385471b86003ea36c7ab58aad12d2a711b316edd560ee9816a532123eea2c14782889e491d7c
+Farmer Public Key: 81f61d3cfabbe5f9b9fd6b1e078e0a4bab42f126a77b013f174644df7243f10e6266e3e7d180d48dddf1ec2c622c2a2b
+Working Directory:   /mnt/ram/varvara/plot/
+Working Directory 2: /mnt/ram/varvara/plot/
+Plot Name: plot-k32-2025-05-08-04-11-6b0f8fc5cd6ec3ec2a66777369cc1aede40039880d132cd5cd55df312e1e1f36
+[P1] Table 1 took 7.04843 sec
+Progress update: 0.01
+[P1] Table 2 took 148.687 sec, found 4295034509 matches
+Progress update: 0.06
+[P1] Table 3 took 159.371 sec, found 4295057627 matches
+Progress update: 0.12
+[P1] Table 4 took 164.78 sec, found 4295134110 matches
+Progress update: 0.2
+[P1] Table 5 took 166.549 sec, found 4295385461 matches
+Progress update: 0.28
+[P1] Table 6 took 168.909 sec, found 4295348145 matches
+Progress update: 0.36
+[P1] Table 7 took 153.985 sec, found 4295349075 matches
+Progress update: 0.42
+Phase 1 took 969.359 sec
+[P2] max_table_size = 4295385461
+[P2] Table 7 scan took 12.7703 sec
+[P2] Table 7 rewrite took 57.8794 sec, dropped 0 entries (0 %)
+Progress update: 0.43
+[P2] Table 6 scan took 48.6813 sec
+[P2] Table 6 rewrite took 74.1869 sec, dropped 581534401 entries (13.5387 %)
+Progress update: 0.48
+[P2] Table 5 scan took 25.5352 sec
+[P2] Table 5 rewrite took 50.8805 sec, dropped 762360240 entries (17.7484 %)
+Progress update: 0.51
+[P2] Table 4 scan took 25.251 sec
+[P2] Table 4 rewrite took 52.9936 sec, dropped 829002802 entries (19.301 %)
+Progress update: 0.55
+[P2] Table 3 scan took 21.023 sec
+[P2] Table 3 rewrite took 41.6642 sec, dropped 855119690 entries (19.9094 %)
+Progress update: 0.58
+[P2] Table 2 scan took 25.7524 sec
+[P2] Table 2 rewrite took 41.0383 sec, dropped 865617564 entries (20.1539 %)
+Progress update: 0.61
+Phase 2 took 523.854 sec
+Wrote plot header with 268 bytes
+[P3-1] Table 2 took 80.5907 sec, wrote 3429416945 right entries
+[P3-2] Table 2 took 60.8444 sec, wrote 3429416945 left entries, 3429416945 final
+Progress update: 0.66
+[P3-1] Table 3 took 78.4126 sec, wrote 3439937937 right entries
+[P3-2] Table 3 took 58.7717 sec, wrote 3439937937 left entries, 3439937937 final
+Progress update: 0.73
+[P3-1] Table 4 took 83.374 sec, wrote 3466131308 right entries
+[P3-2] Table 4 took 55.8815 sec, wrote 3466131308 left entries, 3466131308 final
+Progress update: 0.79
+[P3-1] Table 5 took 84.2838 sec, wrote 3533025221 right entries
+[P3-2] Table 5 took 61.32 sec, wrote 3533025221 left entries, 3533025221 final
+Progress update: 0.85
+[P3-1] Table 6 took 78.3241 sec, wrote 3713813744 right entries
+[P3-2] Table 6 took 60.852 sec, wrote 3713813744 left entries, 3713813744 final
+Progress update: 0.92
+[P3-1] Table 7 took 84.9926 sec, wrote 4295349075 right entries
+[P3-2] Table 7 took 74.8711 sec, wrote 4294967296 left entries, 4294967296 final
+Progress update: 0.98
+Phase 3 took 876.387 sec, wrote 21877292451 entries to final plot
+[P4] Starting to write C1 and C3 tables
+[P4] Finished writing C1 and C3 tables
+[P4] Writing C2 table
+[P4] Finished writing C2 table
+Phase 4 took 171.213 sec, final plot size is 108836089497 bytes
+Total plot creation time was 2540.97 sec (42.3496 min)
+Started copy to /data-l/varvara/plot/plot-k32-2025-05-08-04-11-6b0f8fc5cd6ec3ec2a66777369cc1aede40039880d132cd5cd55df312e1e1f36.plot
+Copy to /data-l/varvara/plot/plot-k32-2025-05-08-04-11-6b0f8fc5cd6ec3ec2a66777369cc1aede40039880d132cd5cd55df312e1e1f36.plot finished, took 326.032 sec, 318.356 MB/s avg.

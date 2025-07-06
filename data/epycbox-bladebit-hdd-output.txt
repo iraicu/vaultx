@@ -1,0 +1,48 @@
+
+Bladebit Chia Plotter
+Version      : 3.1.0
+Git Commit   : e9836f8bd963321457bc86eb5d61344bfb76dcf0
+Compiled With: gcc 9.4.0
+
+[Global Plotting Config]
+ Will create 1 plots.
+ Thread count          : 128
+ Warm start enabled    : false
+ NUMA disabled         : false
+ CPU affinity disabled : false
+ Farmer public key     : 81f61d3cfabbe5f9b9fd6b1e078e0a4bab42f126a77b013f174644df7243f10e6266e3e7d180d48dddf1ec2c622c2a2b
+ Pool public key       : b403d3c00ff9c9274e01385471b86003ea36c7ab58aad12d2a711b316edd560ee9816a532123eea2c14782889e491d7c
+ Compression Level     : 1
+ Benchmark mode        : disabled
+
+System Memory: 272/472 GiB.
+Memory required: 416 GiB.
+Warning: Not enough memory available. Buffer allocation may fail.
+Allocating buffers.
+
+Generating plot 1 / 1: 7f73887986e8088561bc0a84bb480f02dadb0e8c48ce7ad8aae0f0f0ae3b2ebe
+Plot temporary file: /data-l/varvara/plot/plot-k32-c01-2025-05-08-03-36-7f73887986e8088561bc0a84bb480f02dadb0e8c48ce7ad8aae0f0f0ae3b2ebe.plot.tmp
+
+Running Phase 1
+Generating F1...
+Finished F1 generation in 5.91 seconds.
+Sorting F1...
+Finished F1 sort in 10.40 seconds.
+Progress update: 0.01
+Forward propagating to table 2...
+  Pairing L/R groups...
+  Finished pairing L/R groups in 10.3840 seconds. Created 4294896566 pairs.
+  Average of 236.1367 pairs per group.
+  Computing Fx...
+  Finished computing Fx in 7.7340 seconds.
+  Sorting entries...
+  Finished sorting in 92.95 seconds.
+Finished forward propagating table 2 in 111.52 seconds.
+Progress update: 0.06
+Forward propagating to table 3...
+  Pairing L/R groups...
+  Finished pairing L/R groups in 9.0730 seconds. Created 4294751352 pairs.
+  Average of 236.1288 pairs per group.
+  Computing Fx...
+  Finished computing Fx in 36.0970 seconds.
+  Sorting entries...
