@@ -1,0 +1,31 @@
+----Run 1 for K=29, memory=2048 MB----
+Linux 6.8.0-1028-raspi (raspberrypi5) 	06/30/25 	_aarch64_	(4 CPU)
+
+# Time        UID       PID    %usr %system  %guest   %wait    %CPU   CPU  minflt/s  majflt/s     VSZ     RSS   %MEM   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
+11:42:47     1002     19583   17.00   83.00    0.00    0.00  100.00     1 228544.00      0.00 2100680  940160  11.57      0.00      0.00      0.00       0  vaultx
+
+# Time        UID       PID    %usr %system  %guest   %wait    %CPU   CPU  minflt/s  majflt/s     VSZ     RSS   %MEM   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
+11:42:48     1002     19583   16.00   84.00    0.00    0.00  100.00     1 232064.00      0.00 2879216 1868416  22.99      0.00      0.00      0.00       0  vaultx
+
+# Time        UID       PID    %usr %system  %guest   %wait    %CPU   CPU  minflt/s  majflt/s     VSZ     RSS   %MEM   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
+11:42:49     1002     19583   16.00   83.00    0.00    0.00   99.00     1 232106.00      0.00 3657884 2796800  34.41      0.00      0.00      0.00       0  vaultx
+
+# Time        UID       PID    %usr %system  %guest   %wait    %CPU   CPU  minflt/s  majflt/s     VSZ     RSS   %MEM   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
+11:42:50     1002     19583   16.00   85.00    0.00    0.00  101.00     1 232814.00      0.00 4438928 3728128  45.87      0.00      0.00      0.00       0  vaultx
+
+# Time        UID       PID    %usr %system  %guest   %wait    %CPU   CPU  minflt/s  majflt/s     VSZ     RSS   %MEM   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
+11:42:51     1002     19583   16.83   81.19    0.00    0.00   98.02     1 232988.12      0.00 5228420 4669440  57.45      0.00      0.00      0.00       0  vaultx
+
+# Time        UID       PID    %usr %system  %guest   %wait    %CPU   CPU  minflt/s  majflt/s     VSZ     RSS   %MEM   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
+11:42:52     1002     19583   17.00   84.00    0.00    0.00  101.00     1 234921.00      0.00 6016460 5609088  69.01      0.00      0.00      0.00       0  vaultx
+
+# Time        UID       PID    %usr %system  %guest   %wait    %CPU   CPU  minflt/s  majflt/s     VSZ     RSS   %MEM   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
+11:42:53     1002     19583   15.00   85.00    0.00    0.00  100.00     1 234523.00      0.00 6803312 6547200  80.55      0.00      0.00      0.00       0  vaultx
+
+# Time        UID       PID    %usr %system  %guest   %wait    %CPU   CPU  minflt/s  majflt/s     VSZ     RSS   %MEM   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
+11:42:54     1002     19583   18.00   81.00    0.00    0.00   99.00     1 234509.00      0.00 7590032 7485184  92.09      0.00      0.00      0.00       0  vaultx
+
+# Time        UID       PID    %usr %system  %guest   %wait    %CPU   CPU  minflt/s  majflt/s     VSZ     RSS   %MEM   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
+11:42:56     1002     19583    1.29   22.68    0.00    0.26   23.97     3  14535.31     26.03       0       0   0.00     -1.00     -1.00     -1.00       0  vaultx
+
+# Time        UID       PID    %usr %system  %guest   %wait    %CPU   CPU  minflt/s  majflt/s     VSZ     RSS   %MEM   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
