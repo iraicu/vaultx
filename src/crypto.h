@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <secp256k1.h>
 #include <sodium.h>
 
 #include "globals.h"
