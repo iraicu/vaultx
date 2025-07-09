@@ -56,6 +56,7 @@ extern bool FULL_BUCKETS;
 
 extern size_t BATCH_SIZE;
 extern size_t PREFIX_SEARCH_SIZE;
+extern size_t WRITE_BATCH_SIZE; 
 
 // --- state & counters ---
 // extern size_t zero_nonce_count;

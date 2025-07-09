@@ -154,6 +154,7 @@ int main(int argc, char *argv[])
         {"file_tmp_table2", required_argument, 0, 'g'},
         {"file_table2", required_argument, 0, 'j'},
         {"batch_size", required_argument, 0, 'b'},
+        {"write_batch_size", required_argument, 0, 'W'},
         {"memory_write", required_argument, 0, 'w'},
         {"circular_array", required_argument, 0, 'c'},
         {"verify", required_argument, 0, 'v'},
@@ -169,7 +170,7 @@ int main(int argc, char *argv[])
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:j:b:w:c:v:s:S:x:y:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:j:b:W:w:c:v:s:S:x:y:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -243,6 +244,15 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
+        case 'W':
+            WRITE_BATCH_SIZE = atoi(optarg);
+            if (WRITE_BATCH_SIZE < 1)
+            {
+                fprintf(stderr, "WRITE_BATCH_SIZE must be 1 or greater.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            break; 
         case 'w':
             if (strcmp(optarg, "true") == 0)
             {
@@ -765,7 +775,7 @@ int main(int argc, char *argv[])
                 start_time_io = omp_get_wtime();
 
                 // Write table2 to disk
-                for (unsigned long long i = 0; i < total_num_buckets; i++)
+                for (unsigned long long i = 0; i < total_num_buckets; i += WRITE_BATCH_SIZE)
                 {
                     size_t elements_written = fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_tmp);
                     if (elements_written != num_records_in_bucket)
