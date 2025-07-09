@@ -1,1 +1,0 @@
-Failed to write to finaldir directory: '/data-fast2/varvara/plot/'
