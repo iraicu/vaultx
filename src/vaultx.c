@@ -444,6 +444,7 @@ int main(int argc, char *argv[])
             printf("Number of Records in Bucket : %llu\n", num_records_in_bucket);
 
             printf("BATCH_SIZE                  : %zu\n", BATCH_SIZE);
+            printf("WRITE_BATCH_SIZE            : %zu\n", WRITE_BATCH_SIZE);
 
             if (HASHGEN)
                 printf("HASHGEN                     : true\n");
