@@ -252,7 +252,16 @@ int main(int argc, char *argv[])
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
-            break; 
+            break;
+        case 'R':
+            READ_BATCH_SIZE = atoi(optarg);
+            if (READ_BATCH_SIZE < 1)
+            {
+                fprintf(stderr, "READ_BATCH_SIZE must be 1 or greater.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            break;
         case 'w':
             if (strcmp(optarg, "true") == 0)
             {
@@ -390,6 +399,20 @@ int main(int argc, char *argv[])
     num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
     num_records_total = num_records_per_round * rounds;
 
+    if (WRITE_BATCH_SIZE > total_num_buckets)
+    {
+        fprintf(stderr, "WRITE_BATCH_SIZE cannot be greater than total_num_buckets.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    if (READ_BATCH_SIZE > total_num_buckets)
+    {
+        fprintf(stderr, "READ_BATCH_SIZE cannot be greater than total_num_buckets.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+
     // Set the number of threads for all operations
     if (num_threads > 0)
     {
@@ -445,6 +468,7 @@ int main(int argc, char *argv[])
 
             printf("BATCH_SIZE                  : %zu\n", BATCH_SIZE);
             printf("WRITE_BATCH_SIZE            : %zu\n", WRITE_BATCH_SIZE);
+            printf("READ_BATCH_SIZE             : %zu\n", READ_BATCH_SIZE);
 
             if (HASHGEN)
                 printf("HASHGEN                     : true\n");
@@ -530,7 +554,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error: Unable to allocate memory for all_records.\n");
             free(buckets);
             exit(EXIT_FAILURE);
-        }        
+        }
 
         MemoTable2Record *all_records_table2 = (MemoTable2Record *)calloc(total_num_buckets * num_records_in_bucket, sizeof(MemoTable2Record));
         if (all_records_table2 == NULL)
@@ -555,12 +579,12 @@ int main(int argc, char *argv[])
         //         exit(EXIT_FAILURE);
         //     }
 
-            // buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
-            // if (buckets2[i].records == NULL)
-            // {
-            //     fprintf(stderr, "Error: Unable to allocate memory for records in table 2.\n");
-            //     exit(EXIT_FAILURE);
-            // }
+        // buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
+        // if (buckets2[i].records == NULL)
+        // {
+        //     fprintf(stderr, "Error: Unable to allocate memory for records in table 2.\n");
+        //     exit(EXIT_FAILURE);
+        // }
         // }
 
         double throughput_hash = 0.0;
@@ -1053,16 +1077,22 @@ int main(int argc, char *argv[])
             // unsigned long long num_total_buckets_to_read = num_diff_pref_buckets_to_read * rounds; // the number of how many buckets will be stored in bucket structure
 
             buckets = (Bucket *)calloc(num_diff_pref_buckets_to_read, sizeof(Bucket));
+            if (buckets == NULL)
+            {
+                fprintf(stderr, "Error: Unable to allocate memory for buckets.\n");
+                exit(EXIT_FAILURE);
+            }
+
+            all_records = (MemoRecord *)calloc(num_diff_pref_buckets_to_read * num_records_in_shuffled_bucket, sizeof(MemoRecord));
+            if (all_records == NULL)
+            {
+                fprintf(stderr, "Error: Unable to allocate memory for all_records.\n");
+                exit(EXIT_FAILURE);
+            }
+
             for (unsigned long long i = 0; i < num_diff_pref_buckets_to_read; i++)
             {
-                buckets[i].records = (MemoRecord *)calloc(num_records_in_shuffled_bucket, sizeof(MemoRecord));
-                if (buckets[i].records == NULL)
-                {
-                    fprintf(stderr, "Error: Unable to allocate memory for records in shuffled bucket.\n");
-                    fclose(fd_table2_tmp);
-                    free(buckets);
-                    return EXIT_FAILURE;
-                }
+                buckets[i].records = all_records + (i * num_records_in_shuffled_bucket);
             }
 
             // Allocate memory for the destination buckets
@@ -1080,12 +1110,14 @@ int main(int argc, char *argv[])
                 free(buckets2);
                 fclose(fd_table2_tmp);
                 return EXIT_FAILURE;
-            }      
+            }
 
             for (unsigned long long i = 0; i < total_num_buckets; i++)
             {
                 buckets2[i].records = all_records_table2 + (i * num_records_in_bucket);
             }
+
+            size_t READ_BATCH_SIZE = 4096;
 
             for (unsigned long long i = 0; i < total_num_buckets; i += num_diff_pref_buckets_to_read)
             {
@@ -1118,13 +1150,13 @@ int main(int argc, char *argv[])
                         return EXIT_FAILURE;
                     }
 
-                    for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read; b++)
+                    for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read; b += READ_BATCH_SIZE)
                     {
-                        size_t elements_read = fread(buckets[b].records + buckets[b].count, sizeof(MemoRecord), num_records_in_bucket, fd_tmp);
-                        if (elements_read != num_records_in_bucket)
+                        size_t elements_read = fread(buckets[b].records + buckets[b].count, sizeof(MemoRecord), num_records_in_bucket * READ_BATCH_SIZE, fd_tmp);
+                        if (elements_read != num_records_in_bucket * READ_BATCH_SIZE)
                         {
                             fprintf(stderr, "Error reading from file; elements read %zu when expected %llu\n",
-                                    elements_read, num_records_in_bucket);
+                                    elements_read, num_records_in_bucket * READ_BATCH_SIZE);
                             fclose(fd_table2_tmp);
                             free(buckets);
                             free(buckets2);
@@ -1319,15 +1351,7 @@ int main(int argc, char *argv[])
             //                  (double)(count_condition_met + count_condition_not_met + zero_nonce_count);
             // printf("pct_met = %.2f%%\n", pct_met);
 
-            for (unsigned long long i = 0; i < num_buckets_to_read * rounds; i++)
-            {
-                free(buckets[i].records);
-            }
-            // for (unsigned long long i = 0; i < total_num_buckets; i++)
-            // {
-            //     free(buckets2[i].records);
-            // }
-
+            free(all_records);
             free(all_records_table2);
 
             free(buckets);
