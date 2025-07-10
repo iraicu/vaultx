@@ -102,7 +102,7 @@ run_test() {
   for m in "${BATCH_SIZES[@]}"; do
     if [ "$M_FLAG" != "1" ]; then
       row="$m"
-      skip_row=true
+      skip_row=false
     fi
 
     for t in "${THREADS[@]}"; do

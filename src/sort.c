@@ -16,8 +16,8 @@ int compare_memo_all_record(const void* a, const void* b) {
     uint8_t hashA[HASH_SIZE];
     uint8_t hashB[HASH_SIZE];
 
-    g(A->nonce, key, hashA);
-    g(B->nonce, key, hashB);
+    generateBlake3(A->nonce, key, hashA);
+    generateBlake3(B->nonce, key, hashB);
 
     return memcmp(hashA, hashB, HASH_SIZE);
 }

@@ -216,12 +216,11 @@ int main(int argc, char* argv[]) {
     const char* approach = "for"; // Default approach
     int num_threads = 0; // 0 means OpenMP chooses
     int num_threads_io = 0;
-    unsigned long long total_nonces = 1ULL << K; // 2^K iterations
+    total_nonces = 1ULL << K; // 2^K iterations
     unsigned long long MEMORY_SIZE_MB = 1;
     int TOTAL_FILES = 2;
     bool MERGE = false;
 
-    char FILENAME[100]; // Default output file name
     char* FILENAME_FINAL = NULL; // Default output file name
     char* FILENAME_TABLE2 = NULL;
     char* FILENAME_TABLE2_tmp = NULL;
@@ -482,7 +481,7 @@ int main(int argc, char* argv[]) {
                 printf("FULL_BUCKETS                : false\n");
 
             if (writeData) {
-                printf("Temporary File              : %s\n", FILENAME);
+                // printf("Temporary File              : %s\n", FILENAME);
             }
             if (writeDataFinal) {
                 printf("Output File Table 1         : %s\n", FILENAME_FINAL);
@@ -493,24 +492,21 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // Generate plots
     if (HASHGEN) {
-
-        // delete_contents("plots");
-        // ensure_folder_exists("plots");
-
         // Allocate memory
         buckets = (Bucket*)calloc(total_buckets, sizeof(Bucket));
         buckets_table2 = (BucketTable2*)calloc(total_buckets, sizeof(BucketTable2));
+        table2 = (MemoTable2Record*)calloc(total_nonces, sizeof(MemoTable2Record));
 
-        if (buckets == NULL || buckets_table2 == NULL) {
+        if (buckets == NULL || buckets_table2 == NULL || table2 == NULL) {
             fprintf(stderr, "Error: Unable to allocate memory for buckets.\n");
             exit(EXIT_FAILURE);
         }
 
         for (unsigned long long i = 0; i < total_buckets; i++) {
             buckets[i].records = (MemoRecord*)calloc(num_records_in_bucket, sizeof(MemoRecord));
-            buckets_table2[i].records = (MemoTable2Record*)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
-            if (buckets[i].records == NULL || buckets_table2[i].records == NULL) {
+            if (buckets[i].records == NULL) {
                 fprintf(stderr, "Error: Unable to allocate memory for records.\n");
                 exit(EXIT_FAILURE);
             }
@@ -520,9 +516,6 @@ int main(int argc, char* argv[]) {
 
         for (unsigned long long f = 1; f <= TOTAL_FILES; f++) {
             double file_time = 0;
-
-            // uint8_t fileId[FILEID_SIZE];
-            // memcpy(fileId, &f, FILEID_SIZE);
 
             uint8_t plot_id[32];
             generate_plot_id(plot_id);
@@ -543,309 +536,94 @@ int main(int argc, char* argv[]) {
                 buckets_table2[i].flush = 0;
             }
 
-            // unsigned long long MAX_NUM_HASHES = 1ULL << (NONCE_SIZE * 8);
-            // if we want to overgenerate hashes to fill all buckets
-            // if (FULL_BUCKETS)
-            // {
-            //     num_records_per_round = MAX_NUM_HASHES / rounds;
-            // }
-            // unsigned long long nonce_max = 0;
+            // TODO: Alternatives: Recursive task based parallelism and Tasking Model Approach
 
-            // printf("MAX_NUM_HASHES=%llu rounds=%llu num_records_per_round=%llu start_idx = %llu, end_idx = %llu\n", MAX_NUM_HASHES, rounds, num_records_per_round, start_idx, end_idx);
-
-            // Recursive task based parallelism
-            //             if (strcmp(approach, "xtask") == 0)
-            //             {
-            //                 srand((unsigned)time(NULL)); // Seed the random number generator
-            // #pragma omp parallel
-            //                 {
-            // #pragma omp single
-            //                     {
-            //                         // could implement BATCH_SIZE here too
-            //                         generateHashes(start_idx, end_idx);
-            //                     }
-            //                 }
-            //             }
-            //             else if (strcmp(approach, "task") == 0)
-            //             {
-            // // Tasking Model Approach
-            // #pragma omp parallel
-            //                 {
-            // // #pragma omp single nowait
-            // #pragma omp single
-            //                     {
-            //                         for (unsigned long long i = start_idx; i < end_idx; i += BATCH_SIZE)
-            //                         {
-            // #pragma omp task untied
-            //                             {
-            //                                 MemoRecord record;
-            //                                 uint8_t hash[HASH_SIZE];
-
-            //                                 unsigned long long batch_end = i + BATCH_SIZE;
-            //                                 if (batch_end > end_idx)
-            //                                 {
-            //                                     batch_end = end_idx;
-            //                                 }
-
-            //                                 for (unsigned long long j = i; j < batch_end; j++)
-            //                                 {
-            //                                     generateBlake3(hash, &record, j);
-            //                                     if (MEMORY_WRITE)
-            //                                     {
-            //                                         off_t bucketIndex = getBucketIndex(hash);
-            //                                         insert_record(buckets, &record, bucketIndex);
-            //                                     }
-            //                                 }
-            //                             }
-            //                         }
-            //                     }
-            //                 } // Implicit barrier ensures all tasks are completed before exiting
-            //             }
+            // Parallel For Loop Approach
             if (strcmp(approach, "for") == 0) {
-                // Parallel For Loop Approach
-                volatile int cancel_flag = 0; // Shared flag
-                full_buckets_global = 0;
-
-                int count = 0;
-
-#pragma omp parallel for schedule(static) shared(cancel_flag)
-                for (unsigned long long n = 0; n < total_nonces; n += BATCH_SIZE) {
-                    if (cancel_flag) {
-                        continue;
-                    }
-
-                    unsigned long long batch_end = n + BATCH_SIZE;
-                    if (batch_end >= total_nonces) {
-                        batch_end = total_nonces - 1;
-                    }
-
-                    MemoRecord record;
-                    uint8_t hash[HASH_SIZE];
-
-                    for (unsigned long long j = n; j <= batch_end; j++) {
-
-                        // FIXME: Do i need a new one every single time????
-                        // Generate Blake3 hash
-                        memcpy(record.nonce, &j, NONCE_SIZE);
-                        g(record.nonce, key, hash);
-
-                        // TODO: Try combining fileid and nonce into one input vs two separate inputs for hash
-                        off_t bucketIndex = getBucketIndex(hash);
-                        insert_record(buckets, &record, bucketIndex);
-                    }
-
-                    // TODO:
-                    //  Set the flag if the termination condition is met.
-                    //  if (i > end_idx/2 && full_buckets_global == total_buckets) {
-                    //  if (full_buckets_global >= total_buckets)
-                    //  {
-                    //      cancel_flag = 1;
-                    //      if (i > nonce_max)
-                    //          nonce_max = i;
-                    //  }
-                }
+                generateHashes();
             }
-#ifndef __cplusplus
-            // Your C-specific code here
-            else if (strcmp(approach, "tbb") == 0) {
-                printf("TBB is not supported with C, use C++ compiler instead to build vaultx, exiting...\n");
-                exit(1);
-            }
-#endif
 
-            // Hash generation complete
+            // Table1: Hash Generation Complete
             double hashgen_end_time = omp_get_wtime();
             double hashgen_time = hashgen_end_time - hashgen_start_time;
             file_time += hashgen_time;
 
-            printf("[File %llu] %-40s: %.2fs\n", f, "Hash Generation Complete", hashgen_time);
+            printf("[File %llu] %-40s: %.2fs\n", f, "Table1: Hash Generation Complete", hashgen_time);
 
-            // TODO: Parallelize storage efficiency calculations
-            // if (VERIFY) {
-            //     unsigned long long num_zero = 0;
+            // Calculate Table1 storage efficiency
+            if (DEBUG) {
+                unsigned long long nonces_generated = 0;
 
-            //     for (unsigned long long i = 0; i < total_buckets; i++) {
-            //         num_zero += num_records_in_bucket - buckets[i].count;
-            //     }
+#pragma omp parallel for reduction(+ : nonces_generated)
+                for (unsigned long long i = 0; i < total_buckets; i++) {
+                    nonces_generated += buckets[i].count;
+                }
 
-            //     printf("[File %llu] %-40s: %.2f%%\n", current_file, "Table 1 Storage efficiency", 100 * (1 - ((double)num_zero / total_nonces)));
-            // }
-
-            // Sort hashes
-            double sort_start_time = omp_get_wtime();
-
-#pragma omp parallel for schedule(static)
-            for (unsigned long long i = 0; i < total_buckets; i++) {
-                // FIXME: Optimizatioon opportunity?
-                // Hashes are recomputed a little
-                qsort(buckets[i].records, buckets[i].count, sizeof(MemoRecord), compare_memo_all_record);
+                printf("[File %llu] %-40s: %.2f%%\n", current_file, "Table 1 Storage Efficiency", 100 * ((double)nonces_generated / total_nonces));
             }
 
-            double sort_end_time = omp_get_wtime();
-            double sort_time = sort_end_time - sort_start_time;
-            file_time += sort_time;
+            // TODO: Verify records in Table1
 
-            printf("[File %llu] %-40s: %.3fs\n", f, "Sorting Complete", sort_time);
-
+            // Table2 Generation: Find Matches from Table1
             double matching_start_time = omp_get_wtime();
 
-            // #pragma omp parallel for schedule(static)
-
-            //             for (int i = 0; i < total_buckets; i++) {
-            //                 generate_table2(buckets[i].records, num_records_in_bucket);
-            //             }
-
-            // FIXME: How to use a good bucket distance
-            // Ideas: Average distance, multiply expected distance by a constant
-            uint64_t expected_distance = 1ULL << (64 - K);
-
-#pragma omp parallel for schedule(static)
-            for (unsigned long long b = 0; b < total_buckets; b++) {
-                Bucket* bucket = &buckets[b];
-
-                for (unsigned long long i = 0; i + 1 < bucket->count; i++) {
-
-                    // Calculate expected distance
-                    // uint8_t* nonce_min = bucket->records[0].nonce;
-                    // uint8_t* nonce_max = bucket->records[bucket->count - 1].nonce;
-                    // uint8_t hash_max[HASH_SIZE];
-                    // uint8_t hash_min[HASH_SIZE];
-                    // g(nonce_min, fileId, hash_min);
-                    // g(nonce_max, fileId, hash_max);
-                    // uint64_t expected_distance = (double)compute_hash_distance(hash_max, hash_min, HASH_SIZE) / bucket->count;
-
-                    uint8_t hash1[HASH_SIZE];
-                    uint8_t hash2[HASH_SIZE];
-
-                    g(bucket->records[i].nonce, key, hash1);
-
-                    unsigned long long j = i + 1;
-
-                    while (j < bucket->count) {
-                        g(bucket->records[j].nonce, key, hash2);
-
-                        uint64_t distance = compute_hash_distance(hash1, hash2, HASH_SIZE);
-                        // printf("HashA: %s, Hashb: %s, Distance: %.2f\n", byteArrayToHexString(hash1, HASH_SIZE), byteArrayToHexString(hash2, HASH_SIZE), log2(distance));
-
-                        if (distance > expected_distance) {
-                            break;
-                        }
-
-                        MemoTable2Record record;
-                        memcpy(record.nonce1, bucket->records[i].nonce, NONCE_SIZE);
-                        memcpy(record.nonce2, bucket->records[j].nonce, NONCE_SIZE);
-
-                        uint8_t hash[HASH_SIZE];
-                        g2(record.nonce1, record.nonce2, key, hash);
-
-                        size_t bucketIndex = getBucketIndex(hash);
-                        insert_record2(buckets_table2, &record, bucketIndex);
-
-                        j++;
-                    }
-                }
-            }
+            findMatches();
 
             double matching_end_time = omp_get_wtime();
             double matching_time = matching_end_time - matching_start_time;
             file_time += matching_time;
 
-            printf("[File %llu] %-40s: %.2fs\n", current_file, "Table 2 Generation Complete", matching_time);
+            printf("[File %llu] %-40s: %.2fs\n", current_file, "Table2: Matching Complete", matching_time);
 
-            // if (VERIFY) {
-            //     size_t total_records = 0;
+            if (DEBUG) {
+                unsigned long long nonces_generated = 0;
 
-            //     for (unsigned long long i = 0; i < total_buckets; i++) {
-            //         total_records += buckets_table2[i].count;
-            //     }
+#pragma omp parallel for reduction(+ : nonces_generated)
+                for (unsigned long long i = 0; i < total_buckets; i++) {
+                    nonces_generated += buckets_table2[i].count;
+                }
 
-            //     printf("[File %llu] %-40s: %.2f%%\n", current_file, "Table 2 Storage Efficiency", 100 * ((double)total_records / total_nonces));
-            // }
+                printf("[File %llu] %-40s: %.2f%%\n", current_file, "Table 2 Storage Efficiency", 100 * ((double)nonces_generated / total_nonces));
+            }
+
+            // TODO: Verify records in Table2
 
             // Write Table 2 to disk
-            FILE* fd = NULL;
-            snprintf(FILENAME, sizeof(FILENAME), "plots/K%d_%s.plot", K, byteArrayToHexString(plot_id, 32));
-
             double fileio_start_time = omp_get_wtime();
 
-            if (writeData) {
-                fd = fopen(FILENAME, "wb+");
-
-                if (fd == NULL) {
-                    printf("Error opening file %s (#4)\n", FILENAME);
-                    perror("Error opening file");
-                    return EXIT_FAILURE;
-                }
-
-                for (unsigned long long i = 0; i < total_buckets; i++) {
-                    size_t elements_written = fwrite(buckets_table2[i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd);
-                    if (elements_written != num_records_in_bucket) {
-                        fprintf(stderr, "Error writing bucket to file");
-                        fclose(fd);
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                // Flush memory buffer to disk and close the file
-
-                if (fflush(fd) != 0) {
-                    perror("Failed to flush buffer");
-                    fclose(fd);
-                    return EXIT_FAILURE;
-                }
-
-                fclose(fd);
-            }
+            writeTable2(plot_id);
 
             double fileio_end_time = omp_get_wtime();
             double fileio_time = fileio_end_time - fileio_start_time;
             file_time += fileio_time;
 
-            // Clearing memory of all buckets
+            printf("[File %llu] %-40s: %.2fs\n", current_file, "Finished writing to disk", fileio_time);
+
+            // Clearing all buckets from memory
             if (current_file < TOTAL_FILES) {
                 double empty_start_time = omp_get_wtime();
 
                 for (unsigned long long i = 0; i < total_buckets; i++) {
                     memset(buckets[i].records, 0, sizeof(MemoRecord) * num_records_in_bucket);
-                    memset(buckets_table2[i].records, 0, sizeof(MemoTable2Record) * num_records_in_bucket);
                 }
 
                 double empty_end_time = omp_get_wtime();
                 double empty_time = empty_end_time - empty_start_time;
                 file_time += empty_time;
-
-                printf("[File %llu] %-40s: %.2fs\n", current_file, "Clearing bucket memory for next file", empty_time);
             }
 
-            total_time += file_time;
-
-            printf("[File %llu] %-40s: %.2fs\n", current_file, "Finished writing to disk", fileio_time);
             printf("File %llu   %-40s: %.2fs\n\n\n", current_file, "Processing Complete", file_time);
+
+            total_time += file_time;
 
             // Prepare for next file
             current_file++;
             full_buckets_global = 0;
 
-            // Calculate throughput (hashes per second)
             // TODO: Throughput calculation
             // throughput_hash = (num_records_per_round / (hashgen_time + elapsed_time_io)) / (1e6);
-
-            // // Calculate I/O throughput
-            // if (rounds > 1)
-            // {
-            //     throughput_io = (num_records_per_round * sizeof(MemoRecord)) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
-            // }
-            // else
-            // {
-            //     throughput_io = (num_records_per_round * sizeof(MemoTable2Record)) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
-            // }
-
-            // Check Bucket Efficiency for this round
-
-            //  if (!BENCHMARK)
+            // throughput_io = (num_records_per_round * sizeof(MemoTable2Record)) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
             // printf("[%.2f] HashGen %.2f%%: %.2f MH/s : I/O %.2f MB/s\n", omp_get_wtime() - start_time, (r + 1) * 100.0 / rounds, throughput_hash, throughput_io);
-            // end of loop
-
-            //  start_time_io = omp_get_wtime();
         }
 
         printf("[%.2fs] Completed generating %d files\n", total_time, TOTAL_FILES);
@@ -855,13 +633,9 @@ int main(int argc, char* argv[]) {
 
     // TODO: Analzye distribution in L1,L2 cache
 
-    // TODO: Reuse file desscriptors
-
     // TODO: Try taskloop pragma (CHATGPT history)
 
     // TODO: Figure out optimal batch size and thread number
-
-    // TODO: Latency vs bandwidth
 
     // TODO: Small tests on data/fast2
 
@@ -958,10 +732,13 @@ int main(int argc, char* argv[]) {
             exit(EXIT_FAILURE);
         }
 
+        // int cpu = sched_getcpu();
+        // printf("Running on CPU: %d\n", cpu);
+
         // Merge file
         char merge_filename[100];
-        snprintf(merge_filename, sizeof(merge_filename), "/data-l/arnav/vaultx/merge_%d_%d.plot", K, TOTAL_FILES);
-        // snprintf(merge_filename, sizeof(merge_filename), "merge_%d_%d.plot", K, TOTAL_FILES);
+        // snprintf(merge_filename, sizeof(merge_filename), "/data-l/arnav/vaultx/merge_%d_%d.plot", K, TOTAL_FILES);
+        snprintf(merge_filename, sizeof(merge_filename), "merge_%d_%d.plot", K, TOTAL_FILES);
 
         remove(merge_filename);
 
@@ -1242,7 +1019,7 @@ int main(int argc, char* argv[]) {
         //                         record = &buffer[(j - i) * records_per_global_bucket + k];
 
         //                         if (byteArrayToLongLong(record->nonce1, NONCE_SIZE) != 0 || byteArrayToLongLong(record->nonce2, NONCE_SIZE) != 0) {
-        //                             g2(record->nonce1, record->nonce2, plotData[k / num_records_in_bucket].key, hash);
+        //                             generateBlake3Pair(record->nonce1, record->nonce2, plotData[k / num_records_in_bucket].key, hash);
 
         //                             if (byteArrayToLongLong(hash, PREFIX_SIZE) != j) {
         //                                 flag = false;
@@ -1364,7 +1141,7 @@ int main(int argc, char* argv[]) {
 
         for (int i = 0; i < num_records_in_bucket * total_files; i++) {
             if (byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE) != 0 || byteArrayToLongLong(bucket[i].nonce2, NONCE_SIZE) != 0) {
-                g2(bucket[i].nonce1, bucket[i].nonce2, plotData[i / num_records_in_bucket].key, hash);
+                generateBlake3Pair(bucket[i].nonce1, bucket[i].nonce2, plotData[i / num_records_in_bucket].key, hash);
 
                 if (memcmp(hash, hexStringToByteArray(SEARCH_STRING), strlen(SEARCH_STRING) / 2) == 0) {
                     printf("Hash Match Found: %s, Nonce1: %llu, Nonce2: %llu, Key: %s\n", byteArrayToHexString(hash, HASH_SIZE), byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE), byteArrayToLongLong(bucket[i].nonce2, NONCE_SIZE), byteArrayToHexString(plotData[i / num_records_in_bucket].key, 32));

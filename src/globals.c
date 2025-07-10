@@ -5,6 +5,7 @@ int K = 24; // Default exponent
 int MERGE_APPROACH = 0;
 // 0: Merge on SSD
 
+unsigned long long total_nonces;
 unsigned long long num_records_in_bucket = 1;
 unsigned long long num_records_in_shuffled_bucket = 1;
 unsigned long long total_buckets = 1;
@@ -37,3 +38,5 @@ BucketTable2* buckets2;
 Bucket* buckets_phase2;
 BucketTable2* buckets_table2;
 BucketTable2* buckets2_phase2;
+
+MemoTable2Record* table2;

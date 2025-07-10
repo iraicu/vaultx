@@ -1,11 +1,5 @@
-vaultx 
-vaultx*.memo
+vaultx* 
 .vscode/
-memo.t
-memo2.t
-memo.x
-memo.xx
 plots/
 merge*
 .clang-format
-vaultx*/

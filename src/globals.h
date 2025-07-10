@@ -42,6 +42,7 @@ extern unsigned long long total_buckets;
 extern unsigned long long num_buckets_to_read;
 extern unsigned long long full_buckets_global;
 extern unsigned long long current_file;
+extern unsigned long long total_nonces;
 
 extern bool DEBUG;
 extern bool writeData;
@@ -93,7 +94,6 @@ typedef struct
 
 typedef struct
 {
-    MemoTable2Record* records;
     size_t count; // Number of records in the bucket
     size_t count_waste;
     bool full;
@@ -115,5 +115,6 @@ extern Bucket* buckets_phase2;
 extern BucketTable2* buckets2;
 extern BucketTable2* buckets_table2;
 extern BucketTable2* buckets2_phase2;
+extern MemoTable2Record* table2;
 
 #endif
