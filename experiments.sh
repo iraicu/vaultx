@@ -1,9 +1,8 @@
 #!/bin/bash
 
 usage() {
-  echo "Usage: $0 -f <num_files> -t \"<thread_counts>\" -b \"<batch_sizes>\" -n <num_runs> -d <output_path_or_run_folder> -M <M_flag_value>"
-  echo "Example fresh:   $0 -f 256 -t \"4 8\" -b \"2 4 8 16\" -n 3 -d /path/to/folder -M 1"
-  echo "Example resume:  $0 -f 256 -t \"4 8\" -b \"2 4 8 16\" -n 1 -d /path/to/folder/run_1 -M 1"
+  echo "Usage: $0 -f <num_files> -t \"<thread_counts>\" -b \"<batch_sizes>\" -n <num_runs> -d <output_path> -M <M_flag_value>"
+  echo "Example fresh/resume: $0 -f 256 -t \"4 8\" -b \"2 4 8 16\" -n 10 -d /path/to/folder -M 1"
   exit 1
 }
 
@@ -31,17 +30,12 @@ if [ -z "$FILES" ] || [ ${#THREADS[@]} -eq 0 ] || [ ${#BATCH_SIZES[@]} -eq 0 ] |
   usage
 fi
 
-if [[ "$OUTDIR" =~ /run_([0-9]+)$ ]]; then
-  RESUME_MODE=true
-  RUN_INDEX="${BASH_REMATCH[1]}"
-  echo ">>> Resume mode: continuing run $RUN_INDEX in $OUTDIR"
-else
-  RESUME_MODE=false
+# Ensure OUTDIR exists and set full permissions
+if [ ! -d "$OUTDIR" ]; then
   mkdir -p "$OUTDIR"
   USER_NAME=$(whoami)
-  sudo chown -R "$USER:$USER" "$OUTDIR"
+  sudo chown -R "$USER_NAME:$USER_NAME" "$OUTDIR"
   sudo chmod -R 777 "$OUTDIR"
-  echo ">>> Fresh mode: creating $NUM_RUNS run(s) in $OUTDIR"
 fi
 
 get_time() {
@@ -59,7 +53,8 @@ check_csv_done_old_format() {
   local csv="$1"
   local t="$2"
   local b="$3"
-  local header=$(head -1 "$csv")
+  local header
+  header=$(head -1 "$csv")
   local col=0
   IFS=',' read -ra columns <<< "$header"
   for i in "${!columns[@]}"; do
@@ -84,12 +79,39 @@ write_csv_header_old() {
   echo "" >> "$1"
 }
 
+is_run_complete() {
+  local run_dir="$1"
+  local csv_file="${run_dir}/results.csv"
+
+  if [ ! -f "$csv_file" ]; then
+    return 1
+  fi
+
+  for m in "${BATCH_SIZES[@]}"; do
+    for t in "${THREADS[@]}"; do
+      if [ "$M_FLAG" == "1" ]; then
+        if ! check_csv_done_new_format "$csv_file" "$t" "$m"; then
+          return 1
+        fi
+      else
+        if ! check_csv_done_old_format "$csv_file" "$t" "$m"; then
+          return 1
+        fi
+      fi
+    done
+  done
+  return 0
+}
+
 run_test() {
   local run_idx="$1"
   local run_dir="$2"
   local csv_file="${run_dir}/results.csv"
 
   mkdir -p "$run_dir"
+  USER_NAME=$(whoami)
+  sudo chown -R "$USER_NAME:$USER_NAME" "$run_dir"
+  sudo chmod -R 777 "$run_dir"
 
   if [ ! -f "$csv_file" ]; then
     if [ "$M_FLAG" == "1" ]; then
@@ -106,15 +128,13 @@ run_test() {
     fi
 
     for t in "${THREADS[@]}"; do
-      if [ "$RESUME_MODE" = true ]; then
-        if [ "$M_FLAG" == "1" ] && check_csv_done_new_format "$csv_file" "$t" "$m"; then
-          echo ">>> Skipping Threads=$t, BatchSize=$m (already in results.csv)"
-          continue
-        elif [ "$M_FLAG" != "1" ] && check_csv_done_old_format "$csv_file" "$t" "$m"; then
-          echo ">>> Skipping Threads=$t, BatchSize=$m (already in results.csv)"
-          row+=","  # fill skipped slot
-          continue
-        fi
+      if check_csv_done_new_format "$csv_file" "$t" "$m" && [ "$M_FLAG" == "1" ]; then
+        echo ">>> Skipping Threads=$t, BatchSize=$m (already in results.csv)"
+        continue
+      elif check_csv_done_old_format "$csv_file" "$t" "$m" && [ "$M_FLAG" != "1" ]; then
+        echo ">>> Skipping Threads=$t, BatchSize=$m (already in results.csv)"
+        row+=","
+        continue
       fi
 
       OUTPUT_FILE="${run_dir}/vaultx_t${t}_m${m}.log"
@@ -159,7 +179,7 @@ run_test() {
     fi
   done
 
-  # Sort results.csv by Threads and BatchSize if M_FLAG == 1
+  # Sort results if M=1
   if [ "$M_FLAG" == "1" ]; then
     header=$(head -1 "$csv_file")
     tail -n +2 "$csv_file" | sort -t',' -k1,1n -k2,2n > "${csv_file}.sorted"
@@ -169,13 +189,16 @@ run_test() {
 }
 
 # === MAIN ===
-if [ "$RESUME_MODE" = true ]; then
-  run_test "$RUN_INDEX" "$OUTDIR"
-else
-  for run in $(seq 1 "$NUM_RUNS"); do
-    RUN_DIR="${OUTDIR}/run_${run}"
-    run_test "$run" "$RUN_DIR"
-  done
-fi
+for run in $(seq 1 "$NUM_RUNS"); do
+  RUN_DIR="${OUTDIR}/run_${run}"
+
+  if [ -d "$RUN_DIR" ] && is_run_complete "$RUN_DIR"; then
+    echo ">>> Run $run is complete. Skipping."
+    continue
+  fi
+
+  echo ">>> Running run $run in $RUN_DIR"
+  run_test "$run" "$RUN_DIR"
+done
 
 echo -e "\n=== Benchmarking complete at $(date) ==="
