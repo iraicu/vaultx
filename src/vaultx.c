@@ -408,13 +408,7 @@ int main(int argc, char *argv[])
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
     }
-    if (READ_BATCH_SIZE > total_num_buckets)
-    {
-        fprintf(stderr, "READ_BATCH_SIZE cannot be greater than total_num_buckets.\n");
-        print_usage(argv[0]);
-        exit(EXIT_FAILURE);
-    }
-
+    // READ_BATCH_SIZE is checked later in the code. it should be smaller than num_diff_pref_buckets_to_read
 
     // Set the number of threads for all operations
     if (num_threads > 0)
@@ -1047,13 +1041,19 @@ int main(int argc, char *argv[])
             if (DEBUG)
                 printf("num_diff_pref_buckets_to_read=%llu\n", num_diff_pref_buckets_to_read);
 
-            if (total_num_buckets % num_buckets_to_read != 0)
+            if (READ_BATCH_SIZE > num_diff_pref_buckets_to_read)
             {
-                printf("Warning: total_num_buckets=%llu is not a multiple of num_buckets_to_read=%llu, adjusting num_buckets_to_read...\n", total_num_buckets, num_buckets_to_read);
+                printf("Warning: READ_BATCH_SIZE=%llu is greater than num_diff_pref_buckets_to_read=%llu, adjusting READ_BATCH_SIZE...\n", READ_BATCH_SIZE, num_diff_pref_buckets_to_read);
+                READ_BATCH_SIZE = num_diff_pref_buckets_to_read;
             }
 
+            // if (total_num_buckets % num_buckets_to_read != 0)
+            // {
+            //     printf("Warning: total_num_buckets=%llu is not a multiple of num_buckets_to_read=%llu, adjusting num_buckets_to_read...\n", total_num_buckets, num_buckets_to_read);
+            // }
+
             if (DEBUG)
-                printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * sizeof(MemoRecord) * num_buckets_to_read);
+                printf("will read %llu buckets at one time, %llu bytes\n", num_diff_pref_buckets_to_read, num_records_in_shuffled_bucket * sizeof(MemoRecord) * num_diff_pref_buckets_to_read);
             // need to fix this for 5 byte NONCE_SIZE
             // if (total_num_buckets % num_buckets_to_read != 0)
             // {
