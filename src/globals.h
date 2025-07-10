@@ -34,6 +34,7 @@
 
 extern int K;
 extern int MERGE_APPROACH;
+extern int current_file;
 
 extern unsigned long long num_records_in_bucket;
 extern unsigned long long num_records_in_shuffled_bucket;
@@ -41,7 +42,6 @@ extern unsigned long long rounds;
 extern unsigned long long total_buckets;
 extern unsigned long long num_buckets_to_read;
 extern unsigned long long full_buckets_global;
-extern unsigned long long current_file;
 extern unsigned long long total_nonces;
 
 extern bool DEBUG;

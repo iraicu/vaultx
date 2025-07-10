@@ -10,10 +10,6 @@ void print_usage(char* prog_name) {
     printf("  -K, --exponent NUM                    Exponent K to compute 2^K number of records (default: 4)\n");
     printf("  -m, --memory NUM                      Memory size in MB (default: 1)\n");
     printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
-    printf("  -f, --tmp file NAME                   Temporary file name\n");
-    printf("  -g, --final file NAME                 Final file name\n");
-    printf("  -j, --tmp table2 file NAME            Temporary table2 file name\n");
-    printf("  -2, --table2 file NAME                Use Table2 approach (should specify -f (table1 file), if table1 was created previously, turn off HASHGEN)\n");
     printf("  -s, --search STRING                   Search for a specific hash prefix in the file\n");
     printf("  -S, --search-batch NUM                Search for a specific hash prefix in the file in batch mode\n");
     printf("  -x, --benchmark                       Enable benchmark mode (default: false)\n");
@@ -220,10 +216,6 @@ int main(int argc, char* argv[]) {
     unsigned long long MEMORY_SIZE_MB = 1;
     int TOTAL_FILES = 2;
     bool MERGE = false;
-
-    char* FILENAME_FINAL = NULL; // Default output file name
-    char* FILENAME_TABLE2 = NULL;
-    char* FILENAME_TABLE2_tmp = NULL;
     char* SEARCH_STRING = NULL;
 
     // Define long options
@@ -233,10 +225,6 @@ int main(int argc, char* argv[]) {
         { "threads_io", required_argument, 0, 'i' },
         { "exponent", required_argument, 0, 'K' },
         { "memory", required_argument, 0, 'm' },
-        { "file", required_argument, 0, 'f' },
-        { "file_final", required_argument, 0, 'g' },
-        { "file_table2_tmp", required_argument, 0, '2' },
-        { "file_table2", required_argument, 0, 'j' },
         { "batch_size", required_argument, 0, 'b' },
         { "memory_write", required_argument, 0, 'w' },
         { "circular_array", required_argument, 0, 'c' },
@@ -256,7 +244,7 @@ int main(int argc, char* argv[]) {
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:2:j:b:w:c:v:s:S:x:y:d:h:n:M:", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:b:w:c:v:s:S:x:y:d:h:n:M:", long_options, &option_index)) != -1) {
         switch (opt) {
         case 'a':
             if (strcmp(optarg, "xtask") == 0 || strcmp(optarg, "task") == 0 || strcmp(optarg, "for") == 0 || strcmp(optarg, "tbb") == 0) {
@@ -299,22 +287,6 @@ int main(int argc, char* argv[]) {
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
-            break;
-        case 'f':
-            // FILENAME = optarg;
-            writeData = true;
-            break;
-        case 'g':
-            FILENAME_FINAL = optarg;
-            writeDataFinal = true;
-            break;
-        case '2':
-            FILENAME_TABLE2_tmp = optarg;
-            writeDataTable2Tmp = true;
-            break;
-        case 'j':
-            FILENAME_TABLE2 = optarg;
-            writeDataTable2 = true;
             break;
         case 'b':
             BATCH_SIZE = atoi(optarg);
@@ -402,12 +374,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if ((SEARCH || SEARCH_BATCH) && !FILENAME_TABLE2) {
-        fprintf(stderr, "Error: Final file name (-g) is required for search operations.\n");
-        print_usage(argv[0]);
-        exit(EXIT_FAILURE);
-    }
-
     // Set the number of threads if specified
     if (num_threads > 0) {
         omp_set_num_threads(num_threads);
@@ -483,12 +449,6 @@ int main(int argc, char* argv[]) {
             if (writeData) {
                 // printf("Temporary File              : %s\n", FILENAME);
             }
-            if (writeDataFinal) {
-                printf("Output File Table 1         : %s\n", FILENAME_FINAL);
-            }
-            if (writeDataTable2) {
-                printf("Output File Table 2         : %s\n", FILENAME_TABLE2);
-            }
         }
     }
 
@@ -514,7 +474,7 @@ int main(int argc, char* argv[]) {
 
         double total_time = 0;
 
-        for (unsigned long long f = 1; f <= TOTAL_FILES; f++) {
+        for (int f = 1; f <= TOTAL_FILES; f++) {
             double file_time = 0;
 
             uint8_t plot_id[32];
@@ -548,7 +508,7 @@ int main(int argc, char* argv[]) {
             double hashgen_time = hashgen_end_time - hashgen_start_time;
             file_time += hashgen_time;
 
-            printf("[File %llu] %-40s: %.2fs\n", f, "Table1: Hash Generation Complete", hashgen_time);
+            printf("[File %d] %-40s: %.2fs\n", f, "Table1: Hash Generation Complete", hashgen_time);
 
             // Calculate Table1 storage efficiency
             if (DEBUG) {
@@ -559,7 +519,7 @@ int main(int argc, char* argv[]) {
                     nonces_generated += buckets[i].count;
                 }
 
-                printf("[File %llu] %-40s: %.2f%%\n", current_file, "Table 1 Storage Efficiency", 100 * ((double)nonces_generated / total_nonces));
+                printf("[File %d] %-40s: %.2f%%\n", current_file, "Table 1 Storage Efficiency", 100 * ((double)nonces_generated / total_nonces));
             }
 
             // TODO: Verify records in Table1
@@ -573,7 +533,7 @@ int main(int argc, char* argv[]) {
             double matching_time = matching_end_time - matching_start_time;
             file_time += matching_time;
 
-            printf("[File %llu] %-40s: %.2fs\n", current_file, "Table2: Matching Complete", matching_time);
+            printf("[File %d] %-40s: %.2fs\n", current_file, "Table2: Matching Complete", matching_time);
 
             if (DEBUG) {
                 unsigned long long nonces_generated = 0;
@@ -583,7 +543,7 @@ int main(int argc, char* argv[]) {
                     nonces_generated += buckets_table2[i].count;
                 }
 
-                printf("[File %llu] %-40s: %.2f%%\n", current_file, "Table 2 Storage Efficiency", 100 * ((double)nonces_generated / total_nonces));
+                printf("[File %d] %-40s: %.2f%%\n", current_file, "Table 2 Storage Efficiency", 100 * ((double)nonces_generated / total_nonces));
             }
 
             // TODO: Verify records in Table2
@@ -597,7 +557,7 @@ int main(int argc, char* argv[]) {
             double fileio_time = fileio_end_time - fileio_start_time;
             file_time += fileio_time;
 
-            printf("[File %llu] %-40s: %.2fs\n", current_file, "Finished writing to disk", fileio_time);
+            printf("[File %d] %-40s: %.2fs\n", current_file, "Finished writing to disk", fileio_time);
 
             // Clearing all buckets from memory
             if (current_file < TOTAL_FILES) {
@@ -612,7 +572,7 @@ int main(int argc, char* argv[]) {
                 file_time += empty_time;
             }
 
-            printf("File %llu   %-40s: %.2fs\n\n\n", current_file, "Processing Complete", file_time);
+            printf("File %d   %-40s: %.2fs\n\n\n", current_file, "Processing Complete", file_time);
 
             total_time += file_time;
 
@@ -1044,7 +1004,7 @@ int main(int argc, char* argv[]) {
 
         free(mergedBuckets);
 
-        for (unsigned long long i = 0; i < TOTAL_FILES; i++) {
+        for (int i = 0; i < TOTAL_FILES; i++) {
             free(file_records[i].records);
         }
     }
@@ -1105,8 +1065,8 @@ int main(int argc, char* argv[]) {
         }
 
         size_t nread = fread(plotData, sizeof(PlotData), total_files, fd);
-        if (nread != total_files) {
-            fprintf(stderr, "fread failed: expected %zu elements, got %zu\n", total_files, nread);
+        if ((int)nread != total_files) {
+            fprintf(stderr, "fread failed: expected %d elements, got %zu\n", total_files, nread);
             fclose(fd);
             return 1;
         }
@@ -1132,14 +1092,14 @@ int main(int argc, char* argv[]) {
 
         size_t records_read = fread(bucket, sizeof(MemoTable2Record), num_records_in_bucket * total_files, fd);
         if (records_read != num_records_in_bucket * total_files) {
-            fprintf(stderr, "fread failed: expected %zu elements, got %zu\n", total_files, nread);
+            fprintf(stderr, "fread failed: expected %d elements, got %zu\n", total_files, nread);
             fclose(fd);
             return 1;
         }
 
         uint8_t hash[HASH_SIZE];
 
-        for (int i = 0; i < num_records_in_bucket * total_files; i++) {
+        for (unsigned long long i = 0; i < num_records_in_bucket * total_files; i++) {
             if (byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE) != 0 || byteArrayToLongLong(bucket[i].nonce2, NONCE_SIZE) != 0) {
                 generateBlake3Pair(bucket[i].nonce1, bucket[i].nonce2, plotData[i / num_records_in_bucket].key, hash);
 

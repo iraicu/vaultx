@@ -6,8 +6,6 @@ void generateHashes() {
     volatile int buckets_full = 0; // Shared flag
     full_buckets_global = 0;
 
-    int count = 0;
-
 #pragma omp parallel for schedule(static) shared(buckets_full)
 
     for (unsigned long long n = 0; n < total_nonces; n += BATCH_SIZE) {

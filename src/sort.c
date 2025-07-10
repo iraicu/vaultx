@@ -10,8 +10,8 @@
 // }
 
 int compare_memo_all_record(const void* a, const void* b) {
-    const MemoRecord* A = (const MemoRecord*)a;
-    const MemoRecord* B = (const MemoRecord*)b;
+    MemoRecord* A = (MemoRecord*)a;
+    MemoRecord* B = (MemoRecord*)b;
 
     uint8_t hashA[HASH_SIZE];
     uint8_t hashB[HASH_SIZE];

@@ -119,7 +119,7 @@ void writeTable2(uint8_t* plot_id) {
     if (fd == -1) {
         printf("Error opening file %s (#4)\n", FILENAME);
         perror("Error opening file");
-        return EXIT_FAILURE;
+        return;
     }
 
     size_t total_size = total_nonces * sizeof(MemoTable2Record);
@@ -132,7 +132,7 @@ void writeTable2(uint8_t* plot_id) {
         if (bytes < 0) {
             fprintf(stderr, "Error writing to file: %s\n", strerror(errno));
             close(fd);
-            return EXIT_FAILURE;
+            return;
         }
 
         total_written += bytes;
@@ -141,7 +141,7 @@ void writeTable2(uint8_t* plot_id) {
     if (fsync(fd) != 0) {
         perror("Failed to fsync buffer");
         close(fd);
-        return EXIT_FAILURE;
+        return;
     }
 
     close(fd);

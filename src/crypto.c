@@ -33,7 +33,7 @@ void generate_plot_id(uint8_t* plot_id_out) {
 
     // secp256k1_context_destroy(ctx);
 
-    return 0;
+    return;
 }
 
 // void generate_plot_id(uint8_t* plot_id_out) {
