@@ -1043,7 +1043,7 @@ int main(int argc, char *argv[])
 
             if (READ_BATCH_SIZE > num_diff_pref_buckets_to_read)
             {
-                printf("Warning: READ_BATCH_SIZE=%llu is greater than num_diff_pref_buckets_to_read=%llu, adjusting READ_BATCH_SIZE...\n", READ_BATCH_SIZE, num_diff_pref_buckets_to_read);
+                printf("Warning: READ_BATCH_SIZE=%lu is greater than num_diff_pref_buckets_to_read=%llu, adjusting READ_BATCH_SIZE...\n", READ_BATCH_SIZE, num_diff_pref_buckets_to_read);
                 READ_BATCH_SIZE = num_diff_pref_buckets_to_read;
             }
 
@@ -1562,7 +1562,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * sizeof(MemoRecord), elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
+            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE, total_throughput, total_throughput * sizeof(MemoRecord), elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
             // return 0;
         }
     }
