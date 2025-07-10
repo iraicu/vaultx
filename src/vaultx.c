@@ -524,6 +524,19 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
 
+        MemoTable2Record *all_records_table2 = (MemoTable2Record *)calloc(total_num_buckets * num_records_in_bucket, sizeof(MemoTable2Record));
+        if (all_records_table2 == NULL)
+        {
+            fprintf(stderr, "Error: Unable to allocate memory for all_records_table.\n");
+            free(buckets2);
+            exit(EXIT_FAILURE);
+        }
+
+        for (unsigned long long i = 0; i < total_num_buckets; i++)
+        {
+            buckets2[i].records = all_records_table2 + (i * num_records_in_bucket);
+        }
+
         for (unsigned long long i = 0; i < total_num_buckets; i++)
         {
             buckets[i].records = (MemoRecord *)calloc(num_records_in_bucket, sizeof(MemoRecord));
@@ -533,12 +546,12 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
 
-            buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
-            if (buckets2[i].records == NULL)
-            {
-                fprintf(stderr, "Error: Unable to allocate memory for records in table 2.\n");
-                exit(EXIT_FAILURE);
-            }
+            // buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
+            // if (buckets2[i].records == NULL)
+            // {
+            //     fprintf(stderr, "Error: Unable to allocate memory for records in table 2.\n");
+            //     exit(EXIT_FAILURE);
+            // }
         }
 
         double throughput_hash = 0.0;
@@ -778,11 +791,14 @@ int main(int argc, char *argv[])
                 // Write table2 to disk
                 for (unsigned long long i = 0; i < total_num_buckets; i += WRITE_BATCH_SIZE)
                 {
-                    size_t elements_written = fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket, fd_tmp);
-                    if (elements_written != num_records_in_bucket)
+                    size_t elements_written = fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket * WRITE_BATCH_SIZE, fd_tmp);
+                    if (elements_written != num_records_in_bucket * WRITE_BATCH_SIZE)
                     {
                         fprintf(stderr, "Error writing bucket to file; elements written %zu when expected %llu\n",
-                                elements_written, num_records_in_bucket);
+                                elements_written, num_records_in_bucket * WRITE_BATCH_SIZE);
+                        free(buckets);
+                        free(buckets2);
+                        free(all_records_table2);
                         fclose(fd_tmp);
                         exit(EXIT_FAILURE);
                     }
@@ -958,11 +974,12 @@ int main(int argc, char *argv[])
         for (unsigned long long i = 0; i < total_num_buckets; i++)
         {
             free(buckets[i].records);
-            free(buckets2[i].records);
+            // free(buckets2[i].records);
 
             buckets[i].records = NULL;
             buckets2[i].records = NULL;
         }
+        free(all_records_table2);
         free(buckets);
         free(buckets2);
 
@@ -1428,6 +1445,7 @@ int main(int argc, char *argv[])
                 elapsed_time_io_total += elapsed_time_io;
             }
         }
+        // NOTE: Is there any point in this piece of code? Why are we moving
         else if (writeDataTable2 && rounds == 1)
         {
             start_time_io = omp_get_wtime();
