@@ -11,6 +11,8 @@ void print_usage(char *prog_name)
     printf("  -K, --exponent NUM                    Exponent K to compute 2^K number of records (default: 4)\n");
     printf("  -m, --memory NUM                      Memory size in MB (default: 1)\n");
     printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
+    printf("  -W, --write-batch-size NUM            Write batch size (default: 1024)\n");
+    printf("  -R, --read-batch-size NUM             Read batch size (default: 1024)\n");
     printf("  -f, --dir tmp NAME                    Temporary table1 (out-of-memory)/table2 (in-memory) directory name\n");
     printf("  -g, --dir tmp table2 NAME             Temporary table2 directory name (only for out-of-memory)\n");
     printf("  -j, --dir table2 NAME                 Table2 directory name\n");
