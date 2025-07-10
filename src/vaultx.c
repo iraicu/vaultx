@@ -155,6 +155,7 @@ int main(int argc, char *argv[])
         {"file_table2", required_argument, 0, 'j'},
         {"batch_size", required_argument, 0, 'b'},
         {"write_batch_size", required_argument, 0, 'W'},
+        {"read_batch_size", required_argument, 0, 'R'},
         {"memory_write", required_argument, 0, 'w'},
         {"circular_array", required_argument, 0, 'c'},
         {"verify", required_argument, 0, 'v'},
@@ -170,7 +171,7 @@ int main(int argc, char *argv[])
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:j:b:W:w:c:v:s:S:x:y:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:j:b:W:R:w:c:v:s:S:x:y:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
