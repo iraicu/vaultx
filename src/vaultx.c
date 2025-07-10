@@ -1120,8 +1120,6 @@ int main(int argc, char *argv[])
                 buckets2[i].records = all_records_table2 + (i * num_records_in_bucket);
             }
 
-            size_t READ_BATCH_SIZE = 4096;
-
             for (unsigned long long i = 0; i < total_num_buckets; i += num_diff_pref_buckets_to_read)
             {
                 for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read; b++)

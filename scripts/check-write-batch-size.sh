@@ -35,7 +35,7 @@ for disk in "${disks[@]}"; do
         for i in {1..3}; do
             echo "Iteration $i for WRITE_BATCH_SIZE=$W"
             ./scripts/drop-all-caches.sh
-            ./vaultx -a for -f "$disk/varvara/plot/" -g "$disk/varvara/plot/" -j "$disk/varvara/plot/" -t 64 -K 29 -m 512 -W "$W" -R 1024 -x true >> "$data_file"
+            ./vaultx -v true -a for -f "$disk/varvara/plot/" -g "$disk/varvara/plot/" -j "$disk/varvara/plot/" -t 64 -K 29 -m 512 -W "$W" -R 1 -x true >> "$data_file"
         done
     done
     
