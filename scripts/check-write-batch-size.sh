@@ -55,7 +55,8 @@ for disk in "${disks[@]}"; do
             echo "Iteration $i for WRITE_BATCH_SIZE=$W"
             ./scripts/drop-all-caches.sh
             ./vaultx -v true -a for -f "$disk/varvara/plot/" -g "$disk/varvara/plot/" -j "$disk/varvara/plot/" -t 64 -K 29 -m 512 -W "$W" -R 1 -x true >> "$data_file"
-        done
+            sudo rm -r "$disk/varvara/plot/*"
+    	done
     done
     
     echo "Write batch size check completed for disk: $disk"
