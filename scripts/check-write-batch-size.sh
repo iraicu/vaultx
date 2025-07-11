@@ -5,12 +5,15 @@ HOSTNAME=$(hostname)
 case $HOSTNAME in
 	"epycbox")
 		disks=('/ssd-raid0' '/data-l')
+		make_name="vaultx_x86_c"
 		;;	
 	"orangepi5plus")
 		disks=('/data-fast' '/data-a')
+		make_name="vaultx_arm_c"
 		;;
 	"raspberrypi5")
 		disks=('/data-fast' '/data-a')
+		make_name="vaultx_arm_c"
 		;;
 	*)
 		echo "Machine is undefined"
@@ -18,7 +21,7 @@ case $HOSTNAME in
 		;;
 esac
 
-make vaultx_x86_c NONCE_SIZE=4 RECORD_SIZE=16
+make "$make_name" NONCE_SIZE=4 RECORD_SIZE=16
 
 hostname=$(hostname)
 
