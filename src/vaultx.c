@@ -356,6 +356,13 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    double program_start_time = omp_get_wtime();
+
+    if (!BENCHMARK)
+    {
+        printf("VAULTX_PID: %d\n", getpid());
+        fflush(stdout);
+    }
     // Display selected configurations
     if (!BENCHMARK)
     {
@@ -602,6 +609,12 @@ int main(int argc, char *argv[])
         double elapsed_time_hash2_total = 0.0;
         double elapsed_time_io_total = 0.0;
         double elapsed_time_io2_total = 0.0;
+
+        if (!BENCHMARK)
+        {
+            printf("VAULTX_STAGE_MARKER: START Table1Gen %.6f\n", omp_get_wtime() - program_start_time);
+            fflush(stdout);
+        }
 
         // Generate table 1; 1) if in-memory: also generate table2 and write to disk,
         // 2) if out-of-memory: only generate unshuffled table1 and write to disk
@@ -915,6 +928,12 @@ int main(int argc, char *argv[])
                 //     omp_set_num_threads(num_threads);
                 // }
 
+                if (!BENCHMARK)
+                {
+                    printf("VAULTX_STAGE_MARKER: START WriteTable1 %.6f\n", omp_get_wtime() - program_start_time);
+                    fflush(stdout);
+                }
+
                 start_time_io = omp_get_wtime();
 
                 // write table1 in batches
@@ -938,6 +957,12 @@ int main(int argc, char *argv[])
                 end_time_io = omp_get_wtime();
                 elapsed_time_io = end_time_io - start_time_io;
                 elapsed_time_io_total += elapsed_time_io;
+
+                if (!BENCHMARK)
+                {
+                    printf("VAULTX_STAGE_MARKER: END WriteTable1 %.6f\n", omp_get_wtime() - program_start_time);
+                    fflush(stdout);
+                }
 
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
                 {
@@ -976,6 +1001,12 @@ int main(int argc, char *argv[])
                 }
             }
             // end of loop
+        }
+
+        if (!BENCHMARK)
+        {
+            printf("VAULTX_STAGE_MARKER: END Table1Gen %.6f\n", omp_get_wtime() - program_start_time);
+            fflush(stdout);
         }
 
         start_time_io = omp_get_wtime();
@@ -1024,7 +1055,11 @@ int main(int argc, char *argv[])
         if (writeDataTmpTable2 && rounds > 1)
         {
             if (!BENCHMARK)
+            {
                 printf("------------------------Table 2 generation started------------------------\n");
+                printf("VAULTX_STAGE_MARKER: START OutOfMemoryTable2Gen %.6f\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+            }
 
             // Shuffle table1 and write to disk
             FILE *fd_table2_tmp = NULL;
@@ -1037,7 +1072,8 @@ int main(int argc, char *argv[])
             }
 
             // memory_needed = num_buckets_to_read * r * num_records_in_bucket * sizeof(MemoRecord);
-            unsigned long long num_diff_pref_buckets_to_read = MEMORY_SIZE_bytes / (rounds * num_records_in_bucket * sizeof(MemoRecord)); // the number of buckets of different prefixes to read
+            unsigned long long num_diff_pref_buckets_to_read = floor(MEMORY_SIZE_bytes / (rounds * num_records_in_bucket * sizeof(MemoRecord))); // the number of buckets of different prefixes to read
+
             if (DEBUG)
                 printf("num_diff_pref_buckets_to_read=%llu\n", num_diff_pref_buckets_to_read);
 
@@ -1047,28 +1083,25 @@ int main(int argc, char *argv[])
                 READ_BATCH_SIZE = num_diff_pref_buckets_to_read;
             }
 
-            // if (total_num_buckets % num_buckets_to_read != 0)
-            // {
-            //     printf("Warning: total_num_buckets=%llu is not a multiple of num_buckets_to_read=%llu, adjusting num_buckets_to_read...\n", total_num_buckets, num_buckets_to_read);
-            // }
-
             if (DEBUG)
                 printf("will read %llu buckets at one time, %llu bytes\n", num_diff_pref_buckets_to_read, num_records_in_shuffled_bucket * sizeof(MemoRecord) * num_diff_pref_buckets_to_read);
+
             // need to fix this for 5 byte NONCE_SIZE
-            // if (total_num_buckets % num_buckets_to_read != 0)
-            // {
-            //     printf("Warning: total_num_buckets=%llu is not a multiple of num_buckets_to_read=%llu, adjusting num_buckets_to_read...\n", total_num_buckets, num_buckets_to_read);
-            //     uint64_t ratio = total_num_buckets / num_buckets_to_read;
-            //     uint64_t result = largest_power_of_two_less_than(ratio);
-            //     if (DEBUG)
-            //         printf("Largest power of 2 less than %lu is %lu\n", ratio, result);
-            //     num_buckets_to_read = total_num_buckets / result;
-            //     printf("num_buckets_to_read (if num_buckets mod num_buckets_to_read != 0)=%llu\n", num_buckets_to_read);
-            //     if (DEBUG)
-            //         printf("will read %llu buckets at one time, %llu bytes\n", num_buckets_to_read, num_records_in_bucket * rounds * NONCE_SIZE * num_buckets_to_read);
-            //     // printf("error, num_buckets_to_read is not a multiple of total_num_buckets, exiting: total_num_buckets=%llu num_buckets_to_read=%llu...\n",total_num_buckets,num_buckets_to_read);
-            //     // return EXIT_FAILURE;
-            // }
+            if (total_num_buckets % num_diff_pref_buckets_to_read != 0)
+            {
+                printf("Warning: total_num_buckets=%llu is not a multiple of num_diff_pref_buckets_to_read=%llu, adjusting num_diff_pref_buckets_to_read...\n", total_num_buckets, num_diff_pref_buckets_to_read);
+                uint64_t ratio = total_num_buckets / num_diff_pref_buckets_to_read;
+                uint64_t result = largest_power_of_two_less_than(ratio);
+                if (DEBUG)
+                    printf("Largest power of 2 less than %lu is %lu\n", ratio, result);
+                num_diff_pref_buckets_to_read = total_num_buckets / result;
+                printf("num_diff_pref_buckets_to_read (if total_num_buckets mod num_diff_pref_buckets_to_read != 0)=%llu\n", num_diff_pref_buckets_to_read);
+                if (DEBUG)
+                    printf("will read %llu buckets at one time, %llu bytes\n", num_diff_pref_buckets_to_read, num_records_in_bucket * rounds * NONCE_SIZE * num_diff_pref_buckets_to_read);
+                printf("error, num_diff_pref_buckets_to_read is not a multiple of total_num_buckets, exiting: total_num_buckets=%llu num_diff_pref_buckets_to_read=%llu...\n", total_num_buckets, num_diff_pref_buckets_to_read);
+                printf("Please use a memory value that is a multiple of NONCE_SIZE\n");
+                return EXIT_FAILURE;
+            }
 
             rewind(fd_tmp);
 
@@ -1348,6 +1381,12 @@ int main(int argc, char *argv[])
                 }
             }
 
+            if (!BENCHMARK)
+            {
+                printf("VAULTX_STAGE_MARKER: END OutOfMemoryTable2Gen %.6f\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+            }
+
             // double pct_met = (double)count_condition_met * 100.0 /
             //                  (double)(count_condition_met + count_condition_not_met + zero_nonce_count);
             // printf("pct_met = %.2f%%\n", pct_met);
@@ -1404,7 +1443,11 @@ int main(int argc, char *argv[])
             if (writeDataTable2)
             {
                 if (!BENCHMARK)
+                {
                     printf("------------------------Table 2 shuffling started------------------------\n");
+                    printf("VAULTX_STAGE_MARKER: START Table2Shuffle %.6f\n", omp_get_wtime() - program_start_time);
+                    fflush(stdout);
+                }
 
                 // Open the file for writing shuffled table2
                 FILE *fd_table2 = NULL;
@@ -1446,6 +1489,12 @@ int main(int argc, char *argv[])
 
                 // shuffle table uses io2 time
                 shuffle_table2(fd_table2_tmp, fd_table2, buffer_size, records_per_batch, num_buckets_to_read, start_time, elapsed_time_io2, elapsed_time_io2_total);
+
+                if (!BENCHMARK)
+                {
+                    printf("VAULTX_STAGE_MARKER: END Table2Shuffle %.6f\n", omp_get_wtime() - program_start_time);
+                    fflush(stdout);
+                }
 
                 start_time_io = omp_get_wtime();
 
@@ -1493,6 +1542,11 @@ int main(int argc, char *argv[])
         else if (writeDataTable2 && rounds == 1)
         {
             start_time_io = omp_get_wtime();
+            if (!BENCHMARK)
+            {
+                printf("VAULTX_STAGE_MARKER: START FinalizePlotFile %.6f\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+            }
 
             // Call the rename_file function
             if (move_file_overwrite(FILENAME_TMP, FILENAME_TABLE2) == 0)
@@ -1508,6 +1562,12 @@ int main(int argc, char *argv[])
                 // Additional handling can be done here if necessary
                 // return 1;
             }
+            if (!BENCHMARK)
+            {
+                printf("VAULTX_STAGE_MARKER: END FinalizePlotFile %.6f\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+            }
+
             end_time_io = omp_get_wtime();
             elapsed_time_io = end_time_io - start_time_io;
             elapsed_time_io_total += elapsed_time_io;
@@ -1581,9 +1641,18 @@ int main(int argc, char *argv[])
     if (VERIFY)
     {
         if (!BENCHMARK)
+        {
             printf("------------------------Verifying started------------------------\n");
+            printf("VAULTX_STAGE_MARKER: START Verification %.6f\n", omp_get_wtime() - program_start_time);
+            fflush(stdout);
+        }
 
         process_memo_records_table2(FILENAME_TABLE2, num_records_in_shuffled_bucket);
+        if (!BENCHMARK)
+        {
+            printf("VAULTX_STAGE_MARKER: END Verification %.6f\n", omp_get_wtime() - program_start_time);
+            fflush(stdout);
+        }
     }
 
     if (DEBUG)
