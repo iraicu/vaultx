@@ -421,7 +421,9 @@ size_t process_memo_records_table2(const char *filename, const size_t BATCH_SIZE
 
 void generate_table2(MemoRecord *sorted_records, size_t num_records_in_bucket)
 {
+    // uint64_t expected_distance = (1ULL << (64 - K)) * (1/0.70);
     uint64_t expected_distance = (1ULL << (64 - K));
+
 
     // num_records_in_bucket = num_records_in_shuffled_bucket = num_records_in_bucket * rounds
     for (size_t i = 0; i < num_records_in_bucket; ++i)

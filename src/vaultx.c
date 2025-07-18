@@ -612,7 +612,7 @@ int main(int argc, char *argv[])
 
         if (!BENCHMARK)
         {
-            printf("VAULTX_STAGE_MARKER: START Table1Gen %.6f\n", omp_get_wtime() - program_start_time);
+            printf("[%.6f] VAULTX_STAGE_MARKER: START Table1Gen\n", omp_get_wtime() - program_start_time);
             fflush(stdout);
         }
 
@@ -930,7 +930,7 @@ int main(int argc, char *argv[])
 
                 if (!BENCHMARK)
                 {
-                    printf("VAULTX_STAGE_MARKER: START WriteTable1 %.6f\n", omp_get_wtime() - program_start_time);
+                    printf("[%.6f] VAULTX_STAGE_MARKER: START WriteTable1\n", omp_get_wtime() - program_start_time);
                     fflush(stdout);
                 }
 
@@ -960,7 +960,7 @@ int main(int argc, char *argv[])
 
                 if (!BENCHMARK)
                 {
-                    printf("VAULTX_STAGE_MARKER: END WriteTable1 %.6f\n", omp_get_wtime() - program_start_time);
+                    printf("[%.6f] VAULTX_STAGE_MARKER: END WriteTable1\n", omp_get_wtime() - program_start_time);
                     fflush(stdout);
                 }
 
@@ -1005,7 +1005,7 @@ int main(int argc, char *argv[])
 
         if (!BENCHMARK)
         {
-            printf("VAULTX_STAGE_MARKER: END Table1Gen %.6f\n", omp_get_wtime() - program_start_time);
+            printf("[%.6f] VAULTX_STAGE_MARKER: END Table1Gen\n", omp_get_wtime() - program_start_time);
             fflush(stdout);
         }
 
@@ -1057,7 +1057,7 @@ int main(int argc, char *argv[])
             if (!BENCHMARK)
             {
                 printf("------------------------Table 2 generation started------------------------\n");
-                printf("VAULTX_STAGE_MARKER: START OutOfMemoryTable2Gen %.6f\n", omp_get_wtime() - program_start_time);
+                printf("[%.6f] VAULTX_STAGE_MARKER: START OutOfMemoryTable2Gen\n", omp_get_wtime() - program_start_time);
                 fflush(stdout);
             }
 
@@ -1383,7 +1383,7 @@ int main(int argc, char *argv[])
 
             if (!BENCHMARK)
             {
-                printf("VAULTX_STAGE_MARKER: END OutOfMemoryTable2Gen %.6f\n", omp_get_wtime() - program_start_time);
+                printf("[%.6f] VAULTX_STAGE_MARKER: END OutOfMemoryTable2Gen\n", omp_get_wtime() - program_start_time);
                 fflush(stdout);
             }
 
@@ -1445,7 +1445,7 @@ int main(int argc, char *argv[])
                 if (!BENCHMARK)
                 {
                     printf("------------------------Table 2 shuffling started------------------------\n");
-                    printf("VAULTX_STAGE_MARKER: START Table2Shuffle %.6f\n", omp_get_wtime() - program_start_time);
+                    printf("[%.6f] VAULTX_STAGE_MARKER: START Table2Shuffle\n", omp_get_wtime() - program_start_time);
                     fflush(stdout);
                 }
 
@@ -1492,7 +1492,7 @@ int main(int argc, char *argv[])
 
                 if (!BENCHMARK)
                 {
-                    printf("VAULTX_STAGE_MARKER: END Table2Shuffle %.6f\n", omp_get_wtime() - program_start_time);
+                    printf("[%.6f] VAULTX_STAGE_MARKER: END Table2Shuffle\n", omp_get_wtime() - program_start_time);
                     fflush(stdout);
                 }
 
@@ -1544,7 +1544,7 @@ int main(int argc, char *argv[])
             start_time_io = omp_get_wtime();
             if (!BENCHMARK)
             {
-                printf("VAULTX_STAGE_MARKER: START FinalizePlotFile %.6f\n", omp_get_wtime() - program_start_time);
+                printf("[%.6f] VAULTX_STAGE_MARKER: START FinalizePlotFile\n", omp_get_wtime() - program_start_time);
                 fflush(stdout);
             }
 
@@ -1564,7 +1564,7 @@ int main(int argc, char *argv[])
             }
             if (!BENCHMARK)
             {
-                printf("VAULTX_STAGE_MARKER: END FinalizePlotFile %.6f\n", omp_get_wtime() - program_start_time);
+                printf("[%.6f] VAULTX_STAGE_MARKER: END FinalizePlotFile\n", omp_get_wtime() - program_start_time);
                 fflush(stdout);
             }
 
@@ -1643,14 +1643,14 @@ int main(int argc, char *argv[])
         if (!BENCHMARK)
         {
             printf("------------------------Verifying started------------------------\n");
-            printf("VAULTX_STAGE_MARKER: START Verification %.6f\n", omp_get_wtime() - program_start_time);
+            printf("[%.6f] VAULTX_STAGE_MARKER: START Verification\n", omp_get_wtime() - program_start_time);
             fflush(stdout);
         }
 
         process_memo_records_table2(FILENAME_TABLE2, num_records_in_shuffled_bucket);
         if (!BENCHMARK)
         {
-            printf("VAULTX_STAGE_MARKER: END Verification %.6f\n", omp_get_wtime() - program_start_time);
+            printf("[%.6f] VAULTX_STAGE_MARKER: END Verification\n", omp_get_wtime() - program_start_time);
             fflush(stdout);
         }
     }
