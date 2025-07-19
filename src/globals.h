@@ -59,6 +59,8 @@ extern size_t PREFIX_SEARCH_SIZE;
 extern size_t WRITE_BATCH_SIZE; 
 extern size_t READ_BATCH_SIZE; 
 
+extern double matching_factor;
+
 // --- state & counters ---
 // extern size_t zero_nonce_count;
 // extern size_t count_condition_met;

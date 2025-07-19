@@ -28,6 +28,8 @@ size_t PREFIX_SEARCH_SIZE = 1;
 size_t WRITE_BATCH_SIZE = 1024; // Default write batch size
 size_t READ_BATCH_SIZE = 1; 
 
+double matching_factor = 1.0; 
+
 // --- state & counters ---
 // size_t zero_nonce_count = 0;
 // size_t count_condition_met = 0;

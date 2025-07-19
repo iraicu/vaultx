@@ -14,7 +14,7 @@ void generate_hash2(uint8_t *nonce1, uint8_t *nonce2, uint8_t *hash);
 uint64_t compute_hash_distance(const uint8_t *hash_output, const uint8_t *prev_hash, size_t hash_size);
 // void generate2Blake3(uint8_t *record_hash, MemoTable2Record *record, uint8_t *nonce1, uint8_t *nonce2);
 void insert_record2(BucketTable2 *buckets2, MemoTable2Record *record, size_t bucketIndex);
-void generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket);
+unsigned long long generate_table2(MemoRecord *sorted_nonces, size_t num_records_in_bucket);
 size_t process_memo_records_table2(
     const char *filename,
     const size_t BATCH_SIZE);

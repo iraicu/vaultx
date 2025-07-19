@@ -13,6 +13,7 @@ void print_usage(char *prog_name)
     printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
     printf("  -W, --write-batch-size NUM            Write batch size (default: 1024)\n");
     printf("  -R, --read-batch-size NUM             Read batch size (default: 1024)\n");
+    printf("  -M, --matching-factor NUM             Matching factor for table2 generation (0.0 < factor <= 1.0, default: 1.0)\n");
     printf("  -f, --dir tmp NAME                    Temporary table1 (out-of-memory)/table2 (in-memory) directory name\n");
     printf("  -g, --dir tmp table2 NAME             Temporary table2 directory name (only for out-of-memory)\n");
     printf("  -j, --dir table2 NAME                 Table2 directory name\n");
@@ -158,6 +159,7 @@ int main(int argc, char *argv[])
         {"batch_size", required_argument, 0, 'b'},
         {"write_batch_size", required_argument, 0, 'W'},
         {"read_batch_size", required_argument, 0, 'R'},
+        {"matching_factor", required_argument, 0, 'M'},
         {"memory_write", required_argument, 0, 'w'},
         {"circular_array", required_argument, 0, 'c'},
         {"verify", required_argument, 0, 'v'},
@@ -173,7 +175,7 @@ int main(int argc, char *argv[])
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:j:b:W:R:w:c:v:s:S:x:y:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:j:b:W:R:M:w:c:v:s:S:x:y:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -265,6 +267,15 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
+        case 'M':
+            matching_factor = atof(optarg);
+            if (matching_factor <= 0.0 || matching_factor > 1.0)
+            {
+                fprintf(stderr, "Matching factor must be greater than 0.0 and smaller than or equal to 1.0.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            break; 
         case 'w':
             if (strcmp(optarg, "true") == 0)
             {
@@ -574,23 +585,6 @@ int main(int argc, char *argv[])
             buckets2[i].records = all_records_table2 + (i * num_records_in_bucket);
         }
 
-        // for (unsigned long long i = 0; i < total_num_buckets; i++)
-        // {
-        //     buckets[i].records = (MemoRecord *)calloc(num_records_in_bucket, sizeof(MemoRecord));
-        //     if (buckets[i].records == NULL)
-        //     {
-        //         fprintf(stderr, "Error: Unable to allocate memory for records.\n");
-        //         exit(EXIT_FAILURE);
-        //     }
-
-        // buckets2[i].records = (MemoTable2Record *)calloc(num_records_in_bucket, sizeof(MemoTable2Record));
-        // if (buckets2[i].records == NULL)
-        // {
-        //     fprintf(stderr, "Error: Unable to allocate memory for records in table 2.\n");
-        //     exit(EXIT_FAILURE);
-        // }
-        // }
-
         double throughput_hash = 0.0;
         double throughput_io = 0.0;
 
@@ -814,13 +808,18 @@ int main(int argc, char *argv[])
                 // count_condition_met = 0;
                 // count_condition_not_met = 0;
 
+                unsigned long long total_matches = 0;
+
 // Generate Table2
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) reduction(+:total_matches)
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
                 {
                     sort_bucket_records_inplace(buckets[i].records, num_records_in_bucket);
-                    generate_table2(buckets[i].records, num_records_in_bucket);
+                    total_matches += generate_table2(buckets[i].records, num_records_in_bucket);
                 }
+
+                printf("Total matches found in table1: %llu out of %llu records\n", total_matches, num_records_in_bucket * total_num_buckets);
+                printf("Percentage of matches: %.2f%%\n", total_matches * 100.0 / (num_records_in_bucket * total_num_buckets));
 
                 // double pct_met = (double)count_condition_met * 100.0 /
                 //                  (double)(count_condition_met + count_condition_not_met + zero_nonce_count);

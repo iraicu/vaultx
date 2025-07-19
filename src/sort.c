@@ -24,9 +24,7 @@ void sort_bucket_records_inplace(MemoRecord *records, size_t total_records)
     // Populate it
     for (size_t i = 0; i < total_records; i++)
     {
-        if (i)
-            memcpy(all_records[i].nonce, records[i].nonce, NONCE_SIZE);
-
+        memcpy(all_records[i].nonce, records[i].nonce, NONCE_SIZE);
         generate_hash(all_records[i].nonce, all_records[i].hash);
     }
 

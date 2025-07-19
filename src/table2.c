@@ -419,11 +419,13 @@ size_t process_memo_records_table2(const char *filename, const size_t BATCH_SIZE
     return count_condition_met;
 }
 
-void generate_table2(MemoRecord *sorted_records, size_t num_records_in_bucket)
+unsigned long long generate_table2(MemoRecord *sorted_records, size_t num_records_in_bucket)
 {
     // uint64_t expected_distance = (1ULL << (64 - K)) * (1/0.70);
-    uint64_t expected_distance = (1ULL << (64 - K));
+    uint64_t expected_distance = (1ULL << (64 - K)) * (1 / matching_factor);
+    // uint64_t expected_distance = (1ULL << (64 - K));
 
+    unsigned long long match_counter_per_bucket = 0;
 
     // num_records_in_bucket = num_records_in_shuffled_bucket = num_records_in_bucket * rounds
     for (size_t i = 0; i < num_records_in_bucket; ++i)
@@ -458,6 +460,8 @@ void generate_table2(MemoRecord *sorted_records, size_t num_records_in_bucket)
                     break;
                 }
 
+                match_counter_per_bucket++;
+
                 MemoTable2Record record;
                 uint8_t hash_table2[HASH_SIZE];
                 memcpy(record.nonce1, sorted_records[i].nonce, NONCE_SIZE);
@@ -491,6 +495,6 @@ void generate_table2(MemoRecord *sorted_records, size_t num_records_in_bucket)
         //	bucket_not_full = true;
         // }
     }
-    return;
+    return match_counter_per_bucket;
     // printf("hash_pass_count=%lu\ncompared to num_records_in_bucket(unshuffled bucket)=%llu\n\n", hash_pass_count, num_records_in_bucket / rounds);
 }
