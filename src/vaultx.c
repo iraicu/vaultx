@@ -41,6 +41,38 @@ off_t getBucketIndex(const uint8_t *hash)
     return index;
 }
 
+// More precise estimate using your specific parameters
+// unsigned long long estimate_matches_precise(unsigned long long num_records_in_bucket,
+//                                           unsigned long long total_num_buckets,
+//                                           unsigned long long K,
+//                                           double matching_factor)
+// {
+//     uint64_t expected_distance = (1ULL << (64 - K)) * (1 / matching_factor);
+
+//     // Hash space is 2^64 for the first 64 bits
+//     double hash_space = pow(2.0, 64);
+
+//     // Probability of a match within expected_distance
+//     double p_match = (double)expected_distance / hash_space;
+
+//     // For sorted data, the average number of comparisons per record
+//     // is approximately the square root of the expected distance
+//     double avg_comparisons = sqrt((double)expected_distance);
+
+//     // But we're limited by bucket size
+//     if (avg_comparisons > num_records_in_bucket / 2.0) {
+//         avg_comparisons = num_records_in_bucket / 2.0;
+//     }
+
+//     // Expected matches per bucket
+//     double matches_per_bucket = num_records_in_bucket * avg_comparisons * p_match;
+
+//     // Total matches across all buckets
+//     unsigned long long total_estimated = (unsigned long long)(matches_per_bucket * total_num_buckets);
+
+//     return total_estimated;
+// }
+
 // Function to convert bytes to unsigned long long
 unsigned long long byteArrayToLongLong(const uint8_t *byteArray, size_t length)
 {
@@ -137,6 +169,10 @@ int main(int argc, char *argv[])
     unsigned long long num_records_total = 1ULL << K; // 2^K iterations
     unsigned long long num_records_per_round = num_records_total;
     unsigned long long MEMORY_SIZE_MB = 1;
+    unsigned long long total_matches = 0;
+    unsigned long long full_buckets = 0;
+    unsigned long long record_counts = 0;
+    unsigned long long record_counts_waste = 0;
     char *DIR_TMP = NULL; // Default output file name
     char *DIR_TMP_TABLE2 = NULL;
     char *DIR_TABLE2 = NULL;
@@ -275,7 +311,7 @@ int main(int argc, char *argv[])
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
-            break; 
+            break;
         case 'w':
             if (strcmp(optarg, "true") == 0)
             {
@@ -808,18 +844,28 @@ int main(int argc, char *argv[])
                 // count_condition_met = 0;
                 // count_condition_not_met = 0;
 
-                unsigned long long total_matches = 0;
+                // unsigned long long estimated_matches = estimate_matches_precise(num_records_in_bucket,
+                //                                               total_num_buckets,
+                //                                               K,
+                //                                               matching_factor);
+
+                // printf("Estimated matches in table2: %llu\n", estimated_matches);
+
+                total_matches = 0;
 
 // Generate Table2
-#pragma omp parallel for schedule(static) reduction(+:total_matches)
+#pragma omp parallel for schedule(static) reduction(+ : total_matches)
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
                 {
                     sort_bucket_records_inplace(buckets[i].records, num_records_in_bucket);
                     total_matches += generate_table2(buckets[i].records, num_records_in_bucket);
                 }
 
-                printf("Total matches found in table1: %llu out of %llu records\n", total_matches, num_records_in_bucket * total_num_buckets);
-                printf("Percentage of matches: %.2f%%\n", total_matches * 100.0 / (num_records_in_bucket * total_num_buckets));
+                if (!BENCHMARK)
+                {
+                    printf("Total matches found in table1: %llu out of %llu records\n", total_matches, num_records_in_bucket * total_num_buckets);
+                    printf("Percentage of matches: %.2f%%\n", total_matches * 100.0 / (num_records_in_bucket * total_num_buckets));
+                }
 
                 // double pct_met = (double)count_condition_met * 100.0 /
                 //                  (double)(count_condition_met + count_condition_not_met + zero_nonce_count);
@@ -856,9 +902,9 @@ int main(int argc, char *argv[])
                 elapsed_time_hash2_total += elapsed_time_hash2;
 
                 // count how many full buckets , this works for rounds == 1
-                unsigned long long full_buckets = 0;
-                unsigned long long record_counts = 0;
-                unsigned long long record_counts_waste = 0;
+                full_buckets = 0;
+                record_counts = 0;
+                record_counts_waste = 0;
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
                 {
                     if (buckets2[i].count == num_records_in_bucket)
@@ -1619,7 +1665,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE, total_throughput, total_throughput * sizeof(MemoRecord), elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
+            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE, total_throughput, total_throughput * sizeof(MemoRecord), elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time, total_matches * 100.0 / (num_records_in_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_bucket));
             // return 0;
         }
     }
