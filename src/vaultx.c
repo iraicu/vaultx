@@ -268,6 +268,8 @@ int main(int argc, char* argv[]) {
         }
 
         double total_time = 0;
+        double total_gen_time = 0.0;
+        double total_io_time = 0.0;
 
         for (int f = 1; f <= TOTAL_FILES; f++) {
             double file_time = 0;
@@ -301,6 +303,7 @@ int main(int argc, char* argv[]) {
             // Table1: Hash Generation Complete
             double hashgen_end_time = omp_get_wtime();
             double hashgen_time = hashgen_end_time - hashgen_start_time;
+            total_gen_time += hashgen_time;
             file_time += hashgen_time;
 
             printf("[File %d] %-40s: %.2fs\n", f, "Table1: Hash Generation Complete", hashgen_time);
@@ -327,6 +330,7 @@ int main(int argc, char* argv[]) {
             double matching_end_time = omp_get_wtime();
             double matching_time = matching_end_time - matching_start_time;
             file_time += matching_time;
+            total_gen_time += matching_time;
 
             printf("[File %d] %-40s: %.2fs\n", current_file, "Table2: Matching Complete", matching_time);
 
@@ -351,6 +355,7 @@ int main(int argc, char* argv[]) {
             double fileio_end_time = omp_get_wtime();
             double fileio_time = fileio_end_time - fileio_start_time;
             file_time += fileio_time;
+            total_io_time += fileio_time;
 
             printf("[File %d] %-40s: %.2fs\n", current_file, "Finished writing to disk", fileio_time);
 
@@ -358,9 +363,12 @@ int main(int argc, char* argv[]) {
             if (current_file < TOTAL_FILES) {
                 double empty_start_time = omp_get_wtime();
 
+                // FIXME: CPU overhead from loop?
                 for (unsigned long long i = 0; i < total_buckets; i++) {
                     memset(buckets[i].records, 0, sizeof(MemoRecord) * num_records_in_bucket);
                 }
+
+                memset(table2, 0, total_nonces * sizeof(MemoTable2Record));
 
                 double empty_end_time = omp_get_wtime();
                 double empty_time = empty_end_time - empty_start_time;
@@ -374,14 +382,14 @@ int main(int argc, char* argv[]) {
             // Prepare for next file
             current_file++;
             full_buckets_global = 0;
-
-            // TODO: Throughput calculation
-            // throughput_hash = (num_records_per_round / (hashgen_time + elapsed_time_io)) / (1e6);
-            // throughput_io = (num_records_per_round * sizeof(MemoTable2Record)) / ((elapsed_time_hash + elapsed_time_io) * 1024 * 1024);
-            // printf("[%.2f] HashGen %.2f%%: %.2f MH/s : I/O %.2f MB/s\n", omp_get_wtime() - start_time, (r + 1) * 100.0 / rounds, throughput_hash, throughput_io);
         }
 
         printf("[%.2fs] Completed generating %d files\n", total_time, TOTAL_FILES);
+
+        // TODO: Throughput calculation
+        double throughput_hash = (TOTAL_FILES * total_nonces * 2 / (total_gen_time)) / (1e6);
+        double throughput_io = (TOTAL_FILES * total_nonces * sizeof(MemoTable2Record) / (total_io_time)) / (1024 * 1024);
+        printf("Hashgen Throughput: %.2f MH/s\nIO Throughput: %.2f MB/s\n", throughput_hash, throughput_io);
     }
 
     // TODO: PERF to see bottlenecks
@@ -390,15 +398,9 @@ int main(int argc, char* argv[]) {
 
     // TODO: Try taskloop pragma (CHATGPT history)
 
-    // TODO: Figure out optimal batch size and thread number
-
     // TODO: Small tests on data/fast2
 
-    // TODO: Data-l parallel logic works pretty well
-
     // TODO: Optimizations in makefile
-
-    // TODO: Try new merging approaches
 
     // TODO: Play around with scheduling
 
