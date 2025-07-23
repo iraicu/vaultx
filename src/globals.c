@@ -1,10 +1,13 @@
 #include "globals.h"
 #include <stdbool.h>
 
-int K = 24; // Default exponent
+// Defaults
+int K = 24;
 int current_file = 1;
 int MERGE_APPROACH = 0;
-// 0: Merge on SSD
+int TOTAL_FILES = 2;
+int MEMORY_SIZE_MB = 256;
+int num_threads = 8;
 
 unsigned long long total_nonces;
 unsigned long long num_records_in_bucket = 1;
@@ -27,6 +30,9 @@ bool SEARCH = false;
 bool SEARCH_BATCH = false;
 bool VERIFY = false;
 bool FULL_BUCKETS = false;
+
+char* SOURCE = 'ssd-raid0';
+char* DESTINATION = 'ssd-raid0';
 
 uint8_t key[32];
 

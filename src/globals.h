@@ -35,6 +35,9 @@
 extern int K;
 extern int MERGE_APPROACH;
 extern int current_file;
+extern int TOTAL_FILES;
+extern int MEMORY_SIZE_MB;
+extern int num_threads;
 
 extern unsigned long long num_records_in_bucket;
 extern unsigned long long num_records_in_shuffled_bucket;
@@ -57,6 +60,9 @@ extern bool CIRCULAR_ARRAY;
 extern bool MEMORY_WRITE;
 extern bool VERIFY;
 extern bool FULL_BUCKETS;
+
+extern char* SOURCE;
+extern char* DESTINATION;
 
 extern size_t BATCH_SIZE;
 extern size_t PREFIX_SEARCH_SIZE;
@@ -109,6 +115,17 @@ typedef struct
 {
     MemoTable2Record* records;
 } FileRecords;
+
+typedef struct
+{
+    MemoTable2Record* buffer;
+    MemoTable2Record* mergedBuckets;
+    bool readDone;
+    bool mergeDone;
+    bool writeDone;
+    double start_time;
+    double total_time;
+} MergeBatch;
 
 extern Bucket* buckets;
 extern Bucket* buckets_phase2;

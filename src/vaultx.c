@@ -1,17 +1,13 @@
 #include "vaultx.h"
 
 int main(int argc, char* argv[]) {
-    // printf("size of MemoTable2Record: %zu\n", sizeof(MemoTable2Record));
-    // printf("size of MemoRecord2: %zu\n", sizeof(MemoRecord2));
     // Default values
     const char* approach = "for"; // Default approach
-    int num_threads = 0; // 0 means OpenMP chooses
     int num_threads_io = 0;
     total_nonces = 1ULL << K; // 2^K iterations
-    unsigned long long MEMORY_SIZE_MB = 1;
-    int TOTAL_FILES = 2;
     bool MERGE = false;
     char* SEARCH_STRING = NULL;
+    int LOOKUP_COUNT = 1;
 
     // Define long options
     static struct option long_options[] = {
@@ -24,14 +20,15 @@ int main(int argc, char* argv[]) {
         { "memory_write", required_argument, 0, 'w' },
         { "circular_array", required_argument, 0, 'c' },
         { "verify", required_argument, 0, 'v' },
-        { "search", required_argument, 0, 's' },
-        { "prefix_search_size", required_argument, 0, 'S' },
+        { "Lookup S hashes", required_argument, 0, 'S' },
         { "benchmark", required_argument, 0, 'x' },
         { "full_buckets", required_argument, 0, 'y' },
         { "debug", required_argument, 0, 'd' },
         { "help", no_argument, 0, 'h' },
         { "total_files", required_argument, 0, 'n' },
         { "merge", required_argument, 0, 'M' },
+        { "Merge File destination", required_argument, 0, 'T' },
+        { "Small files source", required_argument, 0, 'F' },
         { 0, 0, 0, 0 }
     };
 
@@ -39,7 +36,7 @@ int main(int argc, char* argv[]) {
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:b:w:c:v:s:S:x:y:d:h:n:M:", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:b:w:c:v:s:S:x:y:d:h:n:M:T:F:", long_options, &option_index)) != -1) {
         switch (opt) {
         case 'a':
             if (strcmp(optarg, "xtask") == 0 || strcmp(optarg, "task") == 0 || strcmp(optarg, "for") == 0 || strcmp(optarg, "tbb") == 0) {
@@ -112,18 +109,13 @@ int main(int argc, char* argv[]) {
                 VERIFY = false;
             }
             break;
-        case 's':
-            SEARCH_STRING = optarg;
-            SEARCH = true;
-            HASHGEN = false;
-            break;
         case 'S':
             SEARCH_BATCH = true;
             SEARCH = true;
             HASHGEN = false;
-            PREFIX_SEARCH_SIZE = atoi(optarg);
-            if (PREFIX_SEARCH_SIZE < 1) {
-                fprintf(stderr, "PREFIX_SEARCH_SIZE must be 1 or greater.\n");
+            LOOKUP_COUNT = atoi(optarg);
+            if (LOOKUP_COUNT < 1) {
+                fprintf(stderr, "LOOKUP_COUNT must be 1 or greater.\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
@@ -161,6 +153,12 @@ int main(int argc, char* argv[]) {
             MERGE_APPROACH = atoi(optarg);
             MERGE = true;
             HASHGEN = false;
+            break;
+        case 'T':
+            DESTINATION = optarg;
+            break;
+        case 'F':
+            SOURCE = optarg;
             break;
         case 'h':
         default:
@@ -409,563 +407,194 @@ int main(int argc, char* argv[]) {
     // TODO: Theoretical peak: poster idea
 
     if (MERGE) {
-        int MAX_FILENAME_LEN = 100;
-        char filenames[TOTAL_FILES][MAX_FILENAME_LEN];
-
-        DIR* d = opendir("plots");
-        struct dirent* dir;
-
-        int count = 0;
-
-        if (d) {
-            while ((dir = readdir(d)) != NULL && count < TOTAL_FILES) {
-                if (dir->d_name[0] != '.') { // skip hidden files
-                    // Build full path "plots/filename"
-                    snprintf(filenames[count], MAX_FILENAME_LEN, "plots/%s", dir->d_name);
-                    filenames[count][MAX_FILENAME_LEN - 1] = '\0'; // safety null-terminate
-                    count++;
-                }
-            }
-            closedir(d);
-        } else {
-            perror("opendir");
-            return 1;
-        }
-
-        PlotData plotData[TOTAL_FILES];
-
-        for (int i = 0; i < TOTAL_FILES; i++) {
-            char* filename = filenames[i];
-
-            char buffer[256];
-            strncpy(buffer, filename, sizeof(buffer));
-            buffer[sizeof(buffer) - 1] = '\0';
-
-            // Remove ".plot" extension
-            char* dot = strrchr(buffer, '.');
-            if (dot != NULL) {
-                *dot = '\0';
-            }
-
-            // Skip the "plots/" prefix
-            char* base = buffer;
-            if (strncmp(buffer, "plots/", 6) == 0) {
-                base = buffer + 6;
-            }
-
-            // Now split at '_'
-            int kVal = atoi(strtok(base, "_") + 1);
-            char* hexPart = strtok(NULL, "_");
-
-            uint8_t* plot_id = hexStringToByteArray(hexPart);
-
-            plotData[i].K = kVal;
-            derive_key(kVal, plot_id, plotData[i].key);
-        }
-
-        //   closedir(dir);
-
-        printf("Memory Size: %lluMB\n", MEMORY_SIZE_MB);
-        printf("Threads: %d\n", num_threads);
-        printf("Files: %d\n\n\n", TOTAL_FILES);
-
-        unsigned long long records_per_global_bucket = TOTAL_FILES * num_records_in_bucket;
-        unsigned long long global_bucket_size = records_per_global_bucket * sizeof(MemoTable2Record);
-
-        // Number of global buckets that can be stored in memory
-        unsigned long long total_global_buckets = (unsigned long long)floor(MEMORY_SIZE_MB * 1024 * 1024 / global_bucket_size);
-
-        // Allocate memory
-        MemoTable2Record* mergedBuckets = (MemoTable2Record*)calloc(total_global_buckets * records_per_global_bucket, sizeof(MemoTable2Record));
-
-        FileRecords file_records[TOTAL_FILES];
-
-        for (int i = 0; i < TOTAL_FILES; i++) {
-            file_records[i].records = (MemoTable2Record*)calloc(total_global_buckets * num_records_in_bucket, sizeof(MemoTable2Record));
-        }
-
-        if (mergedBuckets == NULL) {
-            fprintf(stderr, "Error: Unable to allocate memory for buckets.\n");
-            exit(EXIT_FAILURE);
-        }
-
-        // int cpu = sched_getcpu();
-        // printf("Running on CPU: %d\n", cpu);
-
-        // Merge file
-        char merge_filename[100];
-        // snprintf(merge_filename, sizeof(merge_filename), "/data-l/arnav/vaultx/merge_%d_%d.plot", K, TOTAL_FILES);
-        snprintf(merge_filename, sizeof(merge_filename), "merge_%d_%d.plot", K, TOTAL_FILES);
-
-        remove(merge_filename);
-
-        int merge_fd = open(merge_filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
-
-        if (merge_fd == -1) {
-            perror("Error opening file");
-            return EXIT_FAILURE;
-        }
-
-        // Preload Files
-        FILE* files[TOTAL_FILES];
-
-        for (int i = 0; i < TOTAL_FILES; i++) {
-            char* filename = filenames[i];
-
-            files[i] = fopen(filename, "rb");
-            if (!files[i]) {
-                perror("Error opening file");
-                // return 1;
-            }
-        }
-
-        unsigned long long end;
-        double batch_start_time, merge_start_time;
-        double start_time = omp_get_wtime();
-        double read_total_time = 0;
-        double write_total_time = 0;
-
-        switch (MERGE_APPROACH) {
-
-        // Parallel Read & Merge
-        // FIXME: Time benchamrking
-        case 0: {
-
-#pragma omp parallel
-            {
-                for (unsigned long long i = 0; i < total_buckets; i += total_global_buckets) {
-
-                    int tid = omp_get_thread_num();
-
-                    if (tid == 0) {
-                        end = i + total_global_buckets;
-                        if (end > total_buckets) {
-                            end = total_buckets;
-                        }
-
-                        batch_start_time = omp_get_wtime();
-                    }
-
-#pragma omp barrier
-
-#pragma omp for
-
-                    for (int f = 0; f < TOTAL_FILES; f++) {
-                        FILE* fd = files[f];
-
-                        size_t read_bytes = fread(file_records[f].records, sizeof(MemoTable2Record), (end - i) * num_records_in_bucket, fd);
-                        if (read_bytes != num_records_in_bucket * (end - i)) {
-                            if (feof(fd)) {
-                                printf("Reached end of file after reading %zu bytes\n", read_bytes);
-                            } else {
-                                perror("fread failed");
-                                fclose(fd);
-                                // return 1;
-                            }
-                        }
-
-                        FileRecords* file_record = &file_records[f];
-                        unsigned long long off = f * num_records_in_bucket;
-                        for (unsigned long long k = 0; k < end - i; k++) {
-                            memcpy(&mergedBuckets[k * records_per_global_bucket + off], &file_record->records[k * num_records_in_bucket], num_records_in_bucket * sizeof(MemoTable2Record));
-                        }
-                    }
-
-                    if (tid == 0) {
-                        printf("Read: %.4f\n", omp_get_wtime() - batch_start_time);
-                        double fs = omp_get_wtime();
-                        size_t total_bytes = (end - i) * records_per_global_bucket * sizeof(MemoTable2Record);
-                        size_t bytes_written = 0;
-
-                        while (bytes_written < total_bytes) {
-                            ssize_t res = write(merge_fd, (char*)mergedBuckets + bytes_written, total_bytes - bytes_written);
-                            if (res < 0) {
-                                perror("Error writing to merge file");
-                                close(merge_fd);
-                                exit(EXIT_FAILURE);
-                            }
-                            bytes_written += res;
-                        }
-                        printf("Write: %.4f\n", omp_get_wtime() - fs);
-
-                        printf("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n", ((double)end / total_buckets) * 100, omp_get_wtime() - batch_start_time, omp_get_wtime() - start_time);
-                    }
-                }
-            }
-
-            break;
-        }
-
-        // Parallel Merge
-        case 1: {
-
-#pragma omp parallel
-            {
-
-                for (unsigned long long i = 0; i < total_buckets; i += total_global_buckets) {
-
-#pragma omp single
-
-                    {
-                        end = i + total_global_buckets;
-                        if (end > total_buckets) {
-                            end = total_buckets;
-                        }
-
-                        batch_start_time = omp_get_wtime();
-
-                        for (int f = 0; f < TOTAL_FILES; f++) {
-                            FILE* fd = files[f];
-
-                            size_t read_bytes = fread(file_records[f].records, sizeof(MemoTable2Record), (end - i) * num_records_in_bucket, fd);
-                            if (read_bytes != num_records_in_bucket * (end - i)) {
-                                if (feof(fd)) {
-                                    printf("Reached end of file after reading %zu bytes\n", read_bytes);
-                                } else {
-                                    perror("fread failed");
-                                    fclose(fd);
-                                    // return 1;
-                                }
-                            }
-                        }
-
-                        double read_time = omp_get_wtime() - batch_start_time;
-                        read_total_time += read_time;
-
-                        double throughput_MBps = MEMORY_SIZE_MB / read_time; // MB per second
-                        printf("Read : %.4fs, Rate: %.2f MB/s\n", read_time, throughput_MBps);
-
-                        merge_start_time = omp_get_wtime();
-                    }
-
-#pragma omp for
-                    for (int f = 0; f < TOTAL_FILES; f++) {
-                        FileRecords* file_record = &file_records[f];
-                        unsigned long long off = f * num_records_in_bucket;
-                        for (unsigned long long k = 0; k < end - i; k++) {
-                            memcpy(&mergedBuckets[k * records_per_global_bucket + off], &file_record->records[k * num_records_in_bucket], num_records_in_bucket * sizeof(MemoTable2Record));
-                        }
-                    }
-
-#pragma omp single
-                    {
-                        double merge_time = omp_get_wtime() - merge_start_time;
-
-                        printf("Merge: %.4fs\n", merge_time);
-
-                        double write_start_time = omp_get_wtime();
-
-                        size_t total_bytes = (end - i) * records_per_global_bucket * sizeof(MemoTable2Record);
-                        size_t bytes_written = 0;
-
-                        while (bytes_written < total_bytes) {
-                            ssize_t res = write(merge_fd, (char*)mergedBuckets + bytes_written, total_bytes - bytes_written);
-                            if (res < 0) {
-                                perror("Error writing to merge file");
-                                close(merge_fd);
-                                exit(EXIT_FAILURE);
-                            }
-                            bytes_written += res;
-                        }
-
-                        double write_time = omp_get_wtime() - write_start_time;
-                        write_total_time += write_time;
-
-                        double throughput_MBps = MEMORY_SIZE_MB / write_time; // MB per second
-                        printf("Write: %.4fs, Rate: %.2f MB/s\n", write_time, throughput_MBps);
-
-                        printf("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n\n", ((double)end / total_buckets) * 100, omp_get_wtime() - batch_start_time, omp_get_wtime() - start_time);
-                    }
-                }
-            }
-
-            break;
-        }
-
-        default: {
-            break;
-        }
-        }
-
-        // Write metadata to footer
-        double finalize_start_time = omp_get_wtime();
-
-        size_t total_bytes = sizeof(PlotData) * TOTAL_FILES;
-        size_t bytes_written = 0;
-
-        while (bytes_written < total_bytes) {
-            ssize_t res = write(merge_fd, (char*)plotData + bytes_written, total_bytes - bytes_written);
-            if (res < 0) {
-                perror("Failed to write metadata");
-                close(merge_fd);
-                return EXIT_FAILURE;
-            }
-            bytes_written += res;
-        }
-
-        // TODO: Glances
-        // TODO: Graphs (parallelism (some for hdd 4 max)
-
-        // TODO: Profiling
-
-        // Sync disk
-        if (fsync(merge_fd) != 0) {
-            perror("Failed to fsync");
-            close(merge_fd);
-            return EXIT_FAILURE;
-        }
-
-        if (close(merge_fd) != 0) {
-            perror("Failed to close");
-            return EXIT_FAILURE;
-        }
-
-        write_total_time += omp_get_wtime() - finalize_start_time;
-
-        double merge_total_time = omp_get_wtime() - start_time;
-
-        printf("Merge complete: %.2fs\n", merge_total_time);
-        printf("Read Time: %.2fs\n", read_total_time);
-        printf("Write Time: %.2fs\n", write_total_time);
-        printf("Merge Time: %.2fs\n\n\n", merge_total_time - read_total_time - write_total_time);
-
-        for (int i = 0; i < TOTAL_FILES; i++) {
-            fclose(files[i]);
-        }
-
-        // Verify complete merge plot
-        //         if (VERIFY) {
-        //             printf("Starting verification: \n");
-
-        //             size_t verified_global_buckets = 0;
-
-        // #pragma omp parallel for
-        //             for (unsigned long long i = 0; i < total_buckets; i += BATCH_SIZE) {
-
-        //                 FILE* fd = fopen(merge_filename, "rb");
-        //                 if (!fd) {
-        //                     perror("Error opening file");
-        //                 }
-
-        //                 MemoTable2Record* buffer = calloc(BATCH_SIZE * records_per_global_bucket, sizeof(MemoTable2Record));
-
-        //                 size_t offset = i * global_bucket_size;
-
-        //                 fseek(fd, offset, SEEK_SET);
-        //                 size_t elements_written = fread(buffer, sizeof(MemoTable2Record), BATCH_SIZE * records_per_global_bucket, fd);
-
-        //                 if (elements_written != BATCH_SIZE * records_per_global_bucket) {
-        //                     fprintf(stderr, "Error writing bucket to file");
-        //                     fclose(fd);
-        //                     exit(EXIT_FAILURE);
-        //                 }
-
-        //                 size_t end = i + BATCH_SIZE;
-        //                 if (end > total_buckets) {
-        //                     end = total_buckets;
-        //                 }
-
-        //                 MemoTable2Record* record;
-        //                 uint8_t fileId[FILEID_SIZE];
-        //                 uint8_t hash[HASH_SIZE];
-
-        //                 for (unsigned long long j = i; j < end; j++) {
-        //                     bool flag = true;
-
-        //                     for (int k = 0; k < records_per_global_bucket; k++) {
-        //                         record = &buffer[(j - i) * records_per_global_bucket + k];
-
-        //                         if (byteArrayToLongLong(record->nonce1, NONCE_SIZE) != 0 || byteArrayToLongLong(record->nonce2, NONCE_SIZE) != 0) {
-        //                             generateBlake3Pair(record->nonce1, record->nonce2, plotData[k / num_records_in_bucket].key, hash);
-
-        //                             if (byteArrayToLongLong(hash, PREFIX_SIZE) != j) {
-        //                                 flag = false;
-        //                                 break;
-        //                             }
-        //                         }
-        //                     }
-
-        //                     if (flag) {
-        // #pragma omp atomic
-        //                         verified_global_buckets++;
-        //                     }
-        //                 }
-
-        //                 free(buffer);
-
-        //                 fclose(fd);
-        //             }
-
-        //             printf("Total Buckets: %llu\nVerified Buckets: %llu\n", total_buckets, verified_global_buckets);
-        //         }
-
-        free(mergedBuckets);
-
-        for (int i = 0; i < TOTAL_FILES; i++) {
-            free(file_records[i].records);
-        }
+        merge();
     }
 
     if (SEARCH) {
-        double start_time = omp_get_wtime();
+        double small_search_time = 0.0;
+        double merge_search_time = 0.0;
 
-        printf("Searching: %s\n", SEARCH_STRING);
+        unsigned long long bucketSize = num_records_in_bucket * sizeof(MemoTable2Record);
+        unsigned long long global_bucket_size = num_records_in_bucket * TOTAL_FILES * sizeof(MemoTable2Record);
 
-        int k, total_files;
+        // Initialize small plots
+        double small_setup_start_time = omp_get_wtime();
 
-        DIR* dir = opendir(".");
-        FILE* fd;
-        struct dirent* entry;
+        PlotData plotData[TOTAL_FILES];
+        int fds[TOTAL_FILES];
+        int counter = 0;
 
-        if (!dir) {
+        char dir_name[256];
+        snprintf(dir_name, sizeof(dir_name), "/%s/arnav/vaultx/plots", SOURCE);
+
+        DIR* d = opendir(dir_name);
+        if (!d) {
             perror("opendir");
             return 1;
         }
 
-        while ((entry = readdir(dir)) != NULL) {
-            const char* filename = entry->d_name;
-
-            // Check if filename starts with "merge_"
-            if (strncmp(filename, "merge_", 6) != 0)
+        struct dirent* dir;
+        while ((dir = readdir(d)) != NULL && counter < TOTAL_FILES) {
+            if (dir->d_name[0] == '.')
                 continue;
 
-            // Remove ".plot" from the end
-            char temp[512];
-            strncpy(temp, filename, sizeof(temp) - 1);
-            temp[sizeof(temp) - 1] = '\0';
-            temp[strlen(temp) - 5] = '\0'; // Remove ".plot"
-
-            // Extract val1 and val2
-            if (sscanf(temp, "merge_%d_%d", &k, &total_files) == 2) {
-                printf("Filename   : %s\n", filename);
-                printf("K          : %d\n", k);
-                printf("Total files: %d\n", total_files);
-            }
-
-            fd = fopen(filename, "rb");
-            if (!fd) {
-                perror("fopen failed");
+            int kVal = 0;
+            char hex[129];
+            if (sscanf(dir->d_name, "K%d_%128[^.].plot", &kVal, hex) != 2) {
+                printf("Parsing failed for %s\n", dir->d_name);
                 continue;
             }
+
+            plotData[counter].K = kVal;
+            uint8_t* plot_id = hexStringToByteArray(hex);
+            derive_key(kVal, plot_id, plotData[counter].key);
+            free(plot_id);
+
+            char fullpath[256];
+            snprintf(fullpath, sizeof(fullpath), "%s/%s", dir_name, dir->d_name);
+
+            int fd = open(fullpath, O_RDONLY);
+            if (fd < 0) {
+                perror("Small plot open");
+                continue;
+            }
+            fds[counter] = fd;
+
+            counter++;
         }
 
-        closedir(dir);
+        closedir(d);
 
-        PlotData plotData[total_files];
+        small_search_time += omp_get_wtime() - small_setup_start_time;
 
-        off_t offset = sizeof(PlotData) * total_files;
+        // Initialize merged plot
+        double merge_setup_start_time = omp_get_wtime();
 
-        if (fseek(fd, -offset, SEEK_END) != 0) {
-            perror("fseek failed");
-            fclose(fd);
+        char merge_filename[100];
+        snprintf(merge_filename, sizeof(merge_filename), "/%s/arnav/vaultx/merge_%d_%d.plot", DESTINATION, K, TOTAL_FILES);
+        int merge_fd = open(merge_filename, O_RDWR | O_CREAT | O_APPEND, 0644);
+
+        if (merge_fd == -1) {
+            perror("Error opening merged plot");
+            return EXIT_FAILURE;
+        }
+
+        PlotData plotData_merge[TOTAL_FILES];
+
+        off_t offset = total_nonces * sizeof(MemoTable2Record) * TOTAL_FILES;
+        ssize_t bytes_to_read = sizeof(PlotData) * TOTAL_FILES;
+
+        ssize_t bytes_read = pread(merge_fd, plotData_merge, bytes_to_read, offset);
+        if (bytes_read < 0) {
+            perror("pread on merged plotdata failed");
+            close(merge_fd);
+            return 1;
+        }
+        if (bytes_read != bytes_to_read) {
+            fprintf(stderr, "Incomplete read: expected %zd bytes, got %zd bytes\n", bytes_to_read, bytes_read);
+            close(merge_fd);
             return 1;
         }
 
-        size_t nread = fread(plotData, sizeof(PlotData), total_files, fd);
-        if ((int)nread != total_files) {
-            fprintf(stderr, "fread failed: expected %d elements, got %zu\n", total_files, nread);
-            fclose(fd);
-            return 1;
-        }
+        merge_search_time += omp_get_wtime() - merge_setup_start_time;
 
-        const char* start = SEARCH_STRING;
-        while (*start && !isdigit((unsigned char)*start)) {
-            start++;
-        }
+        // Perform lookups
+        for (int s = 0; s < LOOKUP_COUNT; s++) {
+            uint8_t* targetHash = getRandomHash(HASH_SIZE);
+            if (!targetHash) {
+                fprintf(stderr, "Failed to allocate targetHash\n");
+                continue;
+            }
 
-        unsigned long long bucketIndex = byteArrayToLongLong(hexStringToByteArray((SEARCH_STRING)), PREFIX_SIZE);
-        printf("bucket: %llu\n", bucketIndex);
+            int bucketIndex = getBucketIndex(targetHash);
 
-        // FIXME: Recompute all values and reuse those variables
-        size_t off = bucketIndex * num_records_in_bucket * total_files * sizeof(MemoTable2Record);
+            // Lookup in smaller plots
+            double small_start_time = omp_get_wtime();
 
-        if (fseek(fd, off, SEEK_SET) != 0) {
-            perror("fseek failed");
-            fclose(fd);
-            return 1;
-        }
+            for (int idx = 0; idx < TOTAL_FILES; idx++) {
+                MemoTable2Record bucket[num_records_in_bucket];
+                off_t offset = bucketIndex * bucketSize;
 
-        MemoTable2Record bucket[num_records_in_bucket * total_files];
+                ssize_t bytes_read = pread(fds[idx], bucket, bucketSize, offset);
+                if (bytes_read < 0) {
+                    perror("pread");
+                    continue;
+                }
 
-        size_t records_read = fread(bucket, sizeof(MemoTable2Record), num_records_in_bucket * total_files, fd);
-        if (records_read != num_records_in_bucket * total_files) {
-            fprintf(stderr, "fread failed: expected %d elements, got %zu\n", total_files, nread);
-            fclose(fd);
-            return 1;
-        }
-
-        uint8_t hash[HASH_SIZE];
-
-        for (unsigned long long i = 0; i < num_records_in_bucket * total_files; i++) {
-            if (byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE) != 0 || byteArrayToLongLong(bucket[i].nonce2, NONCE_SIZE) != 0) {
-                generateBlake3Pair(bucket[i].nonce1, bucket[i].nonce2, plotData[i / num_records_in_bucket].key, hash);
-
-                if (memcmp(hash, hexStringToByteArray(SEARCH_STRING), strlen(SEARCH_STRING) / 2) == 0) {
-                    printf("Hash Match Found: %s, Nonce1: %llu, Nonce2: %llu, Key: %s\n", byteArrayToHexString(hash, HASH_SIZE), byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE), byteArrayToLongLong(bucket[i].nonce2, NONCE_SIZE), byteArrayToHexString(plotData[i / num_records_in_bucket].key, 32));
+                uint8_t hash[HASH_SIZE];
+                for (int i = 0; i < num_records_in_bucket; i++) {
+                    if (byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE) != 0 || byteArrayToLongLong(bucket[i].nonce2, NONCE_SIZE) != 0) {
+                        generateBlake3Pair(bucket[i].nonce1, bucket[i].nonce2, plotData[idx].key, hash);
+                        if (memcmp(hash, targetHash, HASH_SIZE) == 0) {
+                            printf("Hash Match Found: %s, Nonce1: %llu, Nonce2: %llu, Key: %s\n",
+                                byteArrayToHexString(hash, HASH_SIZE),
+                                byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE),
+                                byteArrayToLongLong(bucket[i].nonce2, NONCE_SIZE),
+                                byteArrayToHexString(plotData[idx].key, 32));
+                        }
+                    }
                 }
             }
+
+            small_search_time += omp_get_wtime() - small_start_time;
+
+            // Lookup in merged plot
+            double merge_start_time = omp_get_wtime();
+
+            MemoTable2Record global_bucket[num_records_in_bucket * TOTAL_FILES];
+            off_t offset = bucketIndex * global_bucket_size;
+
+            ssize_t bytes_read = pread(merge_fd, global_bucket, global_bucket_size, offset);
+            if (bytes_read < 0) {
+                perror("pread failed");
+                close(merge_fd);
+                return 1;
+            }
+            if ((size_t)bytes_read != global_bucket_size) {
+                fprintf(stderr, "pread incomplete: expected %zu bytes, got %zd bytes\n", global_bucket_size, bytes_read);
+                close(merge_fd);
+                return 1;
+            }
+
+            uint8_t hash[HASH_SIZE];
+
+            for (unsigned long long i = 0; i < num_records_in_bucket * TOTAL_FILES; i++) {
+                if (byteArrayToLongLong(global_bucket[i].nonce1, NONCE_SIZE) != 0 || byteArrayToLongLong(global_bucket[i].nonce2, NONCE_SIZE) != 0) {
+                    int plotIndex = i / num_records_in_bucket;
+                    generateBlake3Pair(global_bucket[i].nonce1, global_bucket[i].nonce2, plotData_merge[plotIndex].key, hash);
+                    if (memcmp(hash, targetHash, HASH_SIZE) == 0) {
+                        printf("Hash Match Found: %s, Nonce1: %llu, Nonce2: %llu, Key: %s\n",
+                            byteArrayToHexString(hash, HASH_SIZE),
+                            byteArrayToLongLong(global_bucket[i].nonce1, NONCE_SIZE),
+                            byteArrayToLongLong(global_bucket[i].nonce2, NONCE_SIZE),
+                            byteArrayToHexString(plotData[plotIndex].key, 32));
+                    }
+                }
+            }
+
+            merge_search_time += omp_get_wtime() - merge_start_time;
+
+            int ret = system("sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'");
+
+            if (ret != 0) {
+                perror("Failed to drop caches");
+                return 1;
+            }
         }
 
-        printf("Search Complete: %.4fs\n", omp_get_wtime() - start_time);
+        // FIXME: Deletes all plots
+        // Cleanup all open files
+        for (int i = 0; i < TOTAL_FILES; i++) {
+            close(fds[i]);
+            close(merge_fd);
+            remove(merge_filename);
+            delete_contents(dir_name);
+            ensure_folder_exists(dir_name);
+        }
+
+        printf("Small Plots Lookup Time: %.6f\n", small_search_time);
+        printf("Merged Plot Lookup Time: %.6f\n", merge_search_time);
     }
 
     return 0;
 }
-
-// will need to check on MacOS with a spinning hdd if we need to call sync() to flush all filesystems
-// #ifdef __linux__
-//         if (writeData) {
-//             if (DEBUG)
-//                 printf("Final flush in progress...\n");
-//             int fd2 = open(FILENAME_TABLE2, O_RDWR);
-//             if (fd2 == -1) {
-//                 printf("Error opening file %s (#6)\n", FILENAME_TABLE2);
-
-//                 perror("Error opening file");
-//                 return EXIT_FAILURE;
-//             }
-
-//             // Sync the entire filesystem
-//             if (syncfs(fd2) == -1) {
-//                 perror("Error syncing filesystem with syncfs");
-//                 close(fd2);
-//                 return EXIT_FAILURE;
-//             }
-//         }
-// #endif
-
-// Calculate total throughput
-// double total_throughput = (total_nonces / elapsed_time) / 1e6;
-// if (!BENCHMARK) {
-//     printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput, total_throughput * NONCE_SIZE);
-//     printf("Total Time: %.6f seconds\n", elapsed_time);
-// } else {
-//     // printf("%s %d %lu %d %llu %.2f %zu %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, total_throughput, total_throughput * NONCE_SIZE, hashgen_total_time, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time);
-//     return 0;
-// }
-// end of HASHGEN
-
-// omp_set_num_threads(num_threads);
-
-// if (SEARCH && !SEARCH_BATCH) {
-//     search_memo_records(FILENAME_TABLE2, SEARCH_STRING);
-// }
-
-// if (SEARCH_BATCH) {
-//     search_memo_records_batch(FILENAME_TABLE2, BATCH_SIZE, PREFIX_SEARCH_SIZE);
-// }
-
-// Call the function to count zero-value MemoRecords
-// printf("verifying efficiency of final stored file...\n");
-// count_zero_memo_records(FILENAME_FINAL);
-
-// Call the function to process MemoRecords
-// if (VERIFY) {
-//     if (!BENCHMARK)
-//         printf("verifying sorted order by bucketIndex of final stored file...\n");
-//     // process_memo_records(FILENAME_FINAL, MEMORY_SIZE_bytes / sizeof(MemoRecord));
-//     process_memo_records_table2(FILENAME_TABLE2, num_records_in_bucket * rounds);
-// }
-
-// if (DEBUG)
-//     printf("SUCCESS!\n");

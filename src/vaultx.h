@@ -1,5 +1,6 @@
 #ifndef VAULTX_H
 #define VAULTX_H
+#define _GNU_SOURCE
 
 #ifdef __linux__
 #include <linux/fs.h> // Provides `syncfs` on Linux
@@ -19,8 +20,11 @@
 #include "sort.h"
 #include "table1.h"
 #include "table2.h"
+#include "utils.h"
 #include <ctype.h>
 #include <dirent.h>
+#include <numa.h>
+#include <numaif.h>
 #include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
