@@ -39,7 +39,7 @@ if [ ! -d "$OUTDIR" ]; then
 fi
 
 get_time() {
-  grep "$1" "$2" | awk -F': ' '{print $2}' | sed 's/s//' | awk '{printf "%.0f", $1}'
+  awk -F': ' -v key="$1" '$0 ~ key {gsub(/s/, "", $2); printf "%.2f", $2; exit}' "$2"
 }
 
 check_csv_done_new_format() {
@@ -89,7 +89,7 @@ is_run_complete() {
 
   for m in "${BATCH_SIZES[@]}"; do
     for t in "${THREADS[@]}"; do
-      if [ "$M_FLAG" == "1" ]; then
+      if [ "$M_FLAG" == "1" ] || [ "$M_FLAG" == "2" ]; then
         if ! check_csv_done_new_format "$csv_file" "$t" "$m"; then
           return 1
         fi
@@ -114,7 +114,7 @@ run_test() {
   sudo chmod -R 777 "$run_dir"
 
   if [ ! -f "$csv_file" ]; then
-    if [ "$M_FLAG" == "1" ]; then
+    if [ "$M_FLAG" == "1" ] || [ "$M_FLAG" == "2" ]; then
       write_csv_header_new "$csv_file"
     else
       write_csv_header_old "$csv_file"
@@ -122,23 +122,27 @@ run_test() {
   fi
 
   for m in "${BATCH_SIZES[@]}"; do
-    if [ "$M_FLAG" != "1" ]; then
+    if [ "$M_FLAG" != "1" ] && [ "$M_FLAG" != "2" ]; then
       row="$m"
       skip_row=false
     fi
 
     for t in "${THREADS[@]}"; do
-      if check_csv_done_new_format "$csv_file" "$t" "$m" && [ "$M_FLAG" == "1" ]; then
-        echo ">>> Skipping Threads=$t, BatchSize=$m (already in results.csv)"
-        continue
-      elif check_csv_done_old_format "$csv_file" "$t" "$m" && [ "$M_FLAG" != "1" ]; then
-        echo ">>> Skipping Threads=$t, BatchSize=$m (already in results.csv)"
-        row+=","
-        continue
+      if [ "$M_FLAG" == "1" ] || [ "$M_FLAG" == "2" ]; then
+        if check_csv_done_new_format "$csv_file" "$t" "$m"; then
+          echo ">>> Skipping Threads=$t, BatchSize=$m (already in results.csv)"
+          continue
+        fi
+      else
+        if check_csv_done_old_format "$csv_file" "$t" "$m"; then
+          echo ">>> Skipping Threads=$t, BatchSize=$m (already in results.csv)"
+          row+=","
+          continue
+        fi
       fi
 
       OUTPUT_FILE="${run_dir}/vaultx_t${t}_m${m}.log"
-      CMD="./vaultx -f memo.t -g memo.x -j memo.xx -a for -K 28 -v true -M $M_FLAG -n $FILES -t $t -m $m"
+      CMD="./vaultx -a for -K 28 -v false -M $M_FLAG -n $FILES -t $t -m $m"
 
       echo -e "\n>>> Run $run_idx: Threads=$t, BatchSize=${m}MB"
       echo "Output: $OUTPUT_FILE"
@@ -149,7 +153,7 @@ run_test() {
         echo "Completed at: $(date)"
       } > "$OUTPUT_FILE" 2>&1
 
-      if [ "$M_FLAG" == "1" ]; then
+      if [ "$M_FLAG" == "1" ] || [ "$M_FLAG" == "2" ]; then
         READ_TIME=$(get_time "Read Time:" "$OUTPUT_FILE")
         WRITE_TIME=$(get_time "Write Time:" "$OUTPUT_FILE")
         MERGE_TIME=$(get_time "Merge Time:" "$OUTPUT_FILE")
@@ -174,13 +178,12 @@ run_test() {
       sleep 2
     done
 
-    if [ "$M_FLAG" != "1" ] && [ "$skip_row" = false ]; then
+    if [ "$M_FLAG" != "1" ] && [ "$M_FLAG" != "2" ] && [ "$skip_row" = false ]; then
       echo "$row" >> "$csv_file"
     fi
   done
 
-  # Sort results if M=1
-  if [ "$M_FLAG" == "1" ]; then
+  if [ "$M_FLAG" == "1" ] || [ "$M_FLAG" == "2" ]; then
     header=$(head -1 "$csv_file")
     tail -n +2 "$csv_file" | sort -t',' -k1,1n -k2,2n > "${csv_file}.sorted"
     echo "$header" | cat - "${csv_file}.sorted" > "$csv_file"

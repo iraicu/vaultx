@@ -247,6 +247,12 @@ int main(int argc, char* argv[]) {
 
     // Generate plots
     if (HASHGEN) {
+        // Reset plots folder
+        char* FOLDER[256];
+        snprintf(FOLDER, sizeof(FOLDER), "/%s/arnav/vaultx/plots/", SOURCE);
+        delete_contents(FOLDER);
+        ensure_folder_exists(FOLDER);
+
         // Allocate memory
         buckets = (Bucket*)calloc(total_buckets, sizeof(Bucket));
         buckets_table2 = (BucketTable2*)calloc(total_buckets, sizeof(BucketTable2));

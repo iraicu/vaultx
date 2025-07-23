@@ -2,4 +2,5 @@ vaultx*
 .vscode/
 plots/
 merge*
+!src/merge*
 .clang-format
