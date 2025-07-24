@@ -658,11 +658,9 @@ int main(int argc, char *argv[])
         // 2) if out-of-memory: only generate unshuffled table1 and write to disk
         for (unsigned long long r = 0; r < rounds; r++)
         {
-            if (!BENCHMARK)
-            {
-                printf("[%.6f] VAULTX_STAGE_MARKER: START Table1Gen\n", omp_get_wtime() - program_start_time);
-                fflush(stdout);
-            }
+
+            printf("[%.6f] VAULTX_STAGE_MARKER: START Table1Gen\n", omp_get_wtime() - program_start_time);
+            fflush(stdout);
 
             start_time_hash = omp_get_wtime();
 
@@ -830,12 +828,12 @@ int main(int argc, char *argv[])
             elapsed_time_hash = end_time_hash - start_time_hash;
             elapsed_time_hash_total += elapsed_time_hash;
 
-            printf("[%.6f] VAULTX_STAGE_MARKER: END Table1Gen\n", omp_get_wtime() - program_start_time);
-            fflush(stdout);
-
             // If tmp file is specified and data fits in memory, generate table2 and write to tmp file
             if (rounds == 1)
             {
+                printf("[%.6f] VAULTX_STAGE_MARKER: END Table1Gen\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+
                 if (!BENCHMARK)
                 {
                     printf("------------------------In-memory Table 2 generation started------------------------\n");
@@ -898,7 +896,11 @@ int main(int argc, char *argv[])
                 elapsed_time_hash2_total += elapsed_time_hash2;
 
                 bucket_batch = WRITE_BATCH_SIZE_MB * 1024 * 1024 / (num_records_in_bucket * sizeof(MemoTable2Record)); // num bucket to write at once
-                printf("%llu buckets to write at once\n", bucket_batch);
+                if (!BENCHMARK)
+                    printf("%llu buckets to write at once\n", bucket_batch);
+
+                printf("[%.6f] VAULTX_STAGE_MARKER: START WriteTable2\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
 
                 start_time_io = omp_get_wtime();
 
@@ -927,6 +929,9 @@ int main(int argc, char *argv[])
                 elapsed_time_hash2 = end_time_hash2 - start_time_hash2;
                 elapsed_time_hash2_total += elapsed_time_hash2;
 
+                printf("[%.6f] VAULTX_STAGE_MARKER: END WriteTable2\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+
                 // count how many full buckets , this works for rounds == 1
                 full_buckets = 0;
                 record_counts = 0;
@@ -939,11 +944,8 @@ int main(int argc, char *argv[])
                     record_counts_waste += buckets2[i].count_waste;
                 }
 
-                if (BENCHMARK)
-                {
-                    printf("[%.6f] VAULTX_STAGE_MARKER: END InMemoryTable2Gen\n", omp_get_wtime() - program_start_time);
-                    fflush(stdout);
-                }
+                printf("[%.6f] VAULTX_STAGE_MARKER: END InMemoryTable2Gen\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
 
                 if (!BENCHMARK)
                     printf("record_counts=%llu storage_efficiency_table2=%.2f full_buckets=%llu bucket_efficiency=%.2f nonce_max=%llu record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (total_num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / total_num_buckets, nonce_max, record_counts_waste, total_num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + total_num_buckets * num_records_in_bucket));
@@ -1013,7 +1015,8 @@ int main(int argc, char *argv[])
                 }
 
                 bucket_batch = WRITE_BATCH_SIZE_MB * 1024 * 1024 / (num_records_in_bucket * sizeof(MemoRecord)); // num bucket to write at once
-                printf("%llu buckets to write at once\n", bucket_batch);
+                if (!BENCHMARK)
+                    printf("%llu buckets to write at once\n", bucket_batch);
 
                 start_time_io = omp_get_wtime();
 
@@ -1049,6 +1052,9 @@ int main(int argc, char *argv[])
                 {
                     memset(buckets[i].records, 0, num_records_in_bucket * sizeof(MemoRecord));
                 }
+
+                printf("[%.6f] VAULTX_STAGE_MARKER: END Table1Gen\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
             }
 
             // Calculate throughput (hashes per second)
@@ -1133,11 +1139,9 @@ int main(int argc, char *argv[])
         if (writeDataTmpTable2 && rounds > 1)
         {
             if (!BENCHMARK)
-            {
                 printf("------------------------Table 2 generation started------------------------\n");
-                printf("[%.6f] VAULTX_STAGE_MARKER: START OutOfMemoryTable2Gen\n", omp_get_wtime() - program_start_time);
-                fflush(stdout);
-            }
+            printf("[%.6f] VAULTX_STAGE_MARKER: START OutOfMemoryTable2Gen\n", omp_get_wtime() - program_start_time);
+            fflush(stdout);
 
             // Shuffle table1 and write to disk
             FILE *fd_table2_tmp = NULL;
@@ -1282,7 +1286,6 @@ int main(int argc, char *argv[])
                 elapsed_time_io = end_time_io - start_time_io;
                 elapsed_time_io_total += elapsed_time_io;
 
-                // unsigned long long bucket_idx = 0;
                 // print contents of a bucket
                 if (!BENCHMARK && DEBUG)
                 {
@@ -1343,6 +1346,7 @@ int main(int argc, char *argv[])
                 elapsed_time_hash2 = end_time_hash2 - start_time_hash2;
                 elapsed_time_hash2_total += elapsed_time_hash2;
 
+                // print contents of a bucket after sorting and generating table2
                 if (!BENCHMARK && DEBUG)
                 {
                     printf("Buckets (Table1) after sorting and generating Table2:\n");
@@ -1383,7 +1387,6 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                // unsigned long long bucket_idx = 0;
                 // print contents of a bucket
                 if (!BENCHMARK && DEBUG)
                 {
@@ -1425,6 +1428,9 @@ int main(int argc, char *argv[])
 
                 bucket_batch = WRITE_BATCH_SIZE_MB * 1024 * 1024 / (num_records_in_bucket * sizeof(MemoTable2Record)); // num bucket to write at once
 
+                printf("[%.6f] VAULTX_STAGE_MARKER: START WriteTable2\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+
                 start_time_io = omp_get_wtime();
 
                 for (unsigned long long b = 0; b < total_num_buckets; b += bucket_batch)
@@ -1445,6 +1451,9 @@ int main(int argc, char *argv[])
                 elapsed_time_io = end_time_io - start_time_io;
                 elapsed_time_io_total += elapsed_time_io;
 
+                printf("[%.6f] VAULTX_STAGE_MARKER: END WriteTable2\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+
                 for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read; b++)
                 {
                     memset(buckets[b].records, 0, num_records_in_shuffled_bucket * sizeof(MemoRecord));
@@ -1461,11 +1470,8 @@ int main(int argc, char *argv[])
                 }
             }
 
-            if (!BENCHMARK)
-            {
-                printf("[%.6f] VAULTX_STAGE_MARKER: END OutOfMemoryTable2Gen\n", omp_get_wtime() - program_start_time);
-                fflush(stdout);
-            }
+            printf("[%.6f] VAULTX_STAGE_MARKER: END OutOfMemoryTable2Gen\n", omp_get_wtime() - program_start_time);
+            fflush(stdout);
 
             // double pct_met = (double)count_condition_met * 100.0 /
             //                  (double)(count_condition_met + count_condition_not_met + zero_nonce_count);
@@ -1523,11 +1529,9 @@ int main(int argc, char *argv[])
             if (writeDataTable2)
             {
                 if (!BENCHMARK)
-                {
                     printf("------------------------Table 2 shuffling started------------------------\n");
-                    printf("[%.6f] VAULTX_STAGE_MARKER: START Table2Shuffle\n", omp_get_wtime() - program_start_time);
-                    fflush(stdout);
-                }
+                printf("[%.6f] VAULTX_STAGE_MARKER: START Table2Shuffle\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
 
                 // Open the file for writing shuffled table2
                 FILE *fd_table2 = NULL;
@@ -1570,11 +1574,8 @@ int main(int argc, char *argv[])
                 // shuffle table uses io2 time
                 shuffle_table2(fd_table2_tmp, fd_table2, buffer_size, records_per_batch, num_buckets_to_read, start_time, elapsed_time_io2, elapsed_time_io2_total);
 
-                if (!BENCHMARK)
-                {
-                    printf("[%.6f] VAULTX_STAGE_MARKER: END Table2Shuffle\n", omp_get_wtime() - program_start_time);
-                    fflush(stdout);
-                }
+                printf("[%.6f] VAULTX_STAGE_MARKER: END Table2Shuffle\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
 
                 start_time_io = omp_get_wtime();
 
@@ -1712,7 +1713,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoRecord), throughput_io, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time, total_matches * 100.0 / (num_records_in_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_bucket));
+            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoRecord), throughput_io, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time, total_matches * 100.0 / (num_records_in_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_bucket));
             // return 0;
         }
     }
@@ -1732,19 +1733,14 @@ int main(int argc, char *argv[])
     // Check if data within the file is sorted and what is the storage efficiency
     if (VERIFY)
     {
-        if (!BENCHMARK)
-        {
-            printf("------------------------Verifying started------------------------\n");
-            printf("[%.6f] VAULTX_STAGE_MARKER: START Verification\n", omp_get_wtime() - program_start_time);
-            fflush(stdout);
-        }
+        printf("------------------------Verifying started------------------------\n");
+        printf("[%.6f] VAULTX_STAGE_MARKER: START Verification\n", omp_get_wtime() - program_start_time);
+        fflush(stdout);
 
         process_memo_records_table2(FILENAME_TABLE2, num_records_in_shuffled_bucket);
-        if (!BENCHMARK)
-        {
-            printf("[%.6f] VAULTX_STAGE_MARKER: END Verification\n", omp_get_wtime() - program_start_time);
-            fflush(stdout);
-        }
+
+        printf("[%.6f] VAULTX_STAGE_MARKER: END Verification\n", omp_get_wtime() - program_start_time);
+        fflush(stdout);
     }
 
     if (DEBUG)
