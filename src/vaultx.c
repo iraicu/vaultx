@@ -173,7 +173,8 @@ int main(int argc, char *argv[])
     unsigned long long full_buckets = 0;
     unsigned long long record_counts = 0;
     unsigned long long record_counts_waste = 0;
-    char *DIR_TMP = NULL; // Default output file name
+    unsigned long long bucket_batch = 0; // Number of buckets to write at once
+    char *DIR_TMP = NULL;                // Default output file name
     char *DIR_TMP_TABLE2 = NULL;
     char *DIR_TABLE2 = NULL;
     char *SEARCH_STRING = NULL;
@@ -193,7 +194,7 @@ int main(int argc, char *argv[])
         {"file_tmp_table2", required_argument, 0, 'g'},
         {"file_table2", required_argument, 0, 'j'},
         {"batch_size", required_argument, 0, 'b'},
-        {"write_batch_size", required_argument, 0, 'W'},
+        {"write_batch_size_mb", required_argument, 0, 'W'},
         {"read_batch_size", required_argument, 0, 'R'},
         {"matching_factor", required_argument, 0, 'M'},
         {"memory_write", required_argument, 0, 'w'},
@@ -286,8 +287,8 @@ int main(int argc, char *argv[])
             }
             break;
         case 'W':
-            WRITE_BATCH_SIZE = atoi(optarg);
-            if (WRITE_BATCH_SIZE < 1)
+            WRITE_BATCH_SIZE_MB = atoi(optarg); // in MB
+            if (WRITE_BATCH_SIZE_MB < 1)
             {
                 fprintf(stderr, "WRITE_BATCH_SIZE must be 1 or greater.\n");
                 print_usage(argv[0]);
@@ -295,7 +296,7 @@ int main(int argc, char *argv[])
             }
             break;
         case 'R':
-            READ_BATCH_SIZE = atoi(optarg);
+            READ_BATCH_SIZE = atoi(optarg); // in MB
             if (READ_BATCH_SIZE < 1)
             {
                 fprintf(stderr, "READ_BATCH_SIZE must be 1 or greater.\n");
@@ -396,6 +397,12 @@ int main(int argc, char *argv[])
         }
     }
 
+    if (K >= 33 && NONCE_SIZE == 4)
+    {
+        fprintf(stderr, "K >= 33 requires NONCE_SIZE to be 5. Please recompile with a different NONCE_SIZE.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if ((SEARCH || SEARCH_BATCH) && !writeDataTable2)
     {
         fprintf(stderr, "Error: Final file name (-j) is required for search operations.\n");
@@ -456,11 +463,17 @@ int main(int argc, char *argv[])
     num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
     num_records_total = num_records_per_round * rounds;
 
-    if (WRITE_BATCH_SIZE > total_num_buckets)
+    if (rounds == 1 && WRITE_BATCH_SIZE_MB > file_size_bytes / (1024 * 1024))
     {
-        fprintf(stderr, "WRITE_BATCH_SIZE cannot be greater than total_num_buckets.\n");
-        print_usage(argv[0]);
-        exit(EXIT_FAILURE);
+        printf("WRITE_BATCH_SIZE is greater than the total file size.\n");
+        printf("Setting WRITE_BATCH_SIZE to %llu MB.\n", file_size_bytes / (1024 * 1024));
+        WRITE_BATCH_SIZE_MB = file_size_bytes / (1024 * 1024);
+    }
+    else if (rounds > 1 && WRITE_BATCH_SIZE_MB > MEMORY_SIZE_MB)
+    {
+        printf("WRITE_BATCH_SIZE is greater than the memory size.\n");
+        printf("Setting WRITE_BATCH_SIZE to %llu MB.\n", MEMORY_SIZE_MB);
+        WRITE_BATCH_SIZE_MB = MEMORY_SIZE_MB;
     }
     // READ_BATCH_SIZE is checked later in the code. it should be smaller than num_diff_pref_buckets_to_read
 
@@ -518,7 +531,7 @@ int main(int argc, char *argv[])
             printf("Number of Records in Bucket : %llu\n", num_records_in_bucket);
 
             printf("BATCH_SIZE                  : %zu\n", BATCH_SIZE);
-            printf("WRITE_BATCH_SIZE            : %zu\n", WRITE_BATCH_SIZE);
+            printf("WRITE_BATCH_SIZE            : %zu\n", WRITE_BATCH_SIZE_MB);
             printf("READ_BATCH_SIZE             : %zu\n", READ_BATCH_SIZE);
 
             if (HASHGEN)
@@ -621,7 +634,8 @@ int main(int argc, char *argv[])
             buckets2[i].records = all_records_table2 + (i * num_records_in_bucket);
         }
 
-        double throughput_hash = 0.0;
+        double throughput_mh = 0.0;
+        double throughput_mb = 0.0;
         double throughput_io = 0.0;
 
         double start_time_io = 0.0;
@@ -640,16 +654,16 @@ int main(int argc, char *argv[])
         double elapsed_time_io_total = 0.0;
         double elapsed_time_io2_total = 0.0;
 
-        if (!BENCHMARK)
-        {
-            printf("[%.6f] VAULTX_STAGE_MARKER: START Table1Gen\n", omp_get_wtime() - program_start_time);
-            fflush(stdout);
-        }
-
         // Generate table 1; 1) if in-memory: also generate table2 and write to disk,
         // 2) if out-of-memory: only generate unshuffled table1 and write to disk
         for (unsigned long long r = 0; r < rounds; r++)
         {
+            if (!BENCHMARK)
+            {
+                printf("[%.6f] VAULTX_STAGE_MARKER: START Table1Gen\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+            }
+
             start_time_hash = omp_get_wtime();
 
             // Reset bucket counts
@@ -816,11 +830,20 @@ int main(int argc, char *argv[])
             elapsed_time_hash = end_time_hash - start_time_hash;
             elapsed_time_hash_total += elapsed_time_hash;
 
+            printf("[%.6f] VAULTX_STAGE_MARKER: END Table1Gen\n", omp_get_wtime() - program_start_time);
+            fflush(stdout);
+
             // If tmp file is specified and data fits in memory, generate table2 and write to tmp file
             if (rounds == 1)
             {
                 if (!BENCHMARK)
-                    printf("--------------------In-memory Table 2 generation started------------------\n");
+                {
+                    printf("------------------------In-memory Table 2 generation started------------------------\n");
+                }
+
+                printf("[%.6f] VAULTX_STAGE_MARKER: START InMemoryTable2Gen\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+
                 start_time_hash2 = omp_get_wtime();
 
                 // No need to seek because we are writing to the beginning of the file
@@ -874,16 +897,19 @@ int main(int argc, char *argv[])
                 elapsed_time_hash2 = end_time_hash2 - start_time_hash2;
                 elapsed_time_hash2_total += elapsed_time_hash2;
 
+                bucket_batch = WRITE_BATCH_SIZE_MB * 1024 * 1024 / (num_records_in_bucket * sizeof(MemoTable2Record)); // num bucket to write at once
+                printf("%llu buckets to write at once\n", bucket_batch);
+
                 start_time_io = omp_get_wtime();
 
                 // Write table2 to disk
-                for (unsigned long long i = 0; i < total_num_buckets; i += WRITE_BATCH_SIZE)
+                for (unsigned long long i = 0; i < total_num_buckets; i += bucket_batch)
                 {
-                    size_t elements_written = fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket * WRITE_BATCH_SIZE, fd_tmp);
-                    if (elements_written != num_records_in_bucket * WRITE_BATCH_SIZE)
+                    size_t elements_written = fwrite(buckets2[i].records, sizeof(MemoTable2Record), num_records_in_bucket * bucket_batch, fd_tmp);
+                    if (elements_written != num_records_in_bucket * bucket_batch)
                     {
                         fprintf(stderr, "Error writing bucket to file; elements written %zu when expected %llu\n",
-                                elements_written, num_records_in_bucket * WRITE_BATCH_SIZE);
+                                elements_written, num_records_in_bucket * bucket_batch);
                         free(buckets);
                         free(buckets2);
                         free(all_records_table2);
@@ -913,9 +939,16 @@ int main(int argc, char *argv[])
                     record_counts_waste += buckets2[i].count_waste;
                 }
 
+                if (BENCHMARK)
+                {
+                    printf("[%.6f] VAULTX_STAGE_MARKER: END InMemoryTable2Gen\n", omp_get_wtime() - program_start_time);
+                    fflush(stdout);
+                }
+
                 if (!BENCHMARK)
                     printf("record_counts=%llu storage_efficiency_table2=%.2f full_buckets=%llu bucket_efficiency=%.2f nonce_max=%llu record_counts_waste=%llu hash_efficiency=%.2f\n", record_counts, record_counts * 100.0 / (total_num_buckets * num_records_in_bucket), full_buckets, full_buckets * 100.0 / total_num_buckets, nonce_max, record_counts_waste, total_num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + total_num_buckets * num_records_in_bucket));
 
+                // Prints the contents of a bucket for debugging purposes
                 if (!BENCHMARK && DEBUG)
                 {
                     off_t bucket_idx = 5;
@@ -979,16 +1012,19 @@ int main(int argc, char *argv[])
                     fflush(stdout);
                 }
 
+                bucket_batch = WRITE_BATCH_SIZE_MB * 1024 * 1024 / (num_records_in_bucket * sizeof(MemoRecord)); // num bucket to write at once
+                printf("%llu buckets to write at once\n", bucket_batch);
+
                 start_time_io = omp_get_wtime();
 
                 // write table1 in batches
-                for (unsigned long long i = 0; i < total_num_buckets; i += WRITE_BATCH_SIZE)
+                for (unsigned long long i = 0; i < total_num_buckets; i += bucket_batch)
                 {
-                    size_t elements_written = fwrite(buckets[i].records, sizeof(MemoRecord), num_records_in_bucket * WRITE_BATCH_SIZE, fd_tmp);
-                    if (elements_written != num_records_in_bucket * WRITE_BATCH_SIZE)
+                    size_t elements_written = fwrite(buckets[i].records, sizeof(MemoRecord), num_records_in_bucket * bucket_batch, fd_tmp);
+                    if (elements_written != num_records_in_bucket * bucket_batch)
                     {
                         fprintf(stderr, "Error writing bucket to file; elements written %zu when expected %llu\n",
-                                elements_written, num_records_in_bucket * WRITE_BATCH_SIZE);
+                                elements_written, num_records_in_bucket * bucket_batch);
                         free(buckets);
                         free(buckets2);
                         free(all_records_table2);
@@ -1016,22 +1052,24 @@ int main(int argc, char *argv[])
             }
 
             // Calculate throughput (hashes per second)
-            throughput_hash = (num_records_per_round / (elapsed_time_hash + elapsed_time_hash2 + elapsed_time_io)) / (1e6);
+            throughput_mh = (num_records_per_round / (elapsed_time_hash + elapsed_time_hash2 + elapsed_time_io)) / (1e6);
 
             // Calculate I/O throughput
             if (rounds > 1)
             {
-                throughput_io = (num_records_per_round * sizeof(MemoRecord)) / ((elapsed_time_hash + elapsed_time_hash2 + elapsed_time_io) * 1024 * 1024);
+                throughput_mb = (num_records_per_round * sizeof(MemoRecord)) / ((elapsed_time_hash + elapsed_time_hash2 + elapsed_time_io) * 1024 * 1024);
+                throughput_io = (num_records_per_round * sizeof(MemoRecord)) / (elapsed_time_io * 1024 * 1024);
             }
             else
             {
-                throughput_io = (num_records_per_round * sizeof(MemoTable2Record)) / ((elapsed_time_hash + elapsed_time_hash2 + elapsed_time_io) * 1024 * 1024);
+                throughput_mb = (num_records_per_round * sizeof(MemoTable2Record)) / ((elapsed_time_hash + elapsed_time_hash2 + elapsed_time_io) * 1024 * 1024);
+                throughput_io = (num_records_per_round * sizeof(MemoRecord)) / (elapsed_time_io * 1024 * 1024);
             }
 
             // Check Table1 Efficiency for this round
             if (!BENCHMARK)
             {
-                printf("[%.2f] HashGen %.2f%%: %.2f MH/s : I/O %.2f MB/s\n", omp_get_wtime() - start_time, (r + 1) * 100.0 / rounds, throughput_hash, throughput_io);
+                printf("[%.2f] HashGen %.2f%%: Total %.2f MH/s %.2f MB/s : I/O %.2f MB/s\n", omp_get_wtime() - start_time, (r + 1) * 100.0 / rounds, throughput_mh, throughput_mb, throughput_io);
                 if (VERIFY)
                 {
                     unsigned long long num_zero = 0;
@@ -1043,15 +1081,10 @@ int main(int argc, char *argv[])
                     }
                     avg_num_records_in_bucket /= total_num_buckets;
                     printf("[%.2f] Table1 Storage efficiency : %.2f%%, Zero nonces : %llu / %llu, Avg num records in a bucket : %llu\n", omp_get_wtime() - start_time, 100 * (1 - ((double)num_zero / num_records_per_round)), num_zero, total_num_buckets * num_records_in_bucket, avg_num_records_in_bucket);
+                    printf("num_zero=%llu num_records_per_round=%llu\n", num_zero, num_records_per_round);
                 }
             }
             // end of loop
-        }
-
-        if (!BENCHMARK)
-        {
-            printf("[%.6f] VAULTX_STAGE_MARKER: END Table1Gen\n", omp_get_wtime() - program_start_time);
-            fflush(stdout);
         }
 
         start_time_io = omp_get_wtime();
@@ -1390,15 +1423,17 @@ int main(int argc, char *argv[])
                     }
                 }
 
+                bucket_batch = WRITE_BATCH_SIZE_MB * 1024 * 1024 / (num_records_in_bucket * sizeof(MemoTable2Record)); // num bucket to write at once
+
                 start_time_io = omp_get_wtime();
 
-                for (unsigned long long b = 0; b < total_num_buckets; b += WRITE_BATCH_SIZE)
+                for (unsigned long long b = 0; b < total_num_buckets; b += bucket_batch)
                 {
-                    size_t elements_written = fwrite(buckets2[b].records, sizeof(MemoTable2Record), num_records_in_bucket * WRITE_BATCH_SIZE, fd_table2_tmp);
-                    if (elements_written != num_records_in_bucket * WRITE_BATCH_SIZE)
+                    size_t elements_written = fwrite(buckets2[b].records, sizeof(MemoTable2Record), num_records_in_bucket * bucket_batch, fd_table2_tmp);
+                    if (elements_written != num_records_in_bucket * bucket_batch)
                     {
                         fprintf(stderr, "Error writing bucket to file; elements written %zu when expected %llu\n",
-                                elements_written, num_records_in_bucket * WRITE_BATCH_SIZE);
+                                elements_written, num_records_in_bucket * bucket_batch);
                         fclose(fd_table2_tmp);
                         free(buckets);
                         free(buckets2);
@@ -1658,6 +1693,18 @@ int main(int argc, char *argv[])
 
         // Calculate total throughput
         double total_throughput = (num_records_total / elapsed_time) / 1e6;
+
+        // Calculate I/O throughput
+        // NOTE: is it correct for rounds > 1?
+        if (rounds > 1)
+        {
+            throughput_io = (num_records_per_round * sizeof(MemoRecord)) / (elapsed_time_io_total * 1024 * 1024);
+        }
+        else
+        {
+            throughput_io = (num_records_per_round * sizeof(MemoRecord)) / (elapsed_time_io_total * 1024 * 1024);
+        }
+
         if (!BENCHMARK)
         {
             printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput, total_throughput * NONCE_SIZE);
@@ -1665,7 +1712,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE, total_throughput, total_throughput * sizeof(MemoRecord), elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time, total_matches * 100.0 / (num_records_in_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_bucket));
+            printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoRecord), throughput_io, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time, total_matches * 100.0 / (num_records_in_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_bucket));
             // return 0;
         }
     }

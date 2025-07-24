@@ -56,7 +56,7 @@ extern bool FULL_BUCKETS;
 
 extern size_t BATCH_SIZE;
 extern size_t PREFIX_SEARCH_SIZE;
-extern size_t WRITE_BATCH_SIZE; 
+extern size_t WRITE_BATCH_SIZE_MB; 
 extern size_t READ_BATCH_SIZE; 
 
 extern double matching_factor;

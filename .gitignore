@@ -12,3 +12,4 @@ perf.data.old
 *.tmp2
 *.plot
 secp256k1/
+scripts/__pycache__

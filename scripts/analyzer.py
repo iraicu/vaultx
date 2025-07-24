@@ -74,11 +74,31 @@ def read_available_output(pipe, buffer_dict, label):
 def run_single_threaded_monitoring(vaultx_proc, exp_start_time):
     """Monitor vaultx with single-threaded non-blocking I/O."""
     # Use buffers for non-blocking I/O instead of queue
-    output_buffers = {"vaultx": "", "pidstat": ""}
+    output_buffers = {"vaultx": "", "pidstat": "", "system_pidstat": ""}
     
     pidstat_proc = None
+    system_pidstat_proc = None
     vaultx_pid = None
-    vaultx_log, pidstat_log = [], []
+    vaultx_log, pidstat_log, system_pidstat_log = [], [], []
+
+    # Start system-wide monitoring immediately
+    print("--- Starting system-wide resource monitoring ---")
+    try:
+        # Use pidstat with process filtering to avoid overwhelming the system
+        # Monitor only the most active processes to reduce load
+        system_pidstat_cmd = ['pidstat', '-r', '-u', '-d', '-p', 'ALL', '2']  # 2-second interval
+        system_pidstat_proc = subprocess.Popen(system_pidstat_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+        output_buffers["system_pidstat"] = ""
+        
+        # Test if system pidstat is working
+        import time
+        time.sleep(0.5)
+        if system_pidstat_proc.poll() is not None:
+            raise Exception("system pidstat failed to start")
+            
+    except Exception as e:
+        print(f"Warning: Could not start system pidstat ({e}), system monitoring disabled")
+        system_pidstat_proc = None
 
     # Main loop with single-threaded non-blocking I/O
     print("--- Processing output (single-threaded) ---")
@@ -96,9 +116,24 @@ def run_single_threaded_monitoring(vaultx_proc, exp_start_time):
                     if pid_match:
                         vaultx_pid = int(pid_match.group(1))
                         print(f"--- Starting pidstat for PID {vaultx_pid} ---")
-                        pidstat_cmd = ['pidstat', '-h', '-r', '-u', '-d', '-p', str(vaultx_pid), '1']
-                        pidstat_proc = subprocess.Popen(pidstat_cmd, stdout=subprocess.PIPE, text=True, bufsize=1)
-                        output_buffers["pidstat"] = ""
+                        
+                        # Try pidstat first, fallback to alternative monitoring
+                        try:
+                            pidstat_cmd = ['pidstat', '-r', '-u', '-d', '-p', str(vaultx_pid), '1']
+                            pidstat_proc = subprocess.Popen(pidstat_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+                            output_buffers["pidstat"] = ""
+                            
+                            # Test if pidstat is working by checking for immediate error
+                            import time
+                            time.sleep(0.5)
+                            if pidstat_proc.poll() is not None:
+                                # pidstat failed, try alternative
+                                raise Exception("pidstat failed to start")
+                                
+                        except Exception as e:
+                            print(f"Warning: pidstat failed ({e}), using alternative monitoring")
+                            pidstat_proc = None
+                            # Could implement alternative monitoring here (top, ps, etc.)
         
         # Read available output from pidstat (if running)
         if pidstat_proc:
@@ -106,6 +141,13 @@ def run_single_threaded_monitoring(vaultx_proc, exp_start_time):
             for line in pidstat_lines:
                 if line.strip():
                     pidstat_log.append(line)
+        
+        # Read available output from system pidstat
+        if system_pidstat_proc:
+            system_pidstat_lines = read_available_output(system_pidstat_proc, output_buffers, "system_pidstat")
+            for line in system_pidstat_lines:
+                if line.strip():
+                    system_pidstat_log.append(line)
         
         # Small sleep to prevent busy waiting
         import time
@@ -124,15 +166,26 @@ def run_single_threaded_monitoring(vaultx_proc, exp_start_time):
         for line in final_pidstat_lines:
             if line.strip():
                 pidstat_log.append(line)
+    
+    # Process any remaining system pidstat output
+    if system_pidstat_proc:
+        final_system_pidstat_lines = read_available_output(system_pidstat_proc, output_buffers, "system_pidstat")
+        for line in final_system_pidstat_lines:
+            if line.strip():
+                system_pidstat_log.append(line)
 
     print("--- vaultx process finished ---")
 
-    # Terminate pidstat if still running
+    # Terminate pidstat processes if still running
     if pidstat_proc:
         pidstat_proc.terminate()
         pidstat_proc.wait()
     
-    return vaultx_log, pidstat_log
+    if system_pidstat_proc:
+        system_pidstat_proc.terminate()
+        system_pidstat_proc.wait()
+    
+    return vaultx_log, pidstat_log, system_pidstat_log
 
 def run_multi_threaded_monitoring(vaultx_proc, exp_start_time):
     """Monitor vaultx with multi-threaded approach (original)."""
@@ -143,9 +196,29 @@ def run_multi_threaded_monitoring(vaultx_proc, exp_start_time):
     vaultx_thread = threading.Thread(target=stream_reader, args=(vaultx_proc.stdout, q, "vaultx"))
     vaultx_thread.start()
     
+    # Start system-wide monitoring
+    print("--- Starting system-wide resource monitoring ---")
+    system_pidstat_proc = None
+    try:
+        # Use pidstat with process filtering to avoid overwhelming the system
+        system_pidstat_cmd = ['pidstat', '-r', '-u', '-d', '-p', 'ALL', '2']  # 2-second interval
+        system_pidstat_proc = subprocess.Popen(system_pidstat_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+        system_pidstat_thread = threading.Thread(target=stream_reader, args=(system_pidstat_proc.stdout, q, "system_pidstat"))
+        system_pidstat_thread.start()
+        
+        # Test if system pidstat is working
+        import time
+        time.sleep(0.5)
+        if system_pidstat_proc.poll() is not None:
+            raise Exception("system pidstat failed to start")
+            
+    except Exception as e:
+        print(f"Warning: Could not start system pidstat ({e}), system monitoring disabled")
+        system_pidstat_proc = None
+    
     pidstat_proc = None
     vaultx_pid = None
-    vaultx_log, pidstat_log = [], []
+    vaultx_log, pidstat_log, system_pidstat_log = [], [], []
 
     # Main loop to process queue and start pidstat once PID is found
     while vaultx_proc.poll() is None or not q.empty():
@@ -159,13 +232,28 @@ def run_multi_threaded_monitoring(vaultx_proc, exp_start_time):
                     if pid_match:
                         vaultx_pid = int(pid_match.group(1))
                         print(f"--- Starting pidstat for PID {vaultx_pid} ---")
-                        pidstat_cmd = ['pidstat', '-h', '-r', '-u', '-d', '-p', str(vaultx_pid), '1']
-                        pidstat_proc = subprocess.Popen(pidstat_cmd, stdout=subprocess.PIPE, text=True, bufsize=1)
-                        pidstat_thread = threading.Thread(target=stream_reader, args=(pidstat_proc.stdout, q, "pidstat"))
-                        pidstat_thread.start()
+                        
+                        try:
+                            pidstat_cmd = ['pidstat', '-r', '-u', '-d', '-p', str(vaultx_pid), '1']
+                            pidstat_proc = subprocess.Popen(pidstat_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+                            pidstat_thread = threading.Thread(target=stream_reader, args=(pidstat_proc.stdout, q, "pidstat"))
+                            pidstat_thread.start()
+                            
+                            # Test if pidstat is working
+                            import time
+                            time.sleep(0.5)
+                            if pidstat_proc.poll() is not None:
+                                raise Exception("pidstat failed to start")
+                                
+                        except Exception as e:
+                            print(f"Warning: pidstat failed ({e}), using alternative monitoring")
+                            pidstat_proc = None
             
             elif label == "pidstat":
                 pidstat_log.append(line)
+            
+            elif label == "system_pidstat":
+                system_pidstat_log.append(line)
 
         except queue.Empty:
             continue
@@ -177,8 +265,11 @@ def run_multi_threaded_monitoring(vaultx_proc, exp_start_time):
     if pidstat_proc:
         pidstat_proc.terminate()
         pidstat_thread.join()
+    if system_pidstat_proc:
+        system_pidstat_proc.terminate()
+        system_pidstat_thread.join()
     
-    return vaultx_log, pidstat_log
+    return vaultx_log, pidstat_log, system_pidstat_log
 
 def parse_vaultx_log(lines, exp_start_time):
     """Parses vaultx output for stage markers and PID."""
@@ -236,39 +327,187 @@ def parse_vaultx_log(lines, exp_start_time):
 def parse_pidstat_log(lines, date_str):
     """Parses pidstat output for resource metrics."""
     pidstat_data = []
-    header_skipped = False
     
-    for line in lines:
+    print(f"Debug: Parsing {len(lines)} pidstat lines")
+    
+    for i, line in enumerate(lines):
+        line = line.strip()
+        if not line:
+            continue
         if line.startswith('#'):
             continue
-        if not header_skipped:
-            header_skipped = True
+        if line.startswith('Time') or line.startswith('Average'):
             continue
             
         parts = line.split()
-        if len(parts) < 10:
+        if len(parts) < 15:  # Reduced minimum requirement
+            if i < 10:  # Only print first few for debugging
+                print(f"Debug: Skipping line {i} (too few parts {len(parts)}): {line[:100]}")
             continue
 
         try:
-            time_str, _uid, _pid, usr_cpu, sys_cpu, _guest, _wait, cpu, _cpu_id, \
-            _minflt, _majflt, vsz, rss, mem, \
-            kb_rd_s, kb_wr_s, _kb_ccwr_s, _iodelay = parts[0:18]
+            # More flexible parsing - adapt to different pidstat output formats
+            time_str = parts[0]
+            
+            # Find CPU percentage (usually has % in the value or is around position 7-8)
+            cpu_val = 0.0
+            rss_val = 0.0
+            read_val = 0.0
+            write_val = 0.0
+            
+            # Try to find values by position (common pidstat format)
+            if len(parts) >= 18:
+                try:
+                    cpu_val = float(parts[7])  # %CPU column
+                    rss_val = float(parts[12])  # RSS column
+                    read_val = float(parts[14])  # kB_rd/s column
+                    write_val = float(parts[15])  # kB_wr/s column
+                except (ValueError, IndexError):
+                    pass
+            
+            # Fallback: search for numeric values in reasonable ranges
+            if cpu_val == 0.0:
+                for j, part in enumerate(parts[1:], 1):
+                    try:
+                        val = float(part)
+                        # Look for CPU percentage (0-1000+%)
+                        if 0 <= val <= 2000 and j >= 6 and j <= 10:
+                            cpu_val = val
+                            break
+                    except ValueError:
+                        continue
+            
+            # Look for memory and I/O values
+            for j, part in enumerate(parts):
+                try:
+                    val = float(part)
+                    # RSS memory (typically larger values, KB)
+                    if val > 1000 and rss_val == 0.0:
+                        rss_val = val
+                    # I/O rates (typically smaller values)
+                    elif 0 <= val <= 100000 and j > 10:
+                        if read_val == 0.0:
+                            read_val = val
+                        elif write_val == 0.0:
+                            write_val = val
+                except ValueError:
+                    continue
 
-            # Combine date and time for a full datetime object
-            record_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M:%S")
+            # Parse time
+            try:
+                record_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                if i < 5:  # Only print first few for debugging
+                    print(f"Debug: Could not parse time '{time_str}' on line {i}")
+                continue
 
             pidstat_data.append({
                 "time": record_time,
-                "cpu_total": float(cpu),
-                "mem_rss_kb": float(rss),
-                "io_read_kb_s": float(kb_rd_s),
-                "io_write_kb_s": float(kb_wr_s)
+                "cpu_total": cpu_val,
+                "mem_rss_kb": rss_val,
+                "io_read_kb_s": read_val,
+                "io_write_kb_s": write_val
             })
-        except (ValueError, IndexError):
-            # Ignore lines that don't parse correctly
+            
+            if i < 3:  # Print first few successful parses
+                print(f"Debug: Parsed line {i}: CPU={cpu_val}%, RSS={rss_val}KB, Read={read_val}KB/s, Write={write_val}KB/s")
+                
+        except Exception as e:
+            if i < 5:  # Only print first few errors for debugging
+                print(f"Debug: Error parsing line {i}: {e}")
+            continue
+    
+    print(f"Debug: Successfully parsed {len(pidstat_data)} pidstat records")
+    return pidstat_data
+
+def parse_system_pidstat_log(lines, date_str):
+    """Parses system-wide pidstat output and aggregates metrics."""
+    system_data = {}
+    
+    print(f"Debug: Parsing {len(lines)} system pidstat lines")
+    
+    for i, line in enumerate(lines):
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith('#'):
+            continue
+        if line.startswith('Time') or line.startswith('Average'):
             continue
             
-    return pidstat_data
+        parts = line.split()
+        if len(parts) < 15:  # Reduced minimum requirement
+            continue
+
+        try:
+            time_str = parts[0]
+            
+            # More flexible parsing
+            cpu_val = 0.0
+            rss_val = 0.0
+            read_val = 0.0
+            write_val = 0.0
+            
+            # Try standard positions first
+            if len(parts) >= 18:
+                try:
+                    cpu_val = float(parts[7])
+                    rss_val = float(parts[12])
+                    read_val = float(parts[14])
+                    write_val = float(parts[15])
+                except (ValueError, IndexError):
+                    pass
+            
+            # Fallback parsing
+            if cpu_val == 0.0:
+                for j, part in enumerate(parts[1:], 1):
+                    try:
+                        val = float(part)
+                        if 0 <= val <= 2000 and j >= 6 and j <= 10:
+                            cpu_val = val
+                            break
+                    except ValueError:
+                        continue
+            
+            # Parse time
+            try:
+                record_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                continue
+            
+            # Aggregate by time
+            if record_time not in system_data:
+                system_data[record_time] = {
+                    "total_cpu": 0.0,
+                    "total_mem_kb": 0.0,
+                    "total_io_read_kb_s": 0.0,
+                    "total_io_write_kb_s": 0.0,
+                    "process_count": 0
+                }
+            
+            system_data[record_time]["total_cpu"] += cpu_val
+            system_data[record_time]["total_mem_kb"] += rss_val
+            system_data[record_time]["total_io_read_kb_s"] += read_val
+            system_data[record_time]["total_io_write_kb_s"] += write_val
+            system_data[record_time]["process_count"] += 1
+            
+        except Exception as e:
+            continue
+    
+    # Convert to list format
+    system_pidstat_data = []
+    for time, metrics in sorted(system_data.items()):
+        system_pidstat_data.append({
+            "time": time,
+            "system_cpu_total": metrics["total_cpu"],
+            "system_mem_total_kb": metrics["total_mem_kb"],
+            "system_io_read_kb_s": metrics["total_io_read_kb_s"],
+            "system_io_write_kb_s": metrics["total_io_write_kb_s"],
+            "active_processes": metrics["process_count"]
+        })
+    
+    print(f"Debug: Successfully parsed {len(system_pidstat_data)} system pidstat records")
+    return system_pidstat_data
 
 def analyze(stages, pidstat_data):
     """Correlates stages with pidstat data and calculates averages."""
@@ -297,34 +536,70 @@ def analyze(stages, pidstat_data):
     
     return analysis_results
 
-def create_performance_plot(stages, pidstat_df, output_filename):
+def create_performance_plot(stages, pidstat_df, system_pidstat_df, output_filename):
     """Creates a plot of resource usage over time with stage markers."""
     if plt is None:
         print("Cannot create plot because matplotlib is not installed.", file=sys.stderr)
         return
 
-    fig, axes = plt.subplots(3, 1, figsize=(18, 12), sharex=True)
-    fig.suptitle('VaultX Performance Profile', fontsize=16)
+    fig, axes = plt.subplots(4, 1, figsize=(18, 16), sharex=True)
+    fig.suptitle('VaultX Performance Profile with System Resource Usage', fontsize=16)
 
     # --- Plot Metrics ---
     # CPU
-    axes[0].plot(pidstat_df.index, pidstat_df['cpu_total'], color='royalblue', label='Total CPU')
+    axes[0].plot(pidstat_df.index, pidstat_df['cpu_total'], color='royalblue', label='VaultX CPU', linewidth=2)
+    if not system_pidstat_df.empty:
+        axes[0].plot(system_pidstat_df.index, system_pidstat_df['system_cpu_total'], 
+                    color='lightcoral', label='System Total CPU', alpha=0.7, linewidth=1)
     axes[0].set_ylabel('CPU Usage (%)')
     axes[0].grid(True, linestyle='--', alpha=0.6)
+    axes[0].legend(loc='upper right')
 
     # Memory (RSS)
-    axes[1].plot(pidstat_df.index, pidstat_df['mem_rss_kb'] / 1024, color='forestgreen', label='RSS Memory')
+    axes[1].plot(pidstat_df.index, pidstat_df['mem_rss_kb'] / 1024, color='forestgreen', label='VaultX Memory', linewidth=2)
+    if not system_pidstat_df.empty:
+        axes[1].plot(system_pidstat_df.index, system_pidstat_df['system_mem_total_kb'] / 1024, 
+                    color='lightgreen', label='System Total Memory', alpha=0.7, linewidth=1)
     axes[1].set_ylabel('Memory RSS (MB)')
     axes[1].grid(True, linestyle='--', alpha=0.6)
     axes[1].yaxis.set_major_formatter(FuncFormatter(lambda x, p: f'{x:,.0f}'))
+    axes[1].legend(loc='upper right')
 
     # I/O
-    axes[2].plot(pidstat_df.index, pidstat_df['io_read_kb_s'], color='darkorange', label='Read')
-    axes[2].plot(pidstat_df.index, pidstat_df['io_write_kb_s'], color='crimson', label='Write')
+    axes[2].plot(pidstat_df.index, pidstat_df['io_read_kb_s'], color='darkorange', label='VaultX Read', linewidth=2)
+    axes[2].plot(pidstat_df.index, pidstat_df['io_write_kb_s'], color='crimson', label='VaultX Write', linewidth=2)
+    if not system_pidstat_df.empty:
+        axes[2].plot(system_pidstat_df.index, system_pidstat_df['system_io_read_kb_s'], 
+                    color='peachpuff', label='System Read', alpha=0.7, linewidth=1)
+        axes[2].plot(system_pidstat_df.index, system_pidstat_df['system_io_write_kb_s'], 
+                    color='pink', label='System Write', alpha=0.7, linewidth=1)
     axes[2].set_ylabel('I/O (KB/s)')
-    axes[2].set_xlabel('Time')
     axes[2].grid(True, linestyle='--', alpha=0.6)
-    axes[2].legend(loc='upper left')
+    axes[2].legend(loc='upper right')
+
+    # System Overview (new panel)
+    if not system_pidstat_df.empty:
+        # Calculate CPU utilization percentage (assuming you have info about total CPU cores)
+        # For now, we'll show it as total CPU usage across all processes
+        axes[3].plot(system_pidstat_df.index, system_pidstat_df['system_cpu_total'], 
+                    color='purple', label='Total System CPU %', linewidth=2)
+        axes[3].plot(system_pidstat_df.index, system_pidstat_df['active_processes'], 
+                    color='orange', label='Active Processes', linewidth=1, alpha=0.8)
+        axes[3].set_ylabel('System Overview')
+        axes[3].grid(True, linestyle='--', alpha=0.6)
+        axes[3].legend(loc='upper right')
+        
+        # Add a second y-axis for process count
+        ax3_twin = axes[3].twinx()
+        ax3_twin.plot(system_pidstat_df.index, system_pidstat_df['active_processes'], 
+                     color='orange', alpha=0)  # Invisible line just for the axis
+        ax3_twin.set_ylabel('Process Count', color='orange')
+        ax3_twin.tick_params(axis='y', labelcolor='orange')
+    else:
+        axes[3].text(0.5, 0.5, 'No system data available', ha='center', va='center', transform=axes[3].transAxes)
+        axes[3].set_ylabel('System Overview')
+    
+    axes[3].set_xlabel('Time')
 
     # --- Stage descriptions for better legend ---
     stage_descriptions = {
@@ -431,14 +706,14 @@ def main():
     except FileNotFoundError:
         sys.exit(f"Error: Command not found: '{vaultx_cmd[0]}'. Make sure it's in your PATH or specify the full path.")
 
-    vaultx_log, pidstat_log = [], []
+    vaultx_log, pidstat_log, system_pidstat_log = [], [], []
     
     if args.single_thread:
         # Single-threaded approach with non-blocking I/O
-        vaultx_log, pidstat_log = run_single_threaded_monitoring(vaultx_proc, exp_start_time)
+        vaultx_log, pidstat_log, system_pidstat_log = run_single_threaded_monitoring(vaultx_proc, exp_start_time)
     else:
         # Multi-threaded approach (original)
-        vaultx_log, pidstat_log = run_multi_threaded_monitoring(vaultx_proc, exp_start_time)
+        vaultx_log, pidstat_log, system_pidstat_log = run_multi_threaded_monitoring(vaultx_proc, exp_start_time)
 
     print("\n--- Analysis ---")
 
@@ -449,15 +724,42 @@ def main():
         print("Ensure vaultx was compiled with stage markers and not in benchmark mode.")
         return
 
+    print(f"Debug: Processing {len(pidstat_log)} pidstat log lines")
+    print(f"Debug: Processing {len(system_pidstat_log)} system pidstat log lines")
+    
+    # Print first few lines for debugging
+    if pidstat_log:
+        print("Debug: First few pidstat lines:")
+        for i, line in enumerate(pidstat_log[:5]):
+            print(f"  {i}: {line[:100]}")
+    
     pidstat_data = parse_pidstat_log(pidstat_log, exp_date_str)
     if not pidstat_data:
         print("No pidstat data was parsed. Cannot generate report.")
+        print("Debug: This might be due to pidstat output format differences.")
+        print("Debug: Trying to save raw pidstat output for inspection...")
+        
+        # Save raw pidstat data for debugging
+        with open('debug_pidstat_raw.log', 'w') as f:
+            f.write(f"VaultX pidstat log ({len(pidstat_log)} lines):\n")
+            for i, line in enumerate(pidstat_log):
+                f.write(f"{i:4d}: {line}\n")
+        print("Debug: Raw pidstat data saved to 'debug_pidstat_raw.log'")
         return
+
+    # Parse system pidstat data
+    system_pidstat_data = parse_system_pidstat_log(system_pidstat_log, exp_date_str)
+    if not system_pidstat_data:
+        print("Warning: No system pidstat data was parsed. System monitoring may have failed.")
 
     # Create a DataFrame for easier manipulation
     pidstat_df = pd.DataFrame(pidstat_data)
     if not pidstat_df.empty:
         pidstat_df.set_index('time', inplace=True)
+    
+    system_pidstat_df = pd.DataFrame(system_pidstat_data)
+    if not system_pidstat_df.empty:
+        system_pidstat_df.set_index('time', inplace=True)
 
     # Correlate and analyze
     results = analyze(stages, pidstat_data) # The original analyze function is fine
@@ -480,8 +782,22 @@ def main():
                            'display.float_format', '{:,.2f}'.format):
         print(df)
 
+    # Print system resource summary if available
+    if not system_pidstat_df.empty:
+        print("\n--- System Resource Summary ---")
+        print(f"Average system CPU usage: {system_pidstat_df['system_cpu_total'].mean():.2f}%")
+        print(f"Peak system CPU usage: {system_pidstat_df['system_cpu_total'].max():.2f}%")
+        print(f"Average system memory usage: {system_pidstat_df['system_mem_total_kb'].mean()/1024:.2f} MB")
+        print(f"Peak system memory usage: {system_pidstat_df['system_mem_total_kb'].max()/1024:.2f} MB")
+        print(f"Average active processes: {system_pidstat_df['active_processes'].mean():.0f}")
+        print(f"Peak active processes: {system_pidstat_df['active_processes'].max():.0f}")
+        print(f"Average system I/O read: {system_pidstat_df['system_io_read_kb_s'].mean():.2f} KB/s")
+        print(f"Peak system I/O read: {system_pidstat_df['system_io_read_kb_s'].max():.2f} KB/s")
+        print(f"Average system I/O write: {system_pidstat_df['system_io_write_kb_s'].mean():.2f} KB/s")
+        print(f"Peak system I/O write: {system_pidstat_df['system_io_write_kb_s'].max():.2f} KB/s")
+
     if args.plot_file and not pidstat_df.empty:
-        create_performance_plot(stages, pidstat_df, args.plot_file)
+        create_performance_plot(stages, pidstat_df, system_pidstat_df, args.plot_file)
 
 if __name__ == "__main__":
     main()

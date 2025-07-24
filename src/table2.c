@@ -474,8 +474,6 @@ unsigned long long generate_table2(MemoRecord *sorted_records, size_t num_record
                     off_t bucketIndex = getBucketIndex(hash_table2);
                     insert_record2(buckets2, &record, bucketIndex);
                 }
-                // buckets2_count[bucketIndex]++;
-                // printf("bucketIndex=%ld\n",bucketIndex);
 
                 // print_table2_entry(record.nonce1, record.nonce2, hash_i, hash_j, HASH_SIZE);
 
