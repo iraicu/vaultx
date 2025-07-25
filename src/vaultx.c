@@ -412,11 +412,9 @@ int main(int argc, char *argv[])
 
     double program_start_time = omp_get_wtime();
 
-    if (!BENCHMARK)
-    {
-        printf("VAULTX_PID: %d\n", getpid());
-        fflush(stdout);
-    }
+    printf("VAULTX_PID: %d\n", getpid());
+    fflush(stdout);
+
     // Display selected configurations
     if (!BENCHMARK)
     {
@@ -1008,11 +1006,8 @@ int main(int argc, char *argv[])
                 //     omp_set_num_threads(num_threads);
                 // }
 
-                if (!BENCHMARK)
-                {
-                    printf("[%.6f] VAULTX_STAGE_MARKER: START WriteTable1\n", omp_get_wtime() - program_start_time);
-                    fflush(stdout);
-                }
+                printf("[%.6f] VAULTX_STAGE_MARKER: START WriteTable1\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
 
                 bucket_batch = WRITE_BATCH_SIZE_MB * 1024 * 1024 / (num_records_in_bucket * sizeof(MemoRecord)); // num bucket to write at once
                 if (!BENCHMARK)
@@ -1042,11 +1037,8 @@ int main(int argc, char *argv[])
                 elapsed_time_io = end_time_io - start_time_io;
                 elapsed_time_io_total += elapsed_time_io;
 
-                if (!BENCHMARK)
-                {
-                    printf("[%.6f] VAULTX_STAGE_MARKER: END WriteTable1\n", omp_get_wtime() - program_start_time);
-                    fflush(stdout);
-                }
+                printf("[%.6f] VAULTX_STAGE_MARKER: END WriteTable1\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
 
                 for (unsigned long long i = 0; i < total_num_buckets; i++)
                 {
@@ -1253,6 +1245,9 @@ int main(int argc, char *argv[])
                     buckets2[b].flush = 0;
                 }
 
+                printf("[%.6f] VAULTX_STAGE_MARKER: START ReadTable1\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
+
                 start_time_io = omp_get_wtime();
 
                 for (unsigned long long r = 0; r < rounds; r++)
@@ -1285,6 +1280,9 @@ int main(int argc, char *argv[])
                 end_time_io = omp_get_wtime();
                 elapsed_time_io = end_time_io - start_time_io;
                 elapsed_time_io_total += elapsed_time_io;
+
+                printf("[%.6f] VAULTX_STAGE_MARKER: END ReadTable1\n", omp_get_wtime() - program_start_time);
+                fflush(stdout);
 
                 // print contents of a bucket
                 if (!BENCHMARK && DEBUG)
@@ -1335,10 +1333,7 @@ int main(int argc, char *argv[])
                 for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read; b++)
                 {
                     // Sort by hash
-                    // qsort(buckets[b].records, num_records_in_shuffled_bucket, sizeof(MemoAllRecord), compare_memo_all_record);
                     sort_bucket_records_inplace(buckets[b].records, num_records_in_shuffled_bucket);
-                    // Bucket bucket = buckets[b];
-                    // generate_table2(bucket, num_records_in_shuffled_bucket);
                     generate_table2(buckets[b].records, num_records_in_shuffled_bucket);
                 }
 
