@@ -36,7 +36,8 @@ extern int K;
 extern int MERGE_APPROACH;
 extern int current_file;
 extern int TOTAL_FILES;
-extern int MEMORY_SIZE_MB;
+extern int BATCH_MEMORY_MB;
+extern int MEMORY_LIMIT_MB;
 extern int num_threads;
 
 extern unsigned long long num_records_in_bucket;
@@ -123,7 +124,6 @@ typedef struct
     bool readDone;
     bool mergeDone;
     bool writeDone;
-    double start_time;
     double total_time;
 } MergeBatch;
 

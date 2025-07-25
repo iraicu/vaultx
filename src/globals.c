@@ -6,7 +6,8 @@ int K = 24;
 int current_file = 1;
 int MERGE_APPROACH = 0;
 int TOTAL_FILES = 2;
-int MEMORY_SIZE_MB = 256;
+int BATCH_MEMORY_MB = 256;
+int MEMORY_LIMIT_MB = 16384;
 int num_threads = 8;
 
 unsigned long long total_nonces;

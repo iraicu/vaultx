@@ -15,7 +15,8 @@ int main(int argc, char* argv[]) {
         { "threads", required_argument, 0, 't' },
         { "threads_io", required_argument, 0, 'i' },
         { "exponent", required_argument, 0, 'K' },
-        { "memory", required_argument, 0, 'm' },
+        { "size of merge batch", required_argument, 0, 'm' },
+        { "memory limit", required_argument, 0, 'r' },
         { "batch_size", required_argument, 0, 'b' },
         { "memory_write", required_argument, 0, 'w' },
         { "circular_array", required_argument, 0, 'c' },
@@ -36,7 +37,7 @@ int main(int argc, char* argv[]) {
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:b:w:c:v:s:S:x:y:d:h:n:M:T:F:", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:b:w:c:v:s:S:x:y:d:h:n:M:T:F:r:", long_options, &option_index)) != -1) {
         switch (opt) {
         case 'a':
             if (strcmp(optarg, "xtask") == 0 || strcmp(optarg, "task") == 0 || strcmp(optarg, "for") == 0 || strcmp(optarg, "tbb") == 0) {
@@ -73,8 +74,16 @@ int main(int argc, char* argv[]) {
             total_nonces = 1ULL << K; // Compute 2^K
             break;
         case 'm':
-            MEMORY_SIZE_MB = atoi(optarg);
-            if (MEMORY_SIZE_MB <= 0) {
+            BATCH_MEMORY_MB = atoi(optarg);
+            if (BATCH_MEMORY_MB <= 0) {
+                fprintf(stderr, "Memory size must be positive.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'r':
+            MEMORY_LIMIT_MB = atoi(optarg);
+            if (MEMORY_LIMIT_MB <= 0) {
                 fprintf(stderr, "Memory size must be positive.\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
@@ -195,6 +204,7 @@ int main(int argc, char* argv[]) {
 
     num_records_in_shuffled_bucket = num_records_in_bucket * rounds;
 
+    //FIXME:
     if (BENCHMARK) {
         if (SEARCH) {
             printf("SEARCH                      : true\n");
@@ -205,7 +215,7 @@ int main(int argc, char* argv[]) {
             printf("Table2 File Size (GB)       : %.2f\n", file_size_gb * 2);
             printf("Table2 File Size (bytes)    : %llu\n", file_size_bytes * 2);
 
-            printf("Memory Size (MB)            : %llu\n", MEMORY_SIZE_MB);
+            printf("Memory Size (MB)            : %llu\n", BATCH_MEMORY_MB);
             // printf("Memory Size (bytes)         : %llu\n", MEMORY_SIZE_bytes);
 
             // printf("Number of Hashes (RAM)      : %llu\n", num_records_per_round);

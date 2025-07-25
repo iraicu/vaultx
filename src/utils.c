@@ -9,7 +9,8 @@ void print_usage(char* prog_name) {
     printf("  -t, --threads NUM                     Number of threads to use (default: number of available cores)\n");
     printf("  -i, --threads_io NUM                  Number of I/O threads (default: number of available cores)\n");
     printf("  -K, --exponent NUM                    Exponent K to compute 2^K number of records (default: 4)\n");
-    printf("  -m, --memory NUM                      Memory size in MB (default: 1)\n");
+    printf("  -m, --size of merge batch NUM         Memory size per merge batch in MB (default: 256)\n");
+    printf("  -r, --memory limit in MB              Memory size in MB (default: 16384)\n");
     printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
     printf("  -S, --lookup-count NUM                Perofrm lookup for NUM hashes in small plots and merged plot\n");
     printf("  -x, --benchmark                       Enable benchmark mode (default: false)\n");

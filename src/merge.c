@@ -33,130 +33,91 @@ void pin_thread_to_cpu(int cpu_num) {
         // printf("Thread %d pinned to CPU %d\n", tid, cpu_num);
     }
 }
-#define read_buckets(b)                                                                                   \
-    do {                                                                                                  \
-        mergeBatches[b].start_time = omp_get_wtime();                                                     \
-        mergeBatches[b].buffer = (MemoTable2Record*)calloc((end - i) * records_per_global_bucket,         \
-            sizeof(MemoTable2Record));                                                                    \
-        if (mergeBatches[b].buffer == NULL) {                                                             \
-            perror("Failed to alloc memory");                                                             \
-            exit(EXIT_FAILURE);                                                                           \
-        }                                                                                                 \
-                                                                                                          \
-        char* buf = (char*)mergeBatches[b].buffer;                                                        \
-                                                                                                          \
-        for (int f = 0; f < TOTAL_FILES; f++) {                                                           \
-            int fd = fds[f];                                                                              \
-            size_t total_bytes = (end - i) * num_records_in_bucket * sizeof(MemoTable2Record);            \
-            size_t bytes_read = 0;                                                                        \
-            char* dest = buf + f * total_bytes;                                                           \
-                                                                                                          \
-            while (bytes_read < total_bytes) {                                                            \
-                ssize_t res = read(fd, dest + bytes_read, total_bytes - bytes_read);                      \
-                if (res < 0) {                                                                            \
-                    perror("read failed");                                                                \
-                    close(fd);                                                                            \
-                    break;                                                                                \
-                } else if (res == 0) {                                                                    \
-                    fprintf(stderr, "Unexpected EOF on file %d\n", f);                                    \
-                    break;                                                                                \
-                }                                                                                         \
-                bytes_read += res;                                                                        \
-            }                                                                                             \
-                                                                                                          \
-            if (bytes_read < total_bytes) {                                                               \
-                fprintf(stderr, "Only read %zu of %zu bytes from file %d\n", bytes_read, total_bytes, f); \
-            }                                                                                             \
-        }                                                                                                 \
-                                                                                                          \
-        mergeBatches[b].readDone = true;                                                                  \
-        mergeBatches[b].total_time += omp_get_wtime() - mergeBatches[b].start_time;                       \
-        read_total_time += omp_get_wtime() - mergeBatches[b].start_time;                                  \
-    } while (0)
-// #define read_buckets(b)                                                                                                            \
-//     do {                                                                                                                           \
-//         mergeBatches[b].start_time = omp_get_wtime();                                                                              \
-//         /* mergeBatches[b].buffer = (MemoTable2Record*)calloc((end - i) * records_per_global_bucket, sizeof(MemoTable2Record)); */ \
-//         int node = 2;                                                                                                              \
-//         size_t buffer_size = (end - i) * records_per_global_bucket * sizeof(MemoTable2Record);                                     \
-//         mergeBatches[b].buffer = (MemoTable2Record*)numa_alloc_onnode(buffer_size, node);                                          \
-//         memset(mergeBatches[b].buffer, 0, buffer_size);                                                                            \
-//         int actual_node = -1;                                                                                                      \
-//         if (get_mempolicy(&actual_node, NULL, 0, mergeBatches[b].buffer, MPOL_F_NODE | MPOL_F_ADDR) == 0) {                        \
-//             printf("buffer is on NUMA node %d (expected %d)\n", actual_node, node);                                                \
-//         } else {                                                                                                                   \
-//             perror("get_mempolicy failed");                                                                                        \
-//         }                                                                                                                          \
-//                                                                                                                                    \
-//         char* buf = (char*)mergeBatches[b].buffer;                                                                                 \
-//                                                                                                                                    \
-//         for (int f = 0; f < TOTAL_FILES; f++) {                                                                                    \
-//             int fd = fds[f];                                                                                                       \
-//             size_t total_bytes = (end - i) * num_records_in_bucket * sizeof(MemoTable2Record);                                     \
-//             size_t bytes_read = 0;                                                                                                 \
-//             char* dest = buf + f * total_bytes;                                                                                    \
-//                                                                                                                                    \
-//             while (bytes_read < total_bytes) {                                                                                     \
-//                 ssize_t res = read(fd, dest + bytes_read, total_bytes - bytes_read);                                               \
-//                 if (res < 0) {                                                                                                     \
-//                     perror("read failed");                                                                                         \
-//                     close(fd);                                                                                                     \
-//                     break;                                                                                                         \
-//                 } else if (res == 0) {                                                                                             \
-//                     fprintf(stderr, "Unexpected EOF on file %d\n", f);                                                             \
-//                     break;                                                                                                         \
-//                 }                                                                                                                  \
-//                 bytes_read += res;                                                                                                 \
-//             }                                                                                                                      \
-//                                                                                                                                    \
-//             if (bytes_read < total_bytes) {                                                                                        \
-//                 fprintf(stderr, "Only read %zu of %zu bytes from file %d\n", bytes_read, total_bytes, f);                          \
-//             }                                                                                                                      \
-//         }                                                                                                                          \
-//                                                                                                                                    \
-//         mergeBatches[b].readDone = true;                                                                                           \
-//         mergeBatches[b].total_time += omp_get_wtime() - mergeBatches[b].start_time;                                                \
-//         read_total_time += omp_get_wtime() - mergeBatches[b].start_time;                                                           \
-//     } while (0)
 
-#define write_merged_buckets(b)                                                                \
-    do {                                                                                       \
-        double write_start_time = omp_get_wtime();                                             \
-                                                                                               \
-        size_t total_bytes = (end - i) * records_per_global_bucket * sizeof(MemoTable2Record); \
-        size_t bytes_written = 0;                                                              \
-        char* src = (char*)mergeBatches[b].mergedBuckets;                                      \
-                                                                                               \
-        while (bytes_written < total_bytes) {                                                  \
-            ssize_t res = write(merge_fd, src + bytes_written, total_bytes - bytes_written);   \
-            if (res < 0) {                                                                     \
-                perror("Error writing to merge file");                                         \
-                close(merge_fd);                                                               \
-                exit(EXIT_FAILURE);                                                            \
-            } else if (res == 0) {                                                             \
-                fprintf(stderr, "Unexpected zero write\n");                                    \
-                break;                                                                         \
-            }                                                                                  \
-            bytes_written += res;                                                              \
-        }                                                                                      \
-                                                                                               \
-        if (bytes_written < total_bytes) {                                                     \
-            fprintf(stderr, "Only wrote %zu of %zu bytes\n", bytes_written, total_bytes);      \
-        }                                                                                      \
-                                                                                               \
-        free(mergeBatches[b].mergedBuckets);                                                   \
-                                                                                               \
-        double write_time = omp_get_wtime() - write_start_time;                                \
-        write_total_time += write_time;                                                        \
-        mergeBatches[b].total_time += write_time;                                              \
-                                                                                               \
-        double write_throughput_MBps = MEMORY_SIZE_MB / write_time;                            \
-                                                                                               \
-        printf("[%.2f%%] | Batch %d: %.2fs | Total Time: %.2fs\n\n",                           \
-            ((double)end / total_buckets) * 100,                                               \
-            b,                                                                                 \
-            mergeBatches[b].total_time,                                                        \
-            omp_get_wtime() - start_time);                                                     \
+#define batch_read(batch_idx)                                                                                                   \
+    do {                                                                                                                        \
+        double start_time = omp_get_wtime();                                                                                    \
+                                                                                                                                \
+        MergeBatch* mergeBatch = &mergeBatches[batch_idx];                                                                      \
+        mergeBatch->buffer = (MemoTable2Record*)calloc(buckets_in_batch * records_per_global_bucket, sizeof(MemoTable2Record)); \
+                                                                                                                                \
+        if (mergeBatch->buffer == NULL) {                                                                                       \
+            fprintf(stderr, "Error: Failed to allocate memory for buckets (batch %d)\n", batch_idx);                            \
+            exit(EXIT_FAILURE);                                                                                                 \
+        }                                                                                                                       \
+                                                                                                                                \
+        char* buf = (char*)mergeBatch->buffer;                                                                                  \
+                                                                                                                                \
+        for (int f = 0; f < TOTAL_FILES; f++) {                                                                                 \
+            int fd = fds[f];                                                                                                    \
+            size_t total_bytes = buckets_in_batch * num_records_in_bucket * sizeof(MemoTable2Record);                           \
+            size_t bytes_read = 0;                                                                                              \
+            char* dest = buf + f * total_bytes;                                                                                 \
+                                                                                                                                \
+            while (bytes_read < total_bytes) {                                                                                  \
+                ssize_t res = read(fd, dest + bytes_read, total_bytes - bytes_read);                                            \
+                if (res < 0) {                                                                                                  \
+                    perror("read failed");                                                                                      \
+                    close(fd);                                                                                                  \
+                    break;                                                                                                      \
+                } else if (res == 0) {                                                                                          \
+                    fprintf(stderr, "Unexpected EOF on file %d\n", f);                                                          \
+                    break;                                                                                                      \
+                }                                                                                                               \
+                bytes_read += res;                                                                                              \
+            }                                                                                                                   \
+                                                                                                                                \
+            if (bytes_read < total_bytes) {                                                                                     \
+                fprintf(stderr, "Only read %zu of %zu bytes from file %d\n", bytes_read, total_bytes, f);                       \
+            }                                                                                                                   \
+        }                                                                                                                       \
+                                                                                                                                \
+        double elapsed = omp_get_wtime() - start_time;                                                                          \
+        mergeBatch->total_time += elapsed;                                                                                      \
+        read_total_time += elapsed;                                                                                             \
+                                                                                                                                \
+        mergeBatch->readDone = true;                                                                                            \
+    } while (0)
+
+#define batch_write(batch_idx)                                                                        \
+    do {                                                                                              \
+        MergeBatch* mergeBatch = &mergeBatches[batch_idx];                                            \
+        double write_start_time = omp_get_wtime();                                                    \
+                                                                                                      \
+        size_t total_bytes = buckets_in_batch * records_per_global_bucket * sizeof(MemoTable2Record); \
+        size_t bytes_written = 0;                                                                     \
+        char* src = (char*)mergeBatch->mergedBuckets;                                                 \
+                                                                                                      \
+        while (bytes_written < total_bytes) {                                                         \
+            ssize_t res = write(merge_fd, src + bytes_written, total_bytes - bytes_written);          \
+            if (res < 0) {                                                                            \
+                perror("Error writing to merge file");                                                \
+                close(merge_fd);                                                                      \
+                exit(EXIT_FAILURE);                                                                   \
+            } else if (res == 0) {                                                                    \
+                fprintf(stderr, "Unexpected zero write\n");                                           \
+                break;                                                                                \
+            }                                                                                         \
+            bytes_written += res;                                                                     \
+        }                                                                                             \
+                                                                                                      \
+        if (bytes_written < total_bytes) {                                                            \
+            fprintf(stderr, "Only wrote %zu of %zu bytes\n", bytes_written, total_bytes);             \
+        }                                                                                             \
+                                                                                                      \
+        free(mergeBatch->mergedBuckets);                                                              \
+                                                                                                      \
+        double write_time = omp_get_wtime() - write_start_time;                                       \
+        write_total_time += write_time;                                                               \
+        mergeBatch->total_time += write_time;                                                         \
+                                                                                                      \
+        double write_throughput_MBps = BATCH_MEMORY_MB / write_time;                                  \
+                                                                                                      \
+        printf("[%.2f%%] | Batch %d: %.2fs | Total Time: %.2fs\n\n",                                  \
+            ((double)end_bucket / total_buckets) * 100,                                               \
+            batch_idx,                                                                                \
+            mergeBatch->total_time,                                                                   \
+            omp_get_wtime() - start_time);                                                            \
     } while (0)
 
 void merge() {
@@ -214,7 +175,7 @@ void merge() {
     //   closedir(dir);
 
     printf("Merge Approach: %d\n", MERGE_APPROACH);
-    printf("Memory Size: %lluMB\n", MEMORY_SIZE_MB);
+    printf("Memory Size: %lluMB\n", BATCH_MEMORY_MB);
     printf("Threads: %d\n", num_threads);
     printf("Files: %d\n\n\n", TOTAL_FILES);
 
@@ -222,7 +183,7 @@ void merge() {
     unsigned long long global_bucket_size = records_per_global_bucket * sizeof(MemoTable2Record);
 
     // Number of global buckets that can be stored in memory
-    unsigned long long total_global_buckets = (unsigned long long)floor(MEMORY_SIZE_MB * 1024.0 * 1024.0 / global_bucket_size);
+    unsigned long long total_global_buckets = (unsigned long long)floor(BATCH_MEMORY_MB * 1024.0 * 1024.0 / global_bucket_size);
 
     // Allocate memory
     MemoTable2Record* mergedBuckets;
@@ -284,8 +245,6 @@ void merge() {
     double read_total_time = 0;
     double merge_total_time = 0.0;
     double write_total_time = 0;
-
-    int num_batches = ceil((double)total_buckets / total_global_buckets);
 
     switch (MERGE_APPROACH) {
 
@@ -427,7 +386,7 @@ void merge() {
                     double read_time = omp_get_wtime() - batch_start_time;
                     read_total_time += read_time;
 
-                    double read_throughput_MBps = MEMORY_SIZE_MB / read_time; // MB per second
+                    double read_throughput_MBps = BATCH_MEMORY_MB / read_time; // MB per second
                     printf("Read : %.4fs, Rate: %.2f MB/s\n", read_time, read_throughput_MBps);
 
                     merge_start_time = omp_get_wtime();
@@ -466,7 +425,7 @@ void merge() {
                     double write_time = omp_get_wtime() - write_start_time;
                     write_total_time += write_time;
 
-                    double write_throughput_MBps = MEMORY_SIZE_MB / write_time; // MB per second
+                    double write_throughput_MBps = BATCH_MEMORY_MB / write_time; // MB per second
                     printf("Write: %.4fs, Rate: %.2f MB/s\n", write_time, write_throughput_MBps);
 
                     printf("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n\n", ((double)end / total_buckets) * 100, omp_get_wtime() - batch_start_time, omp_get_wtime() - start_time);
@@ -478,151 +437,123 @@ void merge() {
     }
 
     case 2: {
+        unsigned long long total_batches = ceil((double)total_buckets / total_global_buckets);
 
-        MergeBatch* mergeBatches = (MergeBatch*)malloc(sizeof(MergeBatch) * num_batches);
+        MergeBatch* mergeBatches = (MergeBatch*)malloc(sizeof(MergeBatch) * total_batches);
 
         if (!mergeBatches) {
             perror("Failed to allocate mergeBatches");
             exit(EXIT_FAILURE);
         }
 
-        for (int i = 0; i < num_batches; i++) {
+        for (int i = 0; i < total_batches; i++) {
             mergeBatches[i].readDone = false;
             mergeBatches[i].mergeDone = false;
             mergeBatches[i].writeDone = false;
-            mergeBatches[i].start_time = 0;
             mergeBatches[i].total_time = 0;
         }
+
+        // During the merge, an extra temporary buffer is created
+        // We account for it by reducing one batch from the total allowed limit
+        // Only one merge is going on a time, which we assume is always active
+        int max_active_batches = floor((double)MEMORY_LIMIT_MB / BATCH_MEMORY_MB) - 1;
+        max_active_batches = max_active_batches < total_batches ? max_active_batches : total_batches;
 
 #pragma omp parallel
 
         {
 
-            //  pin_thread_to_cpu(omp_get_thread_num());
-
-#pragma omp barrier
-
 #pragma omp single
 
             {
-                for (unsigned long long i_copy = 0; i_copy < total_buckets; i_copy += total_global_buckets) {
-                    unsigned long long b_copy = i_copy / total_global_buckets;
+                for (int batch_idx = 0; batch_idx < total_batches; batch_idx++) {
+                    unsigned long long start_bucket = total_global_buckets * batch_idx;
+                    unsigned long long end_bucket = (batch_idx == total_batches - 1) ? total_buckets : start_bucket + total_global_buckets;
+                    unsigned long long buckets_in_batch = end_bucket - start_bucket;
 
-                    unsigned long long end_copy = i_copy + total_global_buckets;
-                    if (end_copy > total_buckets) {
-                        end_copy = total_buckets;
-                    }
-
-                    unsigned long long b = b_copy;
-                    unsigned long long end = end_copy;
-                    unsigned long long i = i_copy;
-
-                    // FIXME: Throttle reads
-                    if (b == 0) {
-#pragma omp task depend(out : mergeBatches[b].readDone)
+                    // Create Read Tasks
+                    if (batch_idx == 0) {
+#pragma omp task depend(out : mergeBatches[batch_idx].readDone)
                         {
-                            read_buckets(b);
+                            batch_read(batch_idx);
+                        }
+                    } else if (batch_idx >= max_active_batches) {
+#pragma omp task depend(in : mergeBatches[batch_idx - 1].readDone, mergeBatches[batch_idx - max_active_batches].writeDone) depend(out : mergeBatches[batch_idx].readDone)
+                        {
+                            batch_read(batch_idx);
                         }
                     } else {
-#pragma omp task depend(in : mergeBatches[b - 1].readDone) depend(out : mergeBatches[b].readDone)
+#pragma omp task depend(in : mergeBatches[batch_idx - 1].readDone) depend(out : mergeBatches[batch_idx].readDone)
                         {
-                            read_buckets(b);
+                            batch_read(batch_idx);
                         }
                     }
 
-#pragma omp task depend(in : mergeBatches[b].readDone) depend(out : mergeBatches[b].mergeDone)
+                    // Create Merge Tasks
+#pragma omp task depend(in : mergeBatches[batch_idx].readDone) depend(out : mergeBatches[batch_idx].mergeDone)
                     {
-                        double merge_stime = omp_get_wtime();
+                        double start_time = omp_get_wtime();
 
-                        mergeBatches[b].mergedBuckets = (MemoTable2Record*)malloc((end - i) * global_bucket_size);
+                        MergeBatch* mergeBatch = &mergeBatches[batch_idx];
+                        mergeBatch->mergedBuckets = (MemoTable2Record*)malloc(buckets_in_batch * global_bucket_size);
 
-                        // int node = 2; // NUMA node to allocate on
-                        // size_t alloc_size = (end - i) * global_bucket_size;
+                        if (mergeBatch->mergedBuckets == NULL) {
+                            fprintf(stderr, "Error: Failed to allocate memory for mergedBuckets (batch %d)\n", batch_idx);
+                            exit(EXIT_FAILURE);
+                        }
 
-                        // // Allocate on specific NUMA node
-                        // mergeBatches[b].mergedBuckets = (MemoTable2Record*)numa_alloc_onnode(alloc_size, node);
-
-                        // // Touch memory to ensure allocation occurs
-                        // memset(mergeBatches[b].mergedBuckets, 0, alloc_size);
-
-                        // // Verify which NUMA node the memory was allocated on
-                        // int actual_node = -1;
-                        // int status = get_mempolicy(&actual_node, NULL, 0, mergeBatches[b].mergedBuckets, MPOL_F_NODE | MPOL_F_ADDR);
-                        // if (status == 0) {
-                        //     printf("mergedBuckets is on NUMA node %d (expected %d)\n", actual_node, node);
-                        // } else {
-                        //     perror("get_mempolicy failed");
-                        // }
-
-                        int merging_threads = omp_get_num_threads() >= 16 ? omp_get_num_threads() - 10 : omp_get_num_threads() / 2;
+                        // FIXME: Find better way to utilize available threads for merging
+                        // How many are available? Do we want to exhaust all of them?
+                        int total_merge_threads = omp_get_num_threads() >= 16 ? omp_get_num_threads() - 10 : omp_get_num_threads() / 2;
 
 #pragma omp taskloop
-                        for (int m = 0; m < merging_threads; m++) {
-                            int batch_size = floor((end - i) / (double)merging_threads);
-                            int start = m * batch_size;
-                            int merge_end = start + batch_size;
-                            if (m == merging_threads - 1) {
-                                merge_end = end - i;
-                            }
+                        for (int merge_thread = 0; merge_thread < total_merge_threads; merge_thread++) {
+                            int batch_size = floor((double)buckets_in_batch / total_merge_threads);
+                            int merge_start_bucket = merge_thread * batch_size;
+                            int merge_end_bucket = merge_thread == total_merge_threads - 1 ? buckets_in_batch : merge_start_bucket + batch_size;
 
-                            // if (b % 16 == 0)
-                            //     printf("Thread: %d, cpu: %d\n", omp_get_thread_num(), get_current_cpu());
-
-                            for (unsigned long long k = start; k < merge_end; k++) {
+                            for (unsigned long long bucket_idx = merge_start_bucket; bucket_idx < merge_end_bucket; bucket_idx++) {
                                 for (int f = 0; f < TOTAL_FILES; f++) {
-                                    unsigned long long off = f * num_records_in_bucket;
-                                    memcpy(&mergeBatches[b].mergedBuckets[k * records_per_global_bucket + off],
-                                        &mergeBatches[b].buffer[f * (end - i) * num_records_in_bucket + k * num_records_in_bucket],
+                                    memcpy(
+                                        &mergeBatch->mergedBuckets[bucket_idx * records_per_global_bucket + f * num_records_in_bucket],
+                                        &mergeBatch->buffer[f * buckets_in_batch * num_records_in_bucket + bucket_idx * num_records_in_bucket],
                                         num_records_in_bucket * sizeof(MemoTable2Record));
                                 }
                             }
-
-                            // for (unsigned long long k = 0; k < end - i; k++) {
-                            //     for (int f = 0; f < TOTAL_FILES; f++) {
-                            //         unsigned long long off = f * num_records_in_bucket;
-                            //         memcpy(&mergeBatches[b].mergedBuckets[k * records_per_global_bucket + off],
-                            //             &mergeBatches[b].buffer[f * (end - i) * num_records_in_bucket + k * num_records_in_bucket],
-                            //             num_records_in_bucket * sizeof(MemoTable2Record));
-                            //     }
-                            // }
                         }
 
-                        free(mergeBatches[b].buffer);
-                        // numa_free(mergeBatches[b].buffer, alloc_size);
+                        free(mergeBatches[batch_idx].buffer);
 
-                        mergeBatches[b].total_time += omp_get_wtime() - merge_stime;
-                        merge_total_time += omp_get_wtime() - merge_stime;
-                        // printf("Merge Time: %.2f\n", omp_get_wtime() - merge_stime);
+                        double elapsed = omp_get_wtime() - start_time;
+                        mergeBatch->total_time += elapsed;
+                        merge_total_time += elapsed;
 
-                        mergeBatches[b].mergeDone = true;
+                        mergeBatch->mergeDone = true;
                     }
 
-                    if (b == 0) {
-#pragma omp task depend(in : mergeBatches[b].mergeDone) depend(out : mergeBatches[b].writeDone)
+                    // Create Write Tasks
+                    if (batch_idx == 0) {
+#pragma omp task depend(in : mergeBatches[batch_idx].mergeDone) depend(out : mergeBatches[batch_idx].writeDone)
                         {
-                            write_merged_buckets(b);
+                            batch_write(batch_idx);
                         }
                     } else {
-#pragma omp task depend(in : mergeBatches[b].mergeDone, mergeBatches[b - 1].writeDone) depend(out : mergeBatches[b].writeDone)
+#pragma omp task depend(in : mergeBatches[batch_idx].mergeDone, mergeBatches[batch_idx - 1].writeDone) depend(out : mergeBatches[batch_idx].writeDone)
                         {
-                            write_merged_buckets(b);
+                            batch_write(batch_idx);
                         }
                     }
                 }
             }
         }
-    }
 
-    break;
+        break;
+    }
 
     default: {
         break;
     }
     }
-
-    // printf("Wrte batc: %d\n", write_batch);
-    // printf("Write avg time while merging: %.2f\n", write_time_1 / (write_batch + 1));
-    printf("Write avg time after merging: %.2f\n", (write_total_time) / (num_batches));
 
     printf("Write time before flushing: %.2f\n", write_total_time);
 
@@ -679,7 +610,7 @@ void merge() {
             free(file_records[i].records);
         }
 
-        //FIXME: Don't delete it!!
+        // FIXME: Don't delete it!!
         remove(merge_fd);
     }
 
