@@ -53,6 +53,7 @@ extern bool CIRCULAR_ARRAY;
 extern bool MEMORY_WRITE;
 extern bool VERIFY;
 extern bool FULL_BUCKETS;
+extern bool MONITOR;
 
 extern size_t BATCH_SIZE;
 extern size_t PREFIX_SEARCH_SIZE;

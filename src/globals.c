@@ -12,6 +12,7 @@ unsigned long long full_buckets_global = 0;
 
 bool DEBUG = false;
 bool BENCHMARK = false;
+bool MONITOR = false; // Monitor mode for detailed output
 bool CIRCULAR_ARRAY = false;
 bool HASHGEN = true;
 bool MEMORY_WRITE = true;
