@@ -1,8 +1,8 @@
 #!/bin/bash
 
 usage() {
-  echo "Usage: $0 -f <num_files> -t \"<thread_counts>\" -b \"<batch_sizes>\" -n <num_runs> -d <output_path> -M <M_flag_value>"
-  echo "Example fresh/resume: $0 -f 256 -t \"4 8\" -b \"2 4 8 16\" -n 10 -d /path/to/folder -M 1"
+  echo "Usage: $0 -f <num_files> -t \"<thread_counts>\" -b \"<batch_sizes>\" -n <num_runs> -d <output_path> -M <M_flag_value> [-T <T_flag>] [-F <F_flag>]"
+  echo "Example: $0 -f 256 -t \"4 8\" -b \"2 4 8 16\" -n 10 -d /path/to/folder -M 1 -T -1 -F -32"
   exit 1
 }
 
@@ -12,15 +12,19 @@ FILES=""
 OUTDIR=""
 NUM_RUNS=""
 M_FLAG=""
+T_FLAG=""
+F_FLAG=""
 
-while getopts "f:t:b:d:n:M:" opt; do
+while getopts "f:t:b:d:n:M:T:F:" opt; do
   case "$opt" in
     f) FILES="$OPTARG" ;;
     t) IFS=' ' read -r -a THREADS <<< "$OPTARG" ;;
     b) IFS=' ' read -r -a BATCH_SIZES <<< "$OPTARG" ;;
-    d) OUTDIR="${OPTARG%/}" ;;  # Remove trailing slash if any
+    d) OUTDIR="${OPTARG%/}" ;;
     n) NUM_RUNS="$OPTARG" ;;
     M) M_FLAG="$OPTARG" ;;
+    T) T_FLAG="$OPTARG" ;;
+    F) F_FLAG="$OPTARG" ;;
     *) usage ;;
   esac
 done
@@ -30,7 +34,6 @@ if [ -z "$FILES" ] || [ ${#THREADS[@]} -eq 0 ] || [ ${#BATCH_SIZES[@]} -eq 0 ] |
   usage
 fi
 
-# Ensure OUTDIR exists and set full permissions
 if [ ! -d "$OUTDIR" ]; then
   mkdir -p "$OUTDIR"
   USER_NAME=$(whoami)
@@ -144,12 +147,21 @@ run_test() {
       OUTPUT_FILE="${run_dir}/vaultx_t${t}_m${m}.log"
       CMD="./vaultx -a for -K 28 -v false -M $M_FLAG -n $FILES -t $t -m $m"
 
+      if [ -n "$T_FLAG" ]; then
+        CMD+=" -T $T_FLAG"
+      fi
+      if [ -n "$F_FLAG" ]; then
+        CMD+=" -F $F_FLAG"
+      fi
+
       echo -e "\n>>> Run $run_idx: Threads=$t, BatchSize=${m}MB"
       echo "Output: $OUTPUT_FILE"
+      
+      echo "Running command: $CMD"
 
       {
         echo "Start Time: $(date)"
-        $CMD 2>&1
+        eval "$CMD"
         echo "Completed at: $(date)"
       } > "$OUTPUT_FILE" 2>&1
 
