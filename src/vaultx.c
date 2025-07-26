@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
 
     num_records_in_shuffled_bucket = num_records_in_bucket * rounds;
 
-    //FIXME:
+    // FIXME:
     if (BENCHMARK) {
         if (SEARCH) {
             printf("SEARCH                      : true\n");
@@ -260,8 +260,8 @@ int main(int argc, char* argv[]) {
         // Reset plots folder
         char* FOLDER[256];
         snprintf(FOLDER, sizeof(FOLDER), "/%s/arnav/vaultx/plots/", SOURCE);
-        delete_contents(FOLDER);
         ensure_folder_exists(FOLDER);
+        delete_contents(FOLDER);
 
         // Allocate memory
         buckets = (Bucket*)calloc(total_buckets, sizeof(Bucket));
