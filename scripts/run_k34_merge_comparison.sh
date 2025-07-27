@@ -5,25 +5,51 @@
 
 set -e
 
-# Memory values to test (in MB)
-MEMORY_VALUES=(320 640 1280 2560 5120 10240 20480 40960 81920 163840)
+HOSTNAME=$(hostname)
 
-# Drive configurations to test
-DRIVES=(
-    "/data-l/varvara/vaultx/plots/"
-    "/data-fast2/varvara/vaultx/plots/"
-    "MIXED"
-)
+case $HOSTNAME in 
+	"epycbox")
+		MEMORY_VALUES=(320 640 1280 2560 5120 10240 20480 40960 81920 163840)
+		THREADS=64
+		DRIVES=(
+			"/data-l/varvara/vaultx/plots/"
+			"/data-fast2/varvara/vaultx/plots/"
+			"MIXED")
+		# Mixed drive configuration (for third option)
+		MIXED_F_G="/ssd-raid0/varvara/vaultx/plots/"
+		MIXED_J="/data-l/varvara/vaultx/plots/"
+		;;
+	"orangepi5plus")
+		MEMORY_VALUES=(320 640 1280 2560 5120 10240)
+		THREADS=8
+		DRIVES=(
+                        "/data-a/varvara/vaultx/plots/"
+                        "/data-fast/varvara/vaultx/plots/"
+                        "MIXED")
+		MIXED_F_G="/data-fast/varvara/vaultx/plots/"
+		MIXED_J="/data-a/varvara/vaultx/plots/"
+		;;
+	"raspberrypi5")
+		MEMORY_VALUES=(320 640 1280 2560)
+		THREADS=4
+		DRIVES=(
+                        "/data-a/varvara/vaultx/plots/"
+                        "/data-fast/varvara/vaultx/plots/"
+                        "MIXED")
+		MIXED_F_G="/data-fast/varvara/vaultx/plots/"
+                MIXED_J="/data-a/varvara/vaultx/plots/"
+		;;
+	*)
+		echo "Machine is undefined"
+		exit 1
+		;;
+esac 
 
 DRIVE_NAMES=(
     "hdd"
     "ssd-nvme"
-    "ssd-raid0-hdd"
+    "ssd-hdd"
 )
-
-# Mixed drive configuration (for third option)
-MIXED_F_G="/ssd-raid0/varvara/vaultx/plots/"
-MIXED_J="/data-l/varvara/vaultx/plots/"
 
 make clean
 make vaultx_x86_c NONCE_SIZE=5 RECORD_SIZE=16
@@ -44,7 +70,7 @@ mkdir -p "$MIXED_F_G"
 mkdir -p "$MIXED_J"
 
 echo "Starting K=34 memory sweep tests on multiple drives..."
-echo "approach,drive,K,record_size,num_threads,memory_mb,file_size_gb,batch_size,write_batch_size,throughput_mhs,throughput_mbs,hash_time,hash2_time,io_time,io2_time,other_time,total_time,match_percentage,storage_efficiency" > ./data/comparison-to-merge.csv
+echo "approach,drive,K,record_size,num_threads,memory_mb,file_size_gb,batch_size,write_batch_size,total_throughput_mhs,total_throughput_mbs,throughput_hash_mhs,throughput_io_mbs,hash_time,hash2_time,io_time,io2_time,other_time,total_time,match_percentage,storage_efficiency" > ./data/${HOSTNAME}-comparison-to-merge.csv
 
 # Test each drive configuration
 for i in "${!DRIVES[@]}"; do
@@ -73,23 +99,23 @@ for i in "${!DRIVES[@]}"; do
         if [ "$DRIVE_PATH" == "MIXED" ]; then
             # Mixed drive configuration: -f -g on SSD RAID0, -j on HDD
             ./scripts/vaultx_system_monitor_pidstat.py \
-                --plot-file "./graphs/${DRIVE_NAME}-monitor-plot-k34-${MEMORY}.svg" \
-                --csv-output "./data/${DRIVE_NAME}-monitor-k34-${MEMORY}.csv" \
-                -- ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t 64 \
+                --plot-file "./graphs/${HOSTNAME}-${DRIVE_NAME}-monitor-plot-k34-${MEMORY}.svg" \
+                --csv-output "./data/${HOSTNAME}-${DRIVE_NAME}-monitor-k34-${MEMORY}.csv" \
+                -- ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t $THREADS \
                 -f "$MIXED_F_G" \
                 -g "$MIXED_F_G" \
                 -j "$MIXED_J" \
-                -M 1 -x true -n true | sed "s/^/for,${DRIVE_NAME},/" >> ./data/comparison-to-merge.csv            
+                -M 1 -x true -n true | sed "s/^/for,${DRIVE_NAME},/" >> ./data/${HOSTNAME}-comparison-to-merge.csv            
         else
             # Single drive configuration: all flags point to same drive
             ./scripts/vaultx_system_monitor_pidstat.py \
-                --plot-file "./graphs/${DRIVE_NAME}-monitor-plot-k34-${MEMORY}.svg" \
-                --csv-output "./data/${DRIVE_NAME}-monitor-k34-${MEMORY}.csv" \
-                -- ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t 64 \
+                --plot-file "./graphs/${HOSTNAME}-${DRIVE_NAME}-monitor-plot-k34-${MEMORY}.svg" \
+                --csv-output "./data/${HOSTNAME}-${DRIVE_NAME}-monitor-k34-${MEMORY}.csv" \
+                -- ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t $THREADS \
                 -f "$DRIVE_PATH" \
                 -g "$DRIVE_PATH" \
                 -j "$DRIVE_PATH" \
-                -M 1 -x true -n true | sed "s/^/for,${DRIVE_NAME},/" >> ./data/comparison-to-merge.csv
+                -M 1 -x true -n true | sed "s/^/for,${DRIVE_NAME},/" >> ./data/${HOSTNAME}-comparison-to-merge.csv
         fi
         
         # Clean up after each test
@@ -108,6 +134,6 @@ for i in "${!DRIVES[@]}"; do
     echo ""
 done
 
-echo "Memory sweep complete across all drives! Results saved to ./data/comparison-to-merge.csv"
-echo "Individual monitoring data saved to ./data/<drive>-monitor-k34-<memory>.csv"
-echo "Monitoring plots saved to ./graphs/<drive>-monitor-plot-k34-<memory>.svg"
+echo "Memory sweep complete across all drives! Results saved to ./data/${HOSTNAME}-comparison-to-merge.csv"
+echo "Individual monitoring data saved to ./data/${HOSTNAME}-<drive>-monitor-k34-<memory>.csv"
+echo "Monitoring plots saved to ./graphs/${HOSTNAME}-<drive>-monitor-plot-k34-<memory>.svg"
