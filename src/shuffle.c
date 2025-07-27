@@ -32,8 +32,7 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
     double start_time_io = 0.0;
     double end_time_io = 0.0;
     double elapsed_time_io = 0.0;
-    double elapsed_time_io_shuffle = 0.0;
-
+    
     double throughput_io = 0.0;
 
     for (unsigned long long i = 0; i < total_num_buckets; i = i + num_buckets_to_read)
@@ -168,10 +167,10 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         }
         total_bytes_written += elementsWritten * sizeof(MemoTable2Record);
 
-        end_time_shuffle = omp_get_wtime();
-        elapsed_time_io_shuffle = end_time_shuffle - start_time_shuffle;
-        elapsed_time_shuffle_total += elapsed_time_io_shuffle;
-        throughput_io = (num_records_in_bucket * num_buckets_to_read * rounds * sizeof(MemoTable2Record)) / (elapsed_time_io_shuffle * 1024 * 1024);
+        end_time_io = omp_get_wtime();
+        elapsed_time_io = end_time_io - start_time_io;
+        elapsed_time_io_total += elapsed_time_io;
+        throughput_io = (num_records_in_bucket * num_buckets_to_read * rounds * sizeof(MemoTable2Record)) / (elapsed_time_io * 1024 * 1024);
 
         // TO DO: Add another Shuffle print statement for 100%
         if (!BENCHMARK)

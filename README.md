@@ -62,6 +62,14 @@ To see available options:
   ./vaultx -h 
 ```
 
+## Benchmarks
+
+Monitoring: 
+
+```bash
+  ./scripts/vaultx_system_monitor_pidstat.py --plot-file ./test.svg --csv-output ./test.csv -- ./vaultx -a for -K 28 -m 512 -W 512 -t 64 -f ./plots/ -g ./plots/ -j ./plots/ -M 1 -x true -n true
+```
+
 
 ## Publications
 
