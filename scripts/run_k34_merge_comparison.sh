@@ -28,7 +28,7 @@ for MEMORY in "${MEMORY_VALUES[@]}"; do
     ./scripts/drop-all-caches.sh
     
     # Run VaultX
-    ./scripts/vaultx_system_monitor_pidstat.py --plot-file ./graphs/monitor-plot-k34-$MEMORY.svg ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t 64 -f ./plots/ -g ./plots/ -j ./plots/ -M 1 -x true -n true >> ./data/comparison-to-merge.csv
+    ./scripts/vaultx_system_monitor_pidstat.py --plot-file ./graphs/hdd-monitor-plot-k34-$MEMORY.svg ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t 64 -f "/data-l/varvara/vaultx/plots/" -g /plots/ -j ./plots/ -M 1 -x true -n true >> ./data/comparison-to-merge.csv
     
     # Clean previous run
     rm -rf ./plots/*.plot ./plots/*.tmp
