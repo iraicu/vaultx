@@ -79,8 +79,7 @@ for i in "${!DRIVES[@]}"; do
                 -f "$MIXED_F_G" \
                 -g "$MIXED_F_G" \
                 -j "$MIXED_J" \
-                -M 1 -x true -n true | sed "s/^/for,${DRIVE_NAME},/" >> ./data/comparison-to-merge.csv; then
-                echo "✅ Completed ${MEMORY}MB on $DRIVE_NAME"
+                -M 1 -x true -n true | sed "s/^/for,${DRIVE_NAME},/" >> ./data/comparison-to-merge.csv
             
         else
             # Single drive configuration: all flags point to same drive
@@ -91,8 +90,7 @@ for i in "${!DRIVES[@]}"; do
                 -f "$DRIVE_PATH" \
                 -g "$DRIVE_PATH" \
                 -j "$DRIVE_PATH" \
-                -M 1 -x true -n true | sed "s/^/for,${DRIVE_NAME},/" >> ./data/comparison-to-merge.csv; then
-                echo "✅ Completed ${MEMORY}MB on $DRIVE_NAME"
+                -M 1 -x true -n true | sed "s/^/for,${DRIVE_NAME},/" >> ./data/comparison-to-merge.csv
         fi
         
         # Clean up after each test
