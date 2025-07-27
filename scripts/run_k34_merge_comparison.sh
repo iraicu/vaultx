@@ -79,8 +79,7 @@ for i in "${!DRIVES[@]}"; do
                 -f "$MIXED_F_G" \
                 -g "$MIXED_F_G" \
                 -j "$MIXED_J" \
-                -M 1 -x true -n true | sed "s/^/for,${DRIVE_NAME},/" >> ./data/comparison-to-merge.csv
-            
+                -M 1 -x true -n true | sed "s/^/for,${DRIVE_NAME},/" >> ./data/comparison-to-merge.csv            
         else
             # Single drive configuration: all flags point to same drive
             ./scripts/vaultx_system_monitor_pidstat.py \
