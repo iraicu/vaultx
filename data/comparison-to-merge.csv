@@ -1,4 +1,4 @@
-approach,drive,K,record_size,num_threads,memory_mb,file_size_gb,batch_size,write_batch_size,throughput_mhs,throughput_mbs,hash_time,hash2_time,io_time,io2_time,other_time,total_time,match_percentage,storage_efficiency
+approach,drive,K,record_size,num_threads,memory_mb,file_size_gb,batch_size,write_batch_size,throughput_mhs,throughput_mbs,throughput_io,hash2_time,io_time,io2_time,other_time,total_time,match_percentage,storage_efficiency
 for,hdd,for,34,5,64,320,80.00,1024,320,5.67,28.33,0.35,350.98,916.85,0.00,1740.28,3032.00,64.66%,59.85%
 for,hdd,--- Performance Summary ---
 for,hdd,Total execution time: 3032.58 seconds
