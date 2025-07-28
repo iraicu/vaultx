@@ -369,17 +369,28 @@ void merge() {
                     batch_start_time = omp_get_wtime();
 
                     for (int f = 0; f < TOTAL_FILES; f++) {
-                        FILE* fd = files[f];
+                        int fd = fds[f]; // Assumes files are opened with open()
 
-                        size_t read_bytes = fread(file_records[f].records, sizeof(MemoTable2Record), (end - i) * num_records_in_bucket, fd);
-                        if (read_bytes != num_records_in_bucket * (end - i)) {
-                            if (feof(fd)) {
-                                printf("Reached end of file after reading %zu bytes\n", read_bytes);
-                            } else {
-                                perror("fread failed");
-                                fclose(fd);
+                        size_t total_bytes = (end - i) * num_records_in_bucket * sizeof(MemoTable2Record);
+                        char* buffer = (char*)file_records[f].records;
+
+                        size_t bytes_read = 0;
+                        while (bytes_read < total_bytes) {
+                            ssize_t n = read(fd, buffer + bytes_read, total_bytes - bytes_read);
+                            if (n < 0) {
+                                perror("read failed");
+                                close(fd);
                                 // return 1;
+                                break;
+                            } else if (n == 0) {
+                                printf("Reached end of file after reading %zu bytes (expected %zu)\n", bytes_read, total_bytes);
+                                break;
                             }
+                            bytes_read += n;
+                        }
+
+                        if (bytes_read != total_bytes) {
+                            fprintf(stderr, "Warning: Partial read for file %d (got %zu, expected %zu)\n", f, bytes_read, total_bytes);
                         }
                     }
 
@@ -611,7 +622,7 @@ void merge() {
         }
 
         // FIXME: Don't delete it!!
-        remove(merge_fd);
+        // remove(merge_fd);
     }
 
     for (int i = 0; i < TOTAL_FILES; i++) {
