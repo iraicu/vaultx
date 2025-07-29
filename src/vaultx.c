@@ -612,7 +612,7 @@ int main(int argc, char *argv[])
         }
 
         // Start walltime measurement
-        double start_time = omp_get_wtime();
+        start_time = omp_get_wtime();
 
         // Allocate memory for the array of Buckets
         buckets = (Bucket *)calloc(total_num_buckets, sizeof(Bucket));
@@ -646,25 +646,21 @@ int main(int argc, char *argv[])
             buckets2[i].records = all_records_table2 + (i * num_records_in_bucket);
         }
 
-        double throughput_mh = 0.0;
-        double throughput_mb = 0.0;
+        double throughput_mh = 0.0; // hash throughput(MH/s)
+        double throughput_mb = 0.0; // hash throughtput(Mb/s)
         double throughput_io = 0.0;
 
         double start_time_io = 0.0;
         double end_time_io = 0.0;
         double elapsed_time_io = 0.0;
-        double elapsed_time_io2 = 0.0;
+
         double start_time_hash = 0.0;
         double end_time_hash = 0.0;
+
         double elapsed_time_hash = 0.0;
         double start_time_hash2 = 0.0;
         double end_time_hash2 = 0.0;
         double elapsed_time_hash2 = 0.0;
-
-        double elapsed_time_hash_total = 0.0;
-        double elapsed_time_hash2_total = 0.0;
-        double elapsed_time_io_total = 0.0;
-        double elapsed_time_io2_total = 0.0;
 
         // Generate table 1; 1) if in-memory: also generate table2 and write to disk,
         // 2) if out-of-memory: only generate unshuffled table1 and write to disk
@@ -942,15 +938,13 @@ int main(int argc, char *argv[])
                         exit(EXIT_FAILURE);
                     }
                     bytesWritten += elements_written * sizeof(MemoTable2Record);
+                    total_bytes_written += elements_written * sizeof(MemoTable2Record);
                 }
 
                 // End I/O time measurement
                 end_time_io = omp_get_wtime();
                 elapsed_time_io = end_time_io - start_time_io;
                 elapsed_time_io_total += elapsed_time_io;
-
-                elapsed_time_hash2 = end_time_hash2 - start_time_hash2;
-                elapsed_time_hash2_total += elapsed_time_hash2;
 
                 if (MONITOR)
                 {
@@ -1064,6 +1058,7 @@ int main(int argc, char *argv[])
                         exit(EXIT_FAILURE);
                     }
                     bytesWritten += elements_written * sizeof(MemoRecord);
+                    total_bytes_written += elements_written * sizeof(MemoRecord);
                 }
 
                 // End I/O time measurement
@@ -1096,7 +1091,7 @@ int main(int argc, char *argv[])
             else
             {
                 throughput_mb = (num_records_per_round * sizeof(MemoTable2Record)) / ((elapsed_time_hash + elapsed_time_hash2 + elapsed_time_io) * 1024 * 1024);
-                throughput_io = (num_records_per_round * sizeof(MemoRecord)) / (elapsed_time_io * 1024 * 1024);
+                throughput_io = (num_records_per_round * sizeof(MemoTable2Record)) / (elapsed_time_io * 1024 * 1024);
             }
 
             // Check Table1 Efficiency for this round
@@ -1321,6 +1316,7 @@ int main(int argc, char *argv[])
                             return EXIT_FAILURE;
                         }
                         buckets[b].count += elements_read;
+                        total_bytes_read += elements_read * sizeof(MemoRecord);
                     }
                 }
 
@@ -1374,10 +1370,6 @@ int main(int argc, char *argv[])
                 }
 
                 start_time_hash2 = omp_get_wtime();
-
-                // zero_nonce_count = 0;
-                // count_condition_met = 0;
-                // count_condition_not_met = 0;
 
 #pragma omp parallel for schedule(static) reduction(+ : total_matches)
                 for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read; b++)
@@ -1493,6 +1485,7 @@ int main(int argc, char *argv[])
                         free(buckets2);
                         return EXIT_FAILURE;
                     }
+                    total_bytes_written += elements_written * sizeof(MemoTable2Record);
                 }
 
                 end_time_io = omp_get_wtime();
@@ -1539,9 +1532,9 @@ int main(int argc, char *argv[])
             {
                 printf("Total matches found in table1: %llu out of %llu records\n", total_matches, num_records_in_shuffled_bucket * total_num_buckets);
                 printf("Percentage of matches: %.2f%%\n", total_matches * 100.0 / (num_records_in_shuffled_bucket * total_num_buckets));
-                printf("record_counts=%llu storage_efficiency_table2=%.2f full_buckets=%llu bucket_efficiency=%.2f record_counts_waste=%llu hash_efficiency=%.2f\n", 
-                       record_counts, record_counts * 100.0 / (total_num_buckets * num_records_in_bucket), 
-                       full_buckets, full_buckets * 100.0 / total_num_buckets, 
+                printf("record_counts=%llu storage_efficiency_table2=%.2f full_buckets=%llu bucket_efficiency=%.2f record_counts_waste=%llu hash_efficiency=%.2f\n",
+                       record_counts, record_counts * 100.0 / (total_num_buckets * num_records_in_bucket),
+                       full_buckets, full_buckets * 100.0 / total_num_buckets,
                        record_counts_waste, total_num_buckets * num_records_in_bucket * 100.0 / (record_counts_waste + total_num_buckets * num_records_in_bucket));
             }
 
@@ -1647,7 +1640,7 @@ int main(int argc, char *argv[])
                 }
 
                 // shuffle table uses io2 time
-                shuffle_table2(fd_table2_tmp, fd_table2, buffer_size, records_per_batch, num_buckets_to_read, start_time, elapsed_time_io2, elapsed_time_io2_total);
+                shuffle_table2(fd_table2_tmp, fd_table2, buffer_size, records_per_batch, num_buckets_to_read);
 
                 if (MONITOR)
                 {
@@ -1762,41 +1755,47 @@ int main(int argc, char *argv[])
             elapsed_time_io_total += elapsed_time_io;
         }
 #endif
-        // end_time_io = omp_get_wtime();
-        // elapsed_time_io = end_time_io - start_time_io;
-        // elapsed_time_io_total += elapsed_time_io;
 
         // End total time measurement
         double end_time = omp_get_wtime();
         double elapsed_time = end_time - start_time;
 
-        // Calculate total throughput
+        // Calculate throughput(MH/s)
         double total_throughput = (num_records_total / elapsed_time) / 1e6;
+        double throughput_hash = (num_records_total / elapsed_time_hash) / 1e6;
 
         // Calculate I/O throughput
-        // NOTE: is it correct for rounds > 1?
-        if (rounds > 1)
+        // Use total tracked bytes for accurate overall I/O throughput
+        if (elapsed_time_io_total > 0)
         {
-            throughput_io = (num_records_per_round * sizeof(MemoRecord)) / (elapsed_time_io_total * 1024 * 1024);
+            throughput_io = (total_bytes_written + total_bytes_read) / (elapsed_time_io_total * 1024 * 1024);
         }
         else
         {
-            throughput_io = (num_records_per_round * sizeof(MemoRecord)) / (elapsed_time_io_total * 1024 * 1024);
+            printf("Elapsed time for IO    ");
+            throughput_io = 0.0;
         }
 
         if (!BENCHMARK)
         {
-            printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput, total_throughput * NONCE_SIZE);
+            printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput, (rounds > 1) ? total_throughput * sizeof(MemoRecord) : total_throughput * sizeof(MemoTable2Record));
+            printf("Overall I/O Throughput: %.2f MB/s (%.2f GB read + %.2f GB written)\n",
+                   throughput_io,
+                   total_bytes_read / (1024.0 * 1024.0 * 1024.0),
+                   total_bytes_written / (1024.0 * 1024.0 * 1024.0));
             printf("Total Time: %.6f seconds\n", elapsed_time);
         }
         else
         {
-            if (rounds == 1) {
+            if (rounds == 1)
+            {
                 // In-memory case
-                printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoRecord), throughput_io, elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time, total_matches * 100.0 / (num_records_in_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_bucket));
-            } else {
+                printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoRecord), throughput_hash, throughput_io, elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_shuffle_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_shuffle_total, elapsed_time, total_matches * 100.0 / (num_records_in_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_bucket));
+            }
+            else
+            {
                 // Out-of-memory case - use shuffled bucket size for match percentage
-                printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoRecord), throughput_io, elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_io2_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_io2_total, elapsed_time, total_matches * 100.0 / (num_records_in_shuffled_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_shuffled_bucket));
+                printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoTable2Record), throughput_hash, throughput_io, elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_shuffle_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_shuffle_total, elapsed_time, total_matches * 100.0 / (num_records_in_shuffled_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_shuffled_bucket));
             }
             // return 0;
         }

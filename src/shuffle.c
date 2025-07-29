@@ -1,6 +1,6 @@
 #include "shuffle.h"
 
-void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t records_per_batch, unsigned long long num_buckets_to_read, double start_time, double elapsed_time_io2, double elapsed_time_io2_total)
+void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t records_per_batch, unsigned long long num_buckets_to_read)
 {
     // Allocate the buffer
     if (DEBUG)
@@ -26,9 +26,19 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
     unsigned long long total_records_processed = 0;
     unsigned long long zero_nonce_count = 0;
 
+    double start_time_shuffle = 0.0;
+    double end_time_shuffle = 0.0;
+
+    double start_time_io = 0.0;
+    double end_time_io = 0.0;
+    double elapsed_time_io = 0.0;
+    double elapsed_time_io_shuffle = 0.0;
+
+    double throughput_io = 0.0;
+
     for (unsigned long long i = 0; i < total_num_buckets; i = i + num_buckets_to_read)
     {
-        double start_time_io2 = omp_get_wtime();
+        start_time_io = omp_get_wtime(); 
 
 #pragma omp parallel for schedule(static)
         for (unsigned long long r = 0; r < rounds; r++)
@@ -54,7 +64,6 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
                                         sizeof(MemoTable2Record),
                                         records_per_batch,
                                         fd_src);
-
             if (records_read != records_per_batch)
             {
                 fprintf(stderr, "Error reading file, records read %zu instead of %zu\n",
@@ -66,42 +75,8 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
             {
                 if (DEBUG)
                     printf("read %zu records from disk...\n", records_read);
+                total_bytes_read += records_read * sizeof(MemoTable2Record);
             }
-
-            // printf("Buckets (Table2) during shuffling:\n");
-            // for (unsigned long long bucket_idx = 0; bucket_idx < 2; bucket_idx++)
-            // {
-            //     printf("Bucket %llu:\n", bucket_idx);
-            //     for (unsigned long long i = 0; i < num_records_in_bucket; i++)
-            //     {
-            //         printf("Nonce1 : ");
-
-            //         for (unsigned long long j = 0; j < NONCE_SIZE; j++)
-            //         {
-            //             printf("%02x", buckets2[bucket_idx].records[i].nonce1[j]);
-            //         }
-            //         printf(" | Nonce2 : ");
-            //         for (unsigned long long j = 0; j < NONCE_SIZE; j++)
-            //         {
-            //             printf("%02x", buckets2[bucket_idx].records[i].nonce2[j]);
-            //         }
-            //         printf(" | Hash : ");
-            //         uint8_t hash[HASH_SIZE];
-            //         MemoTable2Record *record = malloc(sizeof(MemoTable2Record));
-            //         if (record == NULL)
-            //         {
-            //             fprintf(stderr, "Error: Unable to allocate memory for record.\n");
-            //             exit(EXIT_FAILURE);
-            //         }
-            //         generate_hash2(buckets2[bucket_idx].records[i].nonce1, buckets2[bucket_idx].records[i].nonce2, hash);
-
-            //         for (unsigned long long j = 0; j < HASH_SIZE; j++)
-            //         {
-            //             printf("%02x", hash[j]);
-            //         }
-            //         printf("\n");
-            //     }
-            // }
 
             off_t offset_dest = i * num_records_in_shuffled_bucket * sizeof(MemoTable2Record);
             if (DEBUG)
@@ -117,6 +92,10 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
             // printf("buffer_size=%llu my_buffer_size=%llu\n",buffer_size,num_records_in_bucket*num_buckets_to_read*rounds);
         }
         // end of for loop rounds
+
+        end_time_io = omp_get_wtime(); 
+        elapsed_time_io = end_time_io - start_time_io; 
+        elapsed_time_io_total += elapsed_time_io; 
 
         for (size_t k = 0; k < buffer_size; k++)
         {
@@ -144,6 +123,8 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
             }
         }
 
+        start_time_shuffle = omp_get_wtime();
+
         if (DEBUG)
             printf("shuffling %llu buckets with %llu bytes each...\n", num_buckets_to_read * rounds, num_records_in_bucket * sizeof(MemoTable2Record));
 #pragma omp parallel for schedule(static)
@@ -159,6 +140,9 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
         }
         // end of for loop num_buckets_to_read
 
+        end_time_shuffle = omp_get_wtime(); 
+        elapsed_time_shuffle_total += end_time_shuffle - start_time_shuffle;
+
         // Validate shuffling - check for all-zero nonces
         for (size_t k = 0; k < buffer_size; k++)
         {
@@ -169,19 +153,9 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
             {
                 zero_nonce_count++;
             }
-            // else if (!is_nonce_nonzero(buffer_table2_shuffled[k].nonce1, NONCE_SIZE) ||
-            //          !is_nonce_nonzero(buffer_table2_shuffled[k].nonce2, NONCE_SIZE))
-            // {
-            //     fprintf(stderr, "Warning: Record with one zero nonce at index %lu\n", k);
-            //     fprintf(stderr, "nonce1: ");
-            //     for (int b = 0; b < NONCE_SIZE; b++)
-            //         fprintf(stderr, "%02x", buffer_table2_shuffled[k].nonce1[b]);
-            //     fprintf(stderr, "\nnonce2: ");
-            //     for (int b = 0; b < NONCE_SIZE; b++)
-            //         fprintf(stderr, "%02x", buffer_table2_shuffled[k].nonce2[b]);
-            //     fprintf(stderr, "\n");
-            // }
         }
+
+        start_time_io = omp_get_wtime();
 
         // should write in parallel if possible
         size_t elementsWritten = fwrite(buffer_table2_shuffled, sizeof(MemoTable2Record), num_records_in_bucket * num_buckets_to_read * rounds, fd_dest);
@@ -192,20 +166,16 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
             fclose(fd_dest);
             exit(EXIT_FAILURE);
         }
+        total_bytes_written += elementsWritten * sizeof(MemoTable2Record);
 
-        /*if (fsync(fileno(fd_dest)) != 0) {
-            perror("Failed to fsync buffer");
-            fclose(fd_dest);
-            return EXIT_FAILURE;
-        }*/
+        end_time_shuffle = omp_get_wtime();
+        elapsed_time_io_shuffle = end_time_shuffle - start_time_shuffle;
+        elapsed_time_shuffle_total += elapsed_time_io_shuffle;
+        throughput_io = (num_records_in_bucket * num_buckets_to_read * rounds * sizeof(MemoTable2Record)) / (elapsed_time_io_shuffle * 1024 * 1024);
 
-        double end_time_io2 = omp_get_wtime();
-        elapsed_time_io2 = end_time_io2 - start_time_io2;
-        elapsed_time_io2_total += elapsed_time_io2;
-        double throughput_io2 = (num_records_in_bucket * num_buckets_to_read * rounds * sizeof(MemoTable2Record)) / (elapsed_time_io2 * 1024 * 1024);
-        // Last Shuffle print shows at 75% completion. why?
+        // TO DO: Add another Shuffle print statement for 100%
         if (!BENCHMARK)
-            printf("[%.2f] Shuffle Table2 %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / total_num_buckets, throughput_io2);
+            printf("[%.2f] Shuffle Table2 %.2f%%: %.2f MB/s\n", omp_get_wtime() - start_time, (i + 1) * 100.0 / total_num_buckets, throughput_io);
     }
 
     free(buffer_table2);

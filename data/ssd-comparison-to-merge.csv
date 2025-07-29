@@ -103,7 +103,18 @@ Final data points: 2055
   OutOfMemoryTable2Gen: 981.12s
   Table2Shuffle: 589.48s
 
-for,34,5,64,81920,80.00,1024,163840,14.35,71.76,289.30,1039.02,283.17,0.00,595.96,1196.98,97.41%,97.06%
+[vaultx] for,34,5,64,81920,80.00,1024,81920,14.34,71.71,281.40,1029.72,291.12,0.00,590.63,1197.87,97.41%,97.06%
+--- Performance Summary ---
+Total execution time: 1198.44 seconds
+Stages detected: 4
+Combined data points: 1197
+Final data points: 1197
+  Table1Gen: 316.12s
+  WriteTable2: 270.98s
+  InMemoryTable2Gen: 785.95s
+  FinalizePlotFile: 0.00s
+
+[vaultx] for,34,5,64,81920,80.00,1024,163840,14.35,71.76,289.30,1039.02,283.17,0.00,595.96,1196.98,97.41%,97.06%
 --- Performance Summary ---
 Total execution time: 1197.45 seconds
 Stages detected: 4

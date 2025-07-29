@@ -43,3 +43,14 @@ Bucket *buckets;
 Bucket *buckets_phase2;
 BucketTable2 *buckets2;
 BucketTable2 *buckets2_phase2;
+
+// Timing variables for performance measurement
+double start_time = 0.0;
+double elapsed_time_io_total = 0.0;
+double elapsed_time_shuffle_total = 0.0;
+double elapsed_time_hash_total = 0.0;
+double elapsed_time_hash2_total = 0.0;
+
+// I/O tracking variables
+unsigned long long total_bytes_written = 0;
+unsigned long long total_bytes_read = 0;

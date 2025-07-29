@@ -62,6 +62,17 @@ extern size_t READ_BATCH_SIZE;
 
 extern double matching_factor;
 
+// Timing variables for performance measurement
+extern double start_time;
+extern double elapsed_time_io_total;
+extern double elapsed_time_shuffle_total;
+extern double elapsed_time_hash_total;
+extern double elapsed_time_hash2_total;
+
+// I/O tracking variables
+extern unsigned long long total_bytes_written;
+extern unsigned long long total_bytes_read;
+
 // --- state & counters ---
 // extern size_t zero_nonce_count;
 // extern size_t count_condition_met;
