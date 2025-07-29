@@ -377,16 +377,37 @@ int main(int argc, char* argv[]) {
             if (current_file < TOTAL_FILES) {
                 double empty_start_time = omp_get_wtime();
 
-                // FIXME: CPU overhead from loop?
-                for (unsigned long long i = 0; i < total_buckets; i++) {
-                    memset(buckets[i].records, 0, sizeof(MemoRecord) * num_records_in_bucket);
-                }
+                unsigned long long buckets_per_thread = total_buckets / num_threads;
+                unsigned long long buckets_remainder = total_buckets % num_threads;
 
-                memset(table2, 0, total_nonces * sizeof(MemoTable2Record));
+                unsigned long long table2_bytes = total_nonces * sizeof(MemoTable2Record);
+                unsigned long long chunk_size = table2_bytes / num_threads;
+                unsigned long long chunk_remainder = table2_bytes % num_threads;
+
+#pragma omp parallel num_threads(num_threads)
+                {
+                    int tid = omp_get_thread_num();
+
+                    // Clear Table1
+                    unsigned long long b_start = tid * buckets_per_thread + (tid < buckets_remainder ? tid : buckets_remainder);
+                    unsigned long long b_count = buckets_per_thread + (tid < buckets_remainder ? 1 : 0);
+                    unsigned long long b_end = b_start + b_count;
+
+                    for (unsigned long long i = b_start; i < b_end; i++) {
+                        memset(buckets[i].records, 0, sizeof(MemoRecord) * num_records_in_bucket);
+                    }
+
+                    // Clear Table2
+                    unsigned long long t_offset = tid * chunk_size;
+                    unsigned long long t_size = (tid == num_threads - 1) ? (chunk_size + chunk_remainder) : chunk_size;
+                    memset((char*)table2 + t_offset, 0, t_size);
+                }
 
                 double empty_end_time = omp_get_wtime();
                 double empty_time = empty_end_time - empty_start_time;
                 file_time += empty_time;
+
+                printf("[File %d] %-40s: %.2fs\n", current_file, "Cleared Memory", empty_time);
             }
 
             printf("File %d   %-40s: %.2fs\n\n\n", current_file, "Processing Complete", file_time);
