@@ -36,6 +36,10 @@ void pin_thread_to_cpu(int cpu_num) {
 
 #define batch_read(batch_idx)                                                                                                   \
     do {                                                                                                                        \
+        if (DEBUG) {                                                                                                            \
+            printf("[%d] Read Started\n", batch_idx);                                                                           \
+        }                                                                                                                       \
+                                                                                                                                \
         double start_time = omp_get_wtime();                                                                                    \
                                                                                                                                 \
         MergeBatch* mergeBatch = &mergeBatches[batch_idx];                                                                      \
@@ -76,11 +80,19 @@ void pin_thread_to_cpu(int cpu_num) {
         mergeBatch->total_time += elapsed;                                                                                      \
         read_total_time += elapsed;                                                                                             \
                                                                                                                                 \
+        if (DEBUG) {                                                                                                            \
+            printf("[%d] Read Complete: %.2fs\n", batch_idx, elapsed);                                                          \
+        }                                                                                                                       \
+                                                                                                                                \
         mergeBatch->readDone = true;                                                                                            \
     } while (0)
 
 #define batch_write(batch_idx)                                                                        \
     do {                                                                                              \
+        if (DEBUG) {                                                                                  \
+            printf("[%d] Write Started\n", batch_idx);                                                \
+        }                                                                                             \
+                                                                                                      \
         MergeBatch* mergeBatch = &mergeBatches[batch_idx];                                            \
         double write_start_time = omp_get_wtime();                                                    \
                                                                                                       \
@@ -110,6 +122,10 @@ void pin_thread_to_cpu(int cpu_num) {
         double write_time = omp_get_wtime() - write_start_time;                                       \
         write_total_time += write_time;                                                               \
         mergeBatch->total_time += write_time;                                                         \
+                                                                                                      \
+        if (DEBUG) {                                                                                  \
+            printf("[%d] Write Complete: %.2fs\n", batch_idx, write_time);                            \
+        }                                                                                             \
                                                                                                       \
         double write_throughput_MBps = BATCH_MEMORY_MB / write_time;                                  \
                                                                                                       \
@@ -176,6 +192,7 @@ void merge() {
 
     printf("Merge Approach: %d\n", MERGE_APPROACH);
     printf("Memory Size: %lluMB\n", BATCH_MEMORY_MB);
+    printf("Memory Limit: %lluMB\n", MEMORY_LIMIT_MB);
     printf("Threads: %d\n", num_threads);
     printf("Files: %d\n\n\n", TOTAL_FILES);
 
@@ -503,6 +520,10 @@ void merge() {
                     // Create Merge Tasks
 #pragma omp task depend(in : mergeBatches[batch_idx].readDone) depend(out : mergeBatches[batch_idx].mergeDone)
                     {
+                        if (DEBUG) {
+                            printf("[%d] Merge Started\n", batch_idx);
+                        }
+
                         double start_time = omp_get_wtime();
 
                         MergeBatch* mergeBatch = &mergeBatches[batch_idx];
@@ -515,7 +536,7 @@ void merge() {
 
                         // FIXME: Find better way to utilize available threads for merging
                         // How many are available? Do we want to exhaust all of them?
-                        int total_merge_threads = omp_get_num_threads() >= 16 ? omp_get_num_threads() - 10 : omp_get_num_threads() / 2;
+                        int total_merge_threads = omp_get_num_threads() >= 16 ? omp_get_num_threads() - 32 : omp_get_num_threads() / 2;
 
 #pragma omp taskloop
                         for (int merge_thread = 0; merge_thread < total_merge_threads; merge_thread++) {
@@ -540,6 +561,10 @@ void merge() {
                         merge_total_time += elapsed;
 
                         mergeBatch->mergeDone = true;
+
+                        if (DEBUG) {
+                            printf("[%d] Merge Complete: %.2f\n", batch_idx, elapsed);
+                        }
                     }
 
                     // Create Write Tasks
