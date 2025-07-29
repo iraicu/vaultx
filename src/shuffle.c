@@ -32,8 +32,7 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
     double start_time_io = 0.0;
     double end_time_io = 0.0;
     double elapsed_time_io = 0.0;
-    double elapsed_time_io_shuffle = 0.0;
-
+    
     double throughput_io = 0.0;
 
     for (unsigned long long i = 0; i < total_num_buckets; i = i + num_buckets_to_read)
