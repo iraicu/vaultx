@@ -6,6 +6,8 @@
 set -e
 
 HOSTNAME=$(hostname)
+K=29
+nonce_size=4
 
 case $HOSTNAME in 
 	"epycbox")
@@ -18,6 +20,7 @@ case $HOSTNAME in
 		# Mixed drive configuration (for third option)
 		MIXED_F_G="/ssd-raid0/varvara/vaultx/plots/"
 		MIXED_J="/data-l/varvara/vaultx/plots/"
+		MAKE="vaultx_x86_c"
 		;;
 	"orangepi5plus")
 		MEMORY_VALUES=(320 640 1280 2560 5120 10240)
@@ -28,6 +31,7 @@ case $HOSTNAME in
                         "MIXED")
 		MIXED_F_G="/data-fast/varvara/vaultx/plots/"
 		MIXED_J="/data-a/varvara/vaultx/plots/"
+		MAKE="vaultx_arm_c"
 		;;
 	"raspberrypi5")
 		MEMORY_VALUES=(320 640 1280 2560)
@@ -38,6 +42,7 @@ case $HOSTNAME in
                         "MIXED")
 		MIXED_F_G="/data-fast/varvara/vaultx/plots/"
                 MIXED_J="/data-a/varvara/vaultx/plots/"
+		MAKE="vaultx_arm_c"
 		;;
 	*)
 		echo "Machine is undefined"
@@ -52,7 +57,7 @@ DRIVE_NAMES=(
 )
 
 make clean
-make vaultx_x86_c NONCE_SIZE=5 RECORD_SIZE=16
+make $MAKE NONCE_SIZE=$nonce_size RECORD_SIZE=16
 
 # Create directories if they don't exist
 mkdir -p ./data
@@ -101,7 +106,7 @@ for i in "${!DRIVES[@]}"; do
             ./scripts/vaultx_system_monitor_pidstat.py \
                 --plot-file "./graphs/${HOSTNAME}-${DRIVE_NAME}-monitor-plot-k34-${MEMORY}.svg" \
                 --csv-output "./data/${HOSTNAME}-${DRIVE_NAME}-monitor-k34-${MEMORY}.csv" \
-                -- ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t $THREADS \
+                -- ./vaultx -a for -K $K -m $MEMORY -W $MEMORY -t $THREADS \
                 -f "$MIXED_F_G" \
                 -g "$MIXED_F_G" \
                 -j "$MIXED_J" \
@@ -111,7 +116,7 @@ for i in "${!DRIVES[@]}"; do
             ./scripts/vaultx_system_monitor_pidstat.py \
                 --plot-file "./graphs/${HOSTNAME}-${DRIVE_NAME}-monitor-plot-k34-${MEMORY}.svg" \
                 --csv-output "./data/${HOSTNAME}-${DRIVE_NAME}-monitor-k34-${MEMORY}.csv" \
-                -- ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t $THREADS \
+                -- ./vaultx -a for -K $K -m $MEMORY -W $MEMORY -t $THREADS \
                 -f "$DRIVE_PATH" \
                 -g "$DRIVE_PATH" \
                 -j "$DRIVE_PATH" \

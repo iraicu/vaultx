@@ -1,0 +1,181 @@
+approach,drive,K,record_size,num_threads,memory_mb,file_size_gb,batch_size,write_batch_size,total_throughput_mhs,total_throughput_mbs,throughput_hash_mhs,throughput_io_mbs,hash_time,hash2_time,io_time,io2_time,other_time,total_time,match_percentage,storage_efficiency
+for,hdd,--- Experiment Starting at 2025-07-29 21:20:32 ---
+for,hdd,System memory: 7937.5 MB
+for,hdd,Running command: ./vaultx -a for -K 29 -m 320 -W 320 -t 4 -f /data-a/varvara/vaultx/plots/ -g /data-a/varvara/vaultx/plots/ -j /data-a/varvara/vaultx/plots/ -M 1 -x true -n true
+for,hdd,--- VaultX started with PID: 12360 ---
+for,hdd,--- Starting combined pidstat -p ALL monitoring ---
+for,hdd,VaultX PID: 12360, will extract VaultX data from system-wide collection
+for,hdd,This ensures perfect time alignment between system and VaultX metrics
+for,hdd,--- Monitoring VaultX output for stage markers ---
+for,hdd,[vaultx] VAULTX_PID: 12360
+for,hdd,[vaultx] [1.395630] VAULTX_STAGE_MARKER: START Table1Gen
+for,hdd,--> Stage 'Table1Gen' started at 21:20:33 (t=1.40s)
+for,hdd,[vaultx] [12.899920] VAULTX_STAGE_MARKER: START WriteTable1
+for,hdd,--> Stage 'WriteTable1' started at 21:20:45 (t=12.90s)
+for,hdd,[vaultx] [13.330220] VAULTX_STAGE_MARKER: END WriteTable1
+for,hdd,--> Stage 'WriteTable1' ended at 21:20:45 (t=13.33s)
+for,hdd,[vaultx] [13.330232] VAULTX_STAGE_MARKER: END Table1Gen
+for,hdd,--> Stage 'Table1Gen' ended at 21:20:45 (t=13.33s)
+for,hdd,[vaultx] [13.632648] VAULTX_STAGE_MARKER: START Table1Gen
+for,hdd,--> Stage 'Table1Gen' started at 21:20:45 (t=13.63s)
+for,hdd,[vaultx] [25.107859] VAULTX_STAGE_MARKER: START WriteTable1
+for,hdd,--> Stage 'WriteTable1' started at 21:20:57 (t=25.11s)
+for,hdd,[vaultx] [25.553220] VAULTX_STAGE_MARKER: END WriteTable1
+for,hdd,--> Stage 'WriteTable1' ended at 21:20:57 (t=25.55s)
+for,hdd,[vaultx] [25.553231] VAULTX_STAGE_MARKER: END Table1Gen
+for,hdd,--> Stage 'Table1Gen' ended at 21:20:57 (t=25.55s)
+for,hdd,[vaultx] [25.875349] VAULTX_STAGE_MARKER: START Table1Gen
+for,hdd,--> Stage 'Table1Gen' started at 21:20:58 (t=25.88s)
+for,hdd,[vaultx] [37.235477] VAULTX_STAGE_MARKER: START WriteTable1
+for,hdd,--> Stage 'WriteTable1' started at 21:21:09 (t=37.24s)
+for,hdd,[vaultx] [37.671473] VAULTX_STAGE_MARKER: END WriteTable1
+for,hdd,--> Stage 'WriteTable1' ended at 21:21:10 (t=37.67s)
+for,hdd,[vaultx] [37.671484] VAULTX_STAGE_MARKER: END Table1Gen
+for,hdd,--> Stage 'Table1Gen' ended at 21:21:10 (t=37.67s)
+for,hdd,[vaultx] [37.989382] VAULTX_STAGE_MARKER: START Table1Gen
+for,hdd,--> Stage 'Table1Gen' started at 21:21:10 (t=37.99s)
+for,hdd,[vaultx] [49.555677] VAULTX_STAGE_MARKER: START WriteTable1
+for,hdd,--> Stage 'WriteTable1' started at 21:21:21 (t=49.56s)
+for,hdd,[vaultx] [49.997576] VAULTX_STAGE_MARKER: END WriteTable1
+for,hdd,--> Stage 'WriteTable1' ended at 21:21:22 (t=50.00s)
+for,hdd,[vaultx] [49.997588] VAULTX_STAGE_MARKER: END Table1Gen
+for,hdd,--> Stage 'Table1Gen' ended at 21:21:22 (t=50.00s)
+for,hdd,[vaultx] [50.305341] VAULTX_STAGE_MARKER: START Table1Gen
+for,hdd,--> Stage 'Table1Gen' started at 21:21:22 (t=50.31s)
+for,hdd,[vaultx] [61.704121] VAULTX_STAGE_MARKER: START WriteTable1
+for,hdd,--> Stage 'WriteTable1' started at 21:21:34 (t=61.70s)
+for,hdd,[vaultx] [62.155780] VAULTX_STAGE_MARKER: END WriteTable1
+for,hdd,--> Stage 'WriteTable1' ended at 21:21:34 (t=62.16s)
+for,hdd,[vaultx] [62.155790] VAULTX_STAGE_MARKER: END Table1Gen
+for,hdd,--> Stage 'Table1Gen' ended at 21:21:34 (t=62.16s)
+for,hdd,[vaultx] [62.475599] VAULTX_STAGE_MARKER: START Table1Gen
+for,hdd,--> Stage 'Table1Gen' started at 21:21:34 (t=62.48s)
+for,hdd,[vaultx] [74.042008] VAULTX_STAGE_MARKER: START WriteTable1
+for,hdd,--> Stage 'WriteTable1' started at 21:21:46 (t=74.04s)
+for,hdd,[vaultx] [74.506310] VAULTX_STAGE_MARKER: END WriteTable1
+for,hdd,--> Stage 'WriteTable1' ended at 21:21:46 (t=74.51s)
+for,hdd,[vaultx] [74.506318] VAULTX_STAGE_MARKER: END Table1Gen
+for,hdd,--> Stage 'Table1Gen' ended at 21:21:46 (t=74.51s)
+for,hdd,[vaultx] [77.082160] VAULTX_STAGE_MARKER: START OutOfMemoryTable2Gen
+for,hdd,--> Stage 'OutOfMemoryTable2Gen' started at 21:21:49 (t=77.08s)
+for,hdd,[vaultx] Warning: total_num_buckets=16777216 is not a multiple of num_diff_pref_buckets_to_read=2796202, adjusting num_diff_pref_buckets_to_read...
+for,hdd,[vaultx] num_diff_pref_buckets_to_read (if total_num_buckets mod num_diff_pref_buckets_to_read != 0)=4194304
+for,hdd,[vaultx] error, num_diff_pref_buckets_to_read is not a multiple of total_num_buckets, exiting: total_num_buckets=16777216 num_diff_pref_buckets_to_read=4194304...
+for,hdd,[vaultx] Please use a memory value that is a multiple of NONCE_SIZE
+for,hdd,
+for,hdd,--- VaultX execution completed ---
+for,hdd,Debug: Combined data points: 76
+for,hdd,
+for,hdd,--- Performance Summary ---
+for,hdd,Total execution time: 77.26 seconds
+for,hdd,Stages detected: 2
+for,hdd,Combined data points: 76
+for,hdd,Final data points: 76
+for,hdd,  WriteTable1: 0.46s
+for,hdd,  Table1Gen: 12.03s
+for,hdd,Raw data points: 76
+for,hdd,Cleaned data points: 76
+for,hdd,Comparison plot saved to: ./graphs/raspberrypi5-hdd-monitor-plot-k34-320.svg
+for,hdd,
+for,hdd,--- Resource Usage Analysis ---
+for,hdd,Note: System and VaultX values collected from single pidstat -p ALL for perfect alignment
+for,hdd,Average CPU Usage:
+for,hdd,  System Total (all):  348.8% (aggregated)
+for,hdd,  VaultX (raw):        344.3%
+for,hdd,  Other Procs:         4.5%
+for,hdd,  VaultX Share:        98.7% of total system CPU
+for,hdd,  Other Share:         1.3% of total system CPU
+for,hdd,Memory Usage:
+for,hdd,  System Total RSS:    2093.2 MB (avg)
+for,hdd,  VaultX RSS (avg):    1587.6 MB
+for,hdd,  VaultX RSS (peak):   1601.9 MB
+for,hdd,  Other Processes:     505.6 MB (avg)
+for,hdd,  VaultX Share:        75.8% of total system RSS
+for,hdd,I/O Activity (total kB):
+for,hdd,  System Read:  -9252 kB
+for,hdd,  VaultX Read:  349 kB
+for,hdd,  System Write: 1954797 kB
+for,hdd,  VaultX Write: 1966080 kB
+for,hdd,  VaultX Write Share:  100.6%
+for,hdd,Process Count:
+for,hdd,  Average: 159.2
+for,hdd,  Range:   158 - 161
+for,hdd,Raw data saved to: ./data/raspberrypi5-hdd-monitor-k34-320.csv
+for,hdd,--- Experiment Starting at 2025-07-29 21:21:56 ---
+for,hdd,System memory: 7937.5 MB
+for,hdd,Running command: ./vaultx -a for -K 29 -m 640 -W 640 -t 4 -f /data-a/varvara/vaultx/plots/ -g /data-a/varvara/vaultx/plots/ -j /data-a/varvara/vaultx/plots/ -M 1 -x true -n true
+for,hdd,--- VaultX started with PID: 12407 ---
+for,hdd,--- Starting combined pidstat -p ALL monitoring ---
+for,hdd,VaultX PID: 12407, will extract VaultX data from system-wide collection
+for,hdd,This ensures perfect time alignment between system and VaultX metrics
+for,hdd,--- Monitoring VaultX output for stage markers ---
+for,hdd,[vaultx] VAULTX_PID: 12407
+for,hdd,[vaultx] [1.480326] VAULTX_STAGE_MARKER: START Table1Gen
+for,hdd,--> Stage 'Table1Gen' started at 21:21:58 (t=1.48s)
+for,hdd,[vaultx] [25.538618] VAULTX_STAGE_MARKER: START WriteTable1
+for,hdd,--> Stage 'WriteTable1' started at 21:22:22 (t=25.54s)
+for,hdd,[vaultx] [26.401141] VAULTX_STAGE_MARKER: END WriteTable1
+for,hdd,--> Stage 'WriteTable1' ended at 21:22:23 (t=26.40s)
+for,hdd,[vaultx] [26.401153] VAULTX_STAGE_MARKER: END Table1Gen
+for,hdd,--> Stage 'Table1Gen' ended at 21:22:23 (t=26.40s)
+for,hdd,[vaultx] [26.966537] VAULTX_STAGE_MARKER: START Table1Gen
+for,hdd,--> Stage 'Table1Gen' started at 21:22:23 (t=26.97s)
+for,hdd,[vaultx] [50.535200] VAULTX_STAGE_MARKER: START WriteTable1
+for,hdd,--> Stage 'WriteTable1' started at 21:22:47 (t=50.54s)
+for,hdd,[vaultx] [51.410101] VAULTX_STAGE_MARKER: END WriteTable1
+for,hdd,--> Stage 'WriteTable1' ended at 21:22:48 (t=51.41s)
+for,hdd,[vaultx] [51.410109] VAULTX_STAGE_MARKER: END Table1Gen
+for,hdd,--> Stage 'Table1Gen' ended at 21:22:48 (t=51.41s)
+for,hdd,[vaultx] [51.958271] VAULTX_STAGE_MARKER: START Table1Gen
+for,hdd,--> Stage 'Table1Gen' started at 21:22:48 (t=51.96s)
+for,hdd,[vaultx] [75.629506] VAULTX_STAGE_MARKER: START WriteTable1
+for,hdd,--> Stage 'WriteTable1' started at 21:23:12 (t=75.63s)
+for,hdd,[vaultx] [76.538973] VAULTX_STAGE_MARKER: END WriteTable1
+for,hdd,--> Stage 'WriteTable1' ended at 21:23:13 (t=76.54s)
+for,hdd,[vaultx] [76.538981] VAULTX_STAGE_MARKER: END Table1Gen
+for,hdd,--> Stage 'Table1Gen' ended at 21:23:13 (t=76.54s)
+for,hdd,[vaultx] [80.336389] VAULTX_STAGE_MARKER: START OutOfMemoryTable2Gen
+for,hdd,--> Stage 'OutOfMemoryTable2Gen' started at 21:23:17 (t=80.34s)
+for,hdd,[vaultx] Warning: total_num_buckets=16777216 is not a multiple of num_diff_pref_buckets_to_read=5592405, adjusting num_diff_pref_buckets_to_read...
+for,hdd,[vaultx] num_diff_pref_buckets_to_read (if total_num_buckets mod num_diff_pref_buckets_to_read != 0)=8388608
+for,hdd,[vaultx] error, num_diff_pref_buckets_to_read is not a multiple of total_num_buckets, exiting: total_num_buckets=16777216 num_diff_pref_buckets_to_read=8388608...
+for,hdd,[vaultx] Please use a memory value that is a multiple of NONCE_SIZE
+for,hdd,
+for,hdd,--- VaultX execution completed ---
+for,hdd,Debug: Combined data points: 80
+for,hdd,
+for,hdd,--- Performance Summary ---
+for,hdd,Total execution time: 81.27 seconds
+for,hdd,Stages detected: 2
+for,hdd,Combined data points: 80
+for,hdd,Final data points: 80
+for,hdd,  WriteTable1: 0.91s
+for,hdd,  Table1Gen: 24.58s
+for,hdd,Raw data points: 80
+for,hdd,Cleaned data points: 80
+for,hdd,Comparison plot saved to: ./graphs/raspberrypi5-hdd-monitor-plot-k34-640.svg
+for,hdd,
+for,hdd,--- Resource Usage Analysis ---
+for,hdd,Note: System and VaultX values collected from single pidstat -p ALL for perfect alignment
+for,hdd,Average CPU Usage:
+for,hdd,  System Total (all):  354.0% (aggregated)
+for,hdd,  VaultX (raw):        349.9%
+for,hdd,  Other Procs:         4.1%
+for,hdd,  VaultX Share:        98.8% of total system CPU
+for,hdd,  Other Share:         1.2% of total system CPU
+for,hdd,Memory Usage:
+for,hdd,  System Total RSS:    2396.0 MB (avg)
+for,hdd,  VaultX RSS (avg):    1896.1 MB
+for,hdd,  VaultX RSS (peak):   1921.8 MB
+for,hdd,  Other Processes:     499.9 MB (avg)
+for,hdd,  VaultX Share:        79.1% of total system RSS
+for,hdd,I/O Activity (total kB):
+for,hdd,  System Read:  -11582 kB
+for,hdd,  VaultX Read:  338 kB
+for,hdd,  System Write: 1954160 kB
+for,hdd,  VaultX Write: 1966080 kB
+for,hdd,  VaultX Write Share:  100.6%
+for,hdd,Process Count:
+for,hdd,  Average: 160.0
+for,hdd,  Range:   160 - 160
+for,hdd,Raw data saved to: ./data/raspberrypi5-hdd-monitor-k34-640.csv
