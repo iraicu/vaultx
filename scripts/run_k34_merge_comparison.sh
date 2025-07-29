@@ -75,7 +75,7 @@ for i in "${!DRIVES[@]}"; do
             ./scripts/vaultx_system_monitor_pidstat.py \
                 --plot-file "./graphs/${DRIVE_NAME}-monitor-plot-k34-${MEMORY}.svg" \
                 --csv-output "./data/${DRIVE_NAME}-monitor-k34-${MEMORY}.csv" \
-                -- ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t 64 \
+                -- ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t $THREADS \
                 -f "$MIXED_F_G" \
                 -g "$MIXED_F_G" \
                 -j "$MIXED_J" \
@@ -85,7 +85,7 @@ for i in "${!DRIVES[@]}"; do
             ./scripts/vaultx_system_monitor_pidstat.py \
                 --plot-file "./graphs/${DRIVE_NAME}-monitor-plot-k34-${MEMORY}.svg" \
                 --csv-output "./data/${DRIVE_NAME}-monitor-k34-${MEMORY}.csv" \
-                -- ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t 64 \
+                -- ./vaultx -a for -K 34 -m $MEMORY -W $MEMORY -t $THREADS \
                 -f "$DRIVE_PATH" \
                 -g "$DRIVE_PATH" \
                 -j "$DRIVE_PATH" \
