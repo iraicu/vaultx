@@ -126,12 +126,16 @@ void writeTable2(uint8_t* plot_id) {
     size_t total_size = total_nonces * sizeof(MemoTable2Record);
     char* data_ptr = (char*)table2;
     size_t total_written = 0;
+    const size_t chunk_size = 4 * 1024 * 1024;
 
     while (total_written < total_size) {
-        ssize_t bytes = write(fd, data_ptr + total_written, total_size - total_written);
+        size_t remaining = total_size - total_written;
+        size_t to_write = remaining < chunk_size ? remaining : chunk_size;
+
+        ssize_t bytes = write(fd, data_ptr + total_written, to_write);
 
         if (bytes < 0) {
-            fprintf(stderr, "Error writing to file: %s\n", strerror(errno));
+            fprintf(stderr, "Error writing to file at offset %zu: %s\n", total_written, strerror(errno));
             close(fd);
             return;
         }
@@ -139,11 +143,11 @@ void writeTable2(uint8_t* plot_id) {
         total_written += bytes;
     }
 
-    if (fsync(fd) != 0) {
-        perror("Failed to fsync buffer");
-        close(fd);
-        return;
-    }
+    // if (fsync(fd) != 0) {
+    //     perror("Failed to fsync buffer");
+    //     close(fd);
+    //     return;
+    // }
 
     close(fd);
 }

@@ -419,6 +419,15 @@ int main(int argc, char* argv[]) {
             full_buckets_global = 0;
         }
 
+        double sync_start_time = omp_get_wtime();
+
+        printf("Syncing. . . \n");
+        sync();
+
+        double sync_time = omp_get_wtime() - sync_start_time;
+        total_time += sync_time;
+        total_io_time += sync_time;
+
         printf("[%.2fs] Completed generating %d files\n", total_time, TOTAL_FILES);
 
         // TODO: Throughput calculation
