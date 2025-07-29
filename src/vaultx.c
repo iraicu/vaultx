@@ -1772,7 +1772,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("Elapsed time for IO    ");
+            printf("Elapsed time for IO was not measured");
             throughput_io = 0.0;
         }
 
