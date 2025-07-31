@@ -584,18 +584,18 @@ int main(int argc, char *argv[])
     // Vault generation
     if (HASHGEN)
     {
-        // if (rounds == 1 && (!writeDataTmp || !writeDataTable2))
-        // {
-        //     fprintf(stderr, "Error: Table1 file name (-f) and Table2 file name (-j) are required for hash generation.\n");
-        //     print_usage(argv[0]);
-        //     exit(EXIT_FAILURE);
-        // }
-        // if (rounds > 1 && (!writeDataTmp || !writeDataTmpTable2 || !writeDataTable2))
-        // {
-        //     fprintf(stderr, "Error: Table1 file name (-f), Table2 tmp file name (-g), and Table2 file name (-j) are required for hash generation.\n");
-        //     print_usage(argv[0]);
-        //     exit(EXIT_FAILURE);
-        // }
+        if (rounds == 1 && (!writeDataTmp || !writeDataTable2))
+        {
+            fprintf(stderr, "Error: Table1 file name (-f) and Table2 file name (-j) are required for hash generation.\n");
+            print_usage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+        if (rounds > 1 && (!writeDataTmp || !writeDataTmpTable2 || !writeDataTable2))
+        {
+            fprintf(stderr, "Error: Table1 file name (-f), Table2 tmp file name (-g), and Table2 file name (-j) are required for hash generation.\n");
+            print_usage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
 
         if (!BENCHMARK)
             printf("------------------------Table 1 generation started------------------------\n");
