@@ -128,12 +128,14 @@ void pin_thread_to_cpu(int cpu_num) {
         }                                                                                             \
                                                                                                       \
         double write_throughput_MBps = BATCH_MEMORY_MB / write_time;                                  \
-                                                                                                      \
-        printf("[%.2f%%] | Batch %d: %.2fs | Total Time: %.2fs\n\n",                                  \
-            ((double)end_bucket / total_buckets) * 100,                                               \
+        double progress = ((double)end_bucket / total_buckets);                                       \
+        double elapsed_time = omp_get_wtime() - start_time;                                           \
+        printf("[%6.2f%%] | Batch %-6d (%9.2fs) | Total: %9.2fs | Time Left: %9.2fs\n",               \
+            progress * 100,                                                                           \
             batch_idx,                                                                                \
             mergeBatch->total_time,                                                                   \
-            omp_get_wtime() - start_time);                                                            \
+            elapsed_time,                                                                             \
+            elapsed_time * (1 - progress) / progress);                                                \
     } while (0)
 
 void merge() {
@@ -188,14 +190,6 @@ void merge() {
         derive_key(kVal, plot_id, plotData[i].key);
     }
 
-    //   closedir(dir);
-
-    printf("Merge Approach: %d\n", MERGE_APPROACH);
-    printf("Memory Size: %lluMB\n", BATCH_MEMORY_MB);
-    printf("Memory Limit: %lluMB\n", MEMORY_LIMIT_MB);
-    printf("Threads: %d\n", num_threads);
-    printf("Files: %d\n\n\n", TOTAL_FILES);
-
     unsigned long long records_per_global_bucket = TOTAL_FILES * num_records_in_bucket;
     unsigned long long global_bucket_size = records_per_global_bucket * sizeof(MemoTable2Record);
 
@@ -229,12 +223,40 @@ void merge() {
     snprintf(merge_filename, sizeof(merge_filename), "/%s/arnav/vaultx/merge_%d_%d.plot", DESTINATION, K, TOTAL_FILES);
     remove(merge_filename);
 
-    int merge_fd = open(merge_filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    int merge_fd = open(merge_filename, O_WRONLY | O_CREAT, 0644);
 
     if (merge_fd == -1) {
         perror("Error opening file");
         return EXIT_FAILURE;
     }
+
+    unsigned long long num_records = 1ULL << K;
+    unsigned long long record_size = sizeof(MemoTable2Record);
+    unsigned long long size = num_records * record_size * TOTAL_FILES + 36 * TOTAL_FILES;
+
+    printf("Memory Size per Batch: %lluMB\n", BATCH_MEMORY_MB);
+    printf("Buckets processed from each file per batch: %llu\n", total_global_buckets);
+    printf("Bucket size: %llu bytes\n", num_records_in_bucket * sizeof(MemoTable2Record));
+    printf("Data read from each file per batch: %.2fMB\n\n", (double)total_global_buckets * num_records_in_bucket * sizeof(MemoTable2Record) / (1024 * 1024));
+
+    printf("Merge Approach [%d]: %s\n", MERGE_APPROACH, MERGE_APPROACH == 1 ? "Serial" : "Pipelined");
+    printf("Source: %s\n", SOURCE);
+    printf("Destination: %s\n", DESTINATION);
+    printf("Threads: %d\n", num_threads);
+    printf("Files: %d, K%d\n", TOTAL_FILES, K);
+    printf("Memory Limit: %lluMB\n\n\n", MEMORY_LIMIT_MB);
+
+    double t_start = omp_get_wtime();
+    int ret = posix_fallocate(merge_fd, 0, size);
+    double t_end = omp_get_wtime();
+
+    if (ret != 0) {
+        perror("posix_fallocate");
+        close(merge_fd);
+        return 1;
+    }
+
+    printf("posix_fallocate (%llu bytes) took %.3f seconds\n\n\n", size, t_end - t_start);
 
     // Preload Files
     FILE* files[TOTAL_FILES];
@@ -591,8 +613,6 @@ void merge() {
     }
     }
 
-    printf("Write time before flushing: %.2f\n", write_total_time);
-
     // Write metadata to footer
     double finalize_start_time = omp_get_wtime();
 
@@ -634,7 +654,11 @@ void merge() {
         merge_total_time = process_time - read_total_time - write_total_time;
     }
 
-    printf("Merge complete: %.2fs\n", process_time);
+    printf("\n\n");
+    printf("[%.2fs] Completed merging %d K%d-files of total size %.2fGB\n", process_time, TOTAL_FILES, K, (double)size / (1024 * 1024 * 1024));
+    printf("Merge Approach: %s\n", MERGE_APPROACH == 1 ? "Serial" : "Pipelined");
+    printf("Source: %s\n", SOURCE);
+    printf("Destination: %s\n", DESTINATION);
     printf("Read Time: %.2fs\n", read_total_time);
     printf("Write Time: %.2fs\n", write_total_time);
     printf("Merge Time: %.2fs\n\n\n", merge_total_time);
@@ -645,10 +669,10 @@ void merge() {
         for (int i = 0; i < TOTAL_FILES; i++) {
             free(file_records[i].records);
         }
-
-        // FIXME: Don't delete it!!
-        // remove(merge_fd);
     }
+
+    // FIXME: Don't delete it!!
+    // remove(merge_fd);
 
     for (int i = 0; i < TOTAL_FILES; i++) {
         fclose(files[i]);
@@ -688,7 +712,6 @@ void merge() {
             }
 
             MemoTable2Record* record;
-            uint8_t fileId[FILEID_SIZE];
             uint8_t hash[HASH_SIZE];
 
             for (unsigned long long j = i; j < end; j++) {
