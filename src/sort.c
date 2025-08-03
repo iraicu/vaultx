@@ -9,47 +9,41 @@
 //     return memcmp(recA->hash, recB->hash, HASH_SIZE);
 // }
 
-int compare_memo_all_record(const void* a, const void* b) {
-    MemoRecord* A = (MemoRecord*)a;
-    MemoRecord* B = (MemoRecord*)b;
-
-    uint8_t hashA[HASH_SIZE];
-    uint8_t hashB[HASH_SIZE];
-
-    generateBlake3(A->nonce, key, hashA);
-    generateBlake3(B->nonce, key, hashB);
-
-    return memcmp(hashA, hashB, HASH_SIZE);
+// Comparator for qsort
+int compare_hash_wrapper(const void* a, const void* b) {
+    const MemoRecordWithHash* A = a;
+    const MemoRecordWithHash* B = b;
+    return memcmp(A->hash, B->hash, HASH_SIZE);
 }
 
-void sort_bucket_records_inplace(MemoRecord* records, size_t total_records) {
-    // Build an auxiliary array of (nonce, hash) pairs
-    MemoAllRecord* all_records = malloc(total_records * sizeof(MemoAllRecord));
-    if (!all_records) {
-        perror("Error allocating memory for MemoAllRecord array");
-        exit(EXIT_FAILURE);
-    }
+// void sort_bucket_records_inplace(MemoRecord* records, size_t total_records) {
+//     // Build an auxiliary array of (nonce, hash) pairs
+//     MemoAllRecord* all_records = malloc(total_records * sizeof(MemoAllRecord));
+//     if (!all_records) {
+//         perror("Error allocating memory for MemoAllRecord array");
+//         exit(EXIT_FAILURE);
+//     }
 
-    // Populate it
-    for (size_t i = 0; i < total_records; i++) {
-        memcpy(all_records[i].nonce, records[i].nonce, NONCE_SIZE);
-        blake3_hasher hasher;
-        blake3_hasher_init(&hasher);
-        blake3_hasher_update(&hasher, all_records[i].nonce, NONCE_SIZE);
-        blake3_hasher_finalize(&hasher, all_records[i].hash, HASH_SIZE);
-    }
+//     // Populate it
+//     for (size_t i = 0; i < total_records; i++) {
+//         memcpy(all_records[i].nonce, records[i].nonce, NONCE_SIZE);
+//         blake3_hasher hasher;
+//         blake3_hasher_init(&hasher);
+//         blake3_hasher_update(&hasher, all_records[i].nonce, NONCE_SIZE);
+//         blake3_hasher_finalize(&hasher, all_records[i].hash, HASH_SIZE);
+//     }
 
-    // Sort by hash
-    qsort(all_records,
-        total_records,
-        sizeof(MemoAllRecord),
-        compare_memo_all_record);
+//     // Sort by hash
+//     qsort(all_records,
+//         total_records,
+//         sizeof(MemoAllRecord),
+//         compare_memo_all_record);
 
-    // Copy sorted nonces back into the original array
-    for (size_t i = 0; i < total_records; i++) {
-        memcpy(records[i].nonce, all_records[i].nonce, NONCE_SIZE);
-    }
+//     // Copy sorted nonces back into the original array
+//     for (size_t i = 0; i < total_records; i++) {
+//         memcpy(records[i].nonce, all_records[i].nonce, NONCE_SIZE);
+//     }
 
-    // Clean up
-    free(all_records);
-}
+//     // Clean up
+//     free(all_records);
+// }

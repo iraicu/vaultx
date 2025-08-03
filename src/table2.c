@@ -16,45 +16,57 @@ void findMatches() {
         }
 
         for (unsigned long long k = b; k <= end; k++) {
+            int n = buckets[k].count;
+            if (n <= 1) {
+                continue;
+            }
 
-            // FIXME: Optimizatioon opportunity?
-            // Hashes are recomputed a little
-            qsort(buckets[k].records, buckets[k].count, sizeof(MemoRecord), compare_memo_all_record);
+            // Allocate temporary sort array
+            MemoRecordWithHash* sortArray = malloc(n * sizeof(MemoRecordWithHash));
+            if (!sortArray) {
+                perror("malloc failed");
+                exit(EXIT_FAILURE);
+            }
 
-            Bucket* bucket = &buckets[k];
+            // Precompute hashes
+            for (int i = 0; i < n; i++) {
+                sortArray[i].record = &buckets[k].records[i];
+                generateBlake3(sortArray[i].record->nonce, key, sortArray[i].hash);
+            }
 
-            for (unsigned long long i = 0; i + 1 < bucket->count; i++) {
-                uint8_t hash1[HASH_SIZE];
-                uint8_t hash2[HASH_SIZE];
+            // Sort by precomputed hashes
+            qsort(sortArray, n, sizeof(MemoRecordWithHash), compare_hash_wrapper);
 
-                generateBlake3(bucket->records[i].nonce, key, hash1);
+            // Pairwise distance checking on sorted hashes
+            for (int i = 0; i + 1 < n; i++) {
+                uint8_t* hash1 = sortArray[i].hash;
+                int j = i + 1;
 
-                unsigned long long j = i + 1;
-
-                while (j < bucket->count) {
-                    generateBlake3(bucket->records[j].nonce, key, hash2);
+                while (j < n) {
+                    uint8_t* hash2 = sortArray[j].hash;
 
                     uint64_t distance = compute_hash_distance(hash1, hash2, HASH_SIZE);
-                    // printf("HashA: %s, Hashb: %s, Distance: %.2f\n", byteArrayToHexString(hash1, HASH_SIZE), byteArrayToHexString(hash2, HASH_SIZE), logenerateBlake3Pair(distance));
-
                     if (distance > expected_distance) {
                         break;
                     }
 
                     MemoTable2Record record;
-                    memcpy(record.nonce1, bucket->records[i].nonce, NONCE_SIZE);
-                    memcpy(record.nonce2, bucket->records[j].nonce, NONCE_SIZE);
+                    memcpy(record.nonce1, sortArray[i].record->nonce, NONCE_SIZE);
+                    memcpy(record.nonce2, sortArray[j].record->nonce, NONCE_SIZE);
 
                     uint8_t hash[HASH_SIZE];
                     generateBlake3Pair(record.nonce1, record.nonce2, key, hash);
 
                     size_t bucketIndex = getBucketIndex(hash);
-
                     insert_record2(table2, buckets_table2, &record, bucketIndex);
 
                     j++;
                 }
             }
+
+            // Clear bucket
+            free(sortArray);
+            memset(buckets[k].records, 0, sizeof(MemoRecord) * num_records_in_bucket);
         }
     }
 }

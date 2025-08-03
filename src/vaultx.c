@@ -388,15 +388,6 @@ int main(int argc, char* argv[]) {
                 {
                     int tid = omp_get_thread_num();
 
-                    // Clear Table1
-                    unsigned long long b_start = tid * buckets_per_thread + (tid < buckets_remainder ? tid : buckets_remainder);
-                    unsigned long long b_count = buckets_per_thread + (tid < buckets_remainder ? 1 : 0);
-                    unsigned long long b_end = b_start + b_count;
-
-                    for (unsigned long long i = b_start; i < b_end; i++) {
-                        memset(buckets[i].records, 0, sizeof(MemoRecord) * num_records_in_bucket);
-                    }
-
                     // Clear Table2
                     unsigned long long t_offset = tid * chunk_size;
                     unsigned long long t_size = (tid == num_threads - 1) ? (chunk_size + chunk_remainder) : chunk_size;
@@ -419,14 +410,13 @@ int main(int argc, char* argv[]) {
             full_buckets_global = 0;
         }
 
+        // Flush all dirty pages to disk
         double sync_start_time = omp_get_wtime();
-
-        printf("Syncing. . . \n");
         sync();
-
         double sync_time = omp_get_wtime() - sync_start_time;
         total_time += sync_time;
         total_io_time += sync_time;
+        printf("Sync Time: %.2f\n", sync_time);
 
         printf("[%.2fs] Completed generating %d files\n", total_time, TOTAL_FILES);
 
@@ -436,19 +426,9 @@ int main(int argc, char* argv[]) {
         printf("Hashgen Throughput: %.2f MH/s\nIO Throughput: %.2f MB/s\n", throughput_hash, throughput_io);
     }
 
-    // TODO: PERF to see bottlenecks
-
-    // TODO: Analzye distribution in L1,L2 cache
-
     // TODO: Try taskloop pragma (CHATGPT history)
 
-    // TODO: Small tests on data/fast2
-
     // TODO: Optimizations in makefile
-
-    // TODO: Play around with scheduling
-
-    // TODO: pread and pwrite, no merge required?
 
     // TODO: Theoretical peak: poster idea
 

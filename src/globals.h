@@ -20,7 +20,7 @@
 #include "../blake3/blake3.h" // Include Blake3 header
 
 #ifndef NONCE_SIZE
-#define NONCE_SIZE 5 // Default nonce size
+#define NONCE_SIZE 4 // Default nonce size
 #endif
 
 #ifndef RECORD_SIZE
@@ -29,8 +29,6 @@
 
 #define HASH_SIZE (RECORD_SIZE - NONCE_SIZE)
 #define PREFIX_SIZE 3 // Example prefix size for getBucketIndex
-
-#define FILEID_SIZE 2
 
 extern int K;
 extern int MERGE_APPROACH;
@@ -82,6 +80,11 @@ typedef struct
 {
     uint8_t nonce[NONCE_SIZE]; // Nonce to store the seed
 } MemoRecord;
+
+typedef struct {
+    MemoRecord* record;
+    uint8_t hash[HASH_SIZE];
+} MemoRecordWithHash;
 
 typedef struct
 {
