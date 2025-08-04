@@ -233,11 +233,13 @@ void merge() {
     unsigned long long num_records = 1ULL << K;
     unsigned long long record_size = sizeof(MemoTable2Record);
     unsigned long long size = num_records * record_size * TOTAL_FILES + 36 * TOTAL_FILES;
+    unsigned long long total_batches = ceil((double)total_buckets / total_global_buckets);
 
     printf("Memory Size per Batch: %lluMB\n", BATCH_MEMORY_MB);
     printf("Buckets processed from each file per batch: %llu\n", total_global_buckets);
     printf("Bucket size: %llu bytes\n", num_records_in_bucket * sizeof(MemoTable2Record));
     printf("Data read from each file per batch: %.2fMB\n\n", (double)total_global_buckets * num_records_in_bucket * sizeof(MemoTable2Record) / (1024 * 1024));
+    printf("Total Batches: %llu\n", total_batches);
 
     printf("Merge Approach [%d]: %s\n", MERGE_APPROACH, MERGE_APPROACH == 1 ? "Serial" : "Pipelined");
     printf("Source: %s\n", SOURCE);
@@ -487,8 +489,6 @@ void merge() {
     }
 
     case 2: {
-        unsigned long long total_batches = ceil((double)total_buckets / total_global_buckets);
-
         MergeBatch* mergeBatches = (MergeBatch*)malloc(sizeof(MergeBatch) * total_batches);
 
         if (!mergeBatches) {
@@ -628,11 +628,6 @@ void merge() {
         }
         bytes_written += res;
     }
-
-    // TODO: Glances
-    // TODO: Graphs (parallelism (some for hdd 4 max)
-
-    // TODO: Profiling
 
     // Sync disk
     if (fsync(merge_fd) != 0) {
