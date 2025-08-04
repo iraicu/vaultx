@@ -1691,7 +1691,7 @@ int main(int argc, char *argv[])
             }
         }
         // NOTE: Is there any point in this piece of code? Why are we moving
-        else if (writeDataTable2 && rounds == 1)
+        else if (writeDataTable2 && rounds == 1 && DIR_TMP != DIR_TABLE2)
         {
             start_time_io = omp_get_wtime();
             if (MONITOR)

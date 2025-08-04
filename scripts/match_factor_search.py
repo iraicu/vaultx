@@ -26,12 +26,6 @@ def clean_plots_directory():
 
 def run_vaultx_command(match_factor, k_value=26, memory=512): 
     print(f"Running vaultx with match_factor {match_factor}, K={k_value}, memory={memory}")
-    
-    # Validate memory requirements for K value
-    min_memory_mb = 2 ** (k_value - 20)  # Rough estimate
-    if memory < min_memory_mb:
-        print(f"WARNING: K={k_value} typically needs >{min_memory_mb}MB, you specified {memory}MB")
-        print("This may cause OutOfMemory errors!")
 
     clean_plots_directory()
 
@@ -46,7 +40,7 @@ def run_vaultx_command(match_factor, k_value=26, memory=512):
         if result.returncode == 0:
             print("VaultX completed successfully")
             output = result.stdout
-            match_efficiency = output.strip().replace('%', '').split(',')[-2:-1:]
+            match_efficiency = output.strip().replace('%', '').split(',')[-1::]
             match_eff = round(float(match_efficiency[0]) / 100 , 4)
             print(f"Match efficiency is {match_eff} * 100%")
             return match_eff
@@ -68,17 +62,19 @@ def binary_search(beginning_match_factor, k_value=26, memory=512):
             print(f"Perfect match factor is found. It is {match_factor}")
             break
         elif new_match_factor > 1:
-            if match_factor + 0.01 > 1:
+            if match_factor + match_modifier > 1:
                 match_factor = 1
             else:
-                match_factor += 0.001
-            print(f"Match efficiency is > 1. New match_factor to try: {match_factor}")
+                match_factor += match_modifier
+                match_modifier /= 2
+            print(f"Match efficiency is > 1. New match_factor to try: {match_factor}. Future match_modifier: {match_modifier}")
         elif new_match_factor < 0: 
             print(f"Match efficiency is < 0, which is impossible. Match factor that gives the maximum possible match efficiency is {match_factor}")
             break
         else:
-            match_factor -= 0.01
-            print(f"Match efficiency is < 1 and > 0. New match_factor to try: {match_factor}")
+            match_factor -= match_modifier
+            match_modifier /= 2
+            print(f"Match efficiency is < 1 and > 0. New match_factor to try: {match_factor}. Future match_modifier: {match_modifier}")
 
 def main():
     """Main function to handle command line arguments and run the search"""
