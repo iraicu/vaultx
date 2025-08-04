@@ -6,8 +6,8 @@
 set -e
 
 HOSTNAME=$(hostname)
-K=29
-nonce_size=4
+K=34
+nonce_size=5
 
 case $HOSTNAME in 
 	"epycbox")
