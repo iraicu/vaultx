@@ -6,6 +6,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#ifdef ENABLE_NUMA
 void print_numa_node(void* ptr, const char* label) {
     int status;
     int ret = get_mempolicy(&status, NULL, 0, ptr, MPOL_F_NODE | MPOL_F_ADDR);
@@ -15,6 +16,7 @@ void print_numa_node(void* ptr, const char* label) {
     }
     printf("%s is on NUMA node %d\n", label, status);
 }
+#endif
 
 int get_current_cpu() {
     return sched_getcpu(); // Returns the CPU number the calling thread is running on

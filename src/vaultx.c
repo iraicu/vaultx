@@ -1,4 +1,4 @@
-
+#define _GNU_SOURCE
 #include "vaultx.h"
 
 int main(int argc, char* argv[]) {

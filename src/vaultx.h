@@ -23,8 +23,10 @@
 #include "utils.h"
 #include <ctype.h>
 #include <dirent.h>
+#ifdef ENABLE_NUMA
 #include <numa.h>
 #include <numaif.h>
+#endif
 #include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
