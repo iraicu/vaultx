@@ -33,7 +33,7 @@ case $HOSTNAME in
 		MIXED_J="/data-a/varvara/vaultx/plots/"
 		MAKE="vaultx_arm_c"
 		;;
-	"raspberrypi5")
+	"rpi5")
 		MEMORY_VALUES=(320 640 1280 2560)
 		THREADS=4
 		DRIVES=(
