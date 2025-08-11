@@ -1632,7 +1632,7 @@ int main(int argc, char *argv[])
 
                 // Calculate the total number of records to read per batch
                 size_t records_per_batch = num_records_in_bucket * num_buckets_to_read;
-                // size_t buffer_size = records_per_batch * rounds;
+                // Buffer size is now managed by shuffle function for memory efficiency
                 size_t buffer_size = records_per_batch;
 
                 if (num_threads_io > 0)
