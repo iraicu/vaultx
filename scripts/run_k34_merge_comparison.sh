@@ -37,7 +37,6 @@ case $HOSTNAME in
 		MEMORY_VALUES=(320 640 1280 2560)
 		THREADS=4
 		DRIVES=(
-                        "/data-a/varvara/vaultx/plots/"
                         "/data-fast/varvara/vaultx/plots/"
                         "MIXED")
 		MIXED_F_G="/data-fast/varvara/vaultx/plots/"
@@ -55,6 +54,14 @@ DRIVE_NAMES=(
     "ssd-nvme"
     "ssd-hdd"
 )
+
+# Adjust drive names for rpi5 (no HDD-only tests)
+if [ "$HOSTNAME" == "rpi5" ]; then
+    DRIVE_NAMES=(
+        "ssd-nvme"
+        "ssd-hdd"
+    )
+fi
 
 make clean
 make $MAKE NONCE_SIZE=$nonce_size RECORD_SIZE=16
