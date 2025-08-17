@@ -205,6 +205,24 @@ int main(int argc, char* argv[]) {
 
     num_records_in_shuffled_bucket = num_records_in_bucket * rounds;
 
+    char cwd[1024];
+
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        char cwd_copy[1024];
+        strcpy(cwd_copy, cwd);
+
+        char* vaultx_dir = basename(cwd_copy); // last folder
+        if (strcmp(vaultx_dir, "vaultx") == 0) {
+            char parent_copy[1024];
+            strcpy(parent_copy, cwd); // dirname may modify string
+            strcpy(user, basename(dirname(parent_copy)));
+        } else {
+            fprintf(stderr, "Error: not inside vaultx folder\n");
+        }
+    } else {
+        perror("getcwd() error");
+    }
+
     // FIXME:
     if (BENCHMARK) {
         if (SEARCH) {
@@ -260,7 +278,7 @@ int main(int argc, char* argv[]) {
     if (HASHGEN) {
         // Reset plots folder
         char* FOLDER[256];
-        snprintf(FOLDER, sizeof(FOLDER), "/%s/arnav/vaultx/plots/", SOURCE);
+        snprintf(FOLDER, sizeof(FOLDER), "/%s/%s/vaultx/plots/", SOURCE, user);
         ensure_folder_exists(FOLDER);
         delete_contents(FOLDER);
 
@@ -321,10 +339,10 @@ int main(int argc, char* argv[]) {
             total_gen_time += hashgen_time;
             file_time += hashgen_time;
 
-            printf("[File %d] %-40s: %.2fs\n", f, "Table1: Hash Generation Complete", hashgen_time);
-
             // Calculate Table1 storage efficiency
             if (DEBUG) {
+                printf("[File %d] %-40s: %.2fs\n", f, "Table1: Hash Generation Complete", hashgen_time);
+
                 unsigned long long nonces_generated = 0;
 
 #pragma omp parallel for reduction(+ : nonces_generated)
@@ -347,9 +365,9 @@ int main(int argc, char* argv[]) {
             file_time += matching_time;
             total_gen_time += matching_time;
 
-            printf("[File %d] %-40s: %.2fs\n", current_file, "Table2: Matching Complete", matching_time);
-
             if (DEBUG) {
+                printf("[File %d] %-40s: %.2fs\n", current_file, "Table2: Matching Complete", matching_time);
+
                 unsigned long long nonces_generated = 0;
 
 #pragma omp parallel for reduction(+ : nonces_generated)
@@ -372,7 +390,9 @@ int main(int argc, char* argv[]) {
             file_time += fileio_time;
             total_io_time += fileio_time;
 
-            printf("[File %d] %-40s: %.2fs\n", current_file, "Finished writing to disk", fileio_time);
+            if (DEBUG) {
+                printf("[File %d] %-40s: %.2fs\n", current_file, "Finished writing to disk", fileio_time);
+            }
 
             // Clearing all buckets from memory
             if (current_file < TOTAL_FILES) {
@@ -399,12 +419,14 @@ int main(int argc, char* argv[]) {
                 double empty_time = empty_end_time - empty_start_time;
                 file_time += empty_time;
 
-                printf("[File %d] %-40s: %.2fs\n", current_file, "Cleared Memory", empty_time);
+                if (DEBUG) {
+                    printf("[File %d] %-40s: %.2fs\n", current_file, "Cleared Memory", empty_time);
+                }
             }
 
-            printf("File %d   %-40s: %.2fs\n\n\n", current_file, "Processing Complete", file_time);
-
             total_time += file_time;
+
+            printf("[Subplot %3d/%3d] Completed | File time: %7.2fs | Overall Time: %8.2fs | ETA: %7.2fs\n", current_file, TOTAL_FILES, file_time, total_time, (total_time / current_file) * (TOTAL_FILES - current_file));
 
             // Prepare for next file
             current_file++;
@@ -417,7 +439,7 @@ int main(int argc, char* argv[]) {
         double sync_time = omp_get_wtime() - sync_start_time;
         total_time += sync_time;
         total_io_time += sync_time;
-        printf("Sync Time: %.2f\n", sync_time);
+        printf("\n\nSync Time: %.2f\n", sync_time);
 
         printf("[%.2fs] Completed generating %d files\n", total_time, TOTAL_FILES);
 

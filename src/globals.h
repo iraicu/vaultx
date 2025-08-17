@@ -62,6 +62,7 @@ extern bool FULL_BUCKETS;
 
 extern char* SOURCE;
 extern char* DESTINATION;
+extern char user[256];
 
 extern size_t BATCH_SIZE;
 extern size_t PREFIX_SEARCH_SIZE;

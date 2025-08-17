@@ -24,6 +24,7 @@
 #include <ctype.h>
 #include <dirent.h>
 #ifdef ENABLE_NUMA
+#include <libgen.h>
 #include <numa.h>
 #include <numaif.h>
 #endif

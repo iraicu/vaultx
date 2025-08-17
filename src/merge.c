@@ -145,7 +145,7 @@ void merge() {
     int MAX_FILENAME_LEN = 256;
     char filenames[TOTAL_FILES][MAX_FILENAME_LEN];
     char dir_name[256];
-    snprintf(dir_name, sizeof(dir_name), "/%s/arnav/vaultx/plots", SOURCE);
+    snprintf(dir_name, sizeof(dir_name), "/%s/%s/vaultx/plots", SOURCE, user);
 
     DIR* d = opendir(dir_name);
     struct dirent* dir;
@@ -222,7 +222,7 @@ void merge() {
 
     // Merge file
     char merge_filename[100];
-    snprintf(merge_filename, sizeof(merge_filename), "/%s/arnav/vaultx/merge_%d_%d.plot", DESTINATION, K, TOTAL_FILES);
+    snprintf(merge_filename, sizeof(merge_filename), "/%s/%s/vaultx/merge_%d_%d.plot", DESTINATION, user, K, TOTAL_FILES);
     remove(merge_filename);
 
     int merge_fd = open(merge_filename, O_WRONLY | O_CREAT, 0644);

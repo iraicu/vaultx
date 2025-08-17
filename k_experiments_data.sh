@@ -21,9 +21,11 @@ for folder in "$LOG_ROOT"/*_to_*; do
     [[ -f "$genfile" ]] || continue
     K=$(basename "$genfile" | sed -E 's/gen_K([0-9]+)\.log/\1/')
 
+    # --- UPDATED gen parsing ---
     GENTIME=$(grep -oP '\[\K[0-9]+(\.[0-9]+)?(?=s\] Completed generating)' "$genfile")
     GENTHROUGHPUT=$(grep -oP '(?<=Hashgen Throughput: )[0-9]+(\.[0-9]+)?(?= MH/s)' "$genfile")
     IOTHRUPUT=$(grep -oP '(?<=IO Throughput: )[0-9]+(\.[0-9]+)?(?= MB/s)' "$genfile")
+    # ---------------------------
 
     MERGETIME_TOTAL=""
     READTIME=""
@@ -32,10 +34,12 @@ for folder in "$LOG_ROOT"/*_to_*; do
 
     mergefile="$folder/merge_K${K}.log"
     if [[ -f "$mergefile" ]]; then
-      MERGETIME_TOTAL=$(grep -oP '(?<=Merge complete: )[0-9]+(\.[0-9]+)?(?=s)' "$mergefile")
+      # --- UPDATED merge parsing ---
+      MERGETIME_TOTAL=$(grep -oP '\[\K[0-9]+(\.[0-9]+)?(?=s\] Completed merging)' "$mergefile")
       READTIME=$(grep -oP '(?<=Read Time: )[0-9]+(\.[0-9]+)?(?=s)' "$mergefile")
       WRITETIME=$(grep -oP '(?<=Write Time: )[0-9]+(\.[0-9]+)?(?=s)' "$mergefile")
       MERGETIME=$(grep -oP '(?<=Merge Time: )[0-9]+(\.[0-9]+)?(?=s)' "$mergefile")
+      # ------------------------------
     fi
 
     SMALLSEARCH="0"
@@ -43,8 +47,8 @@ for folder in "$LOG_ROOT"/*_to_*; do
     if [[ "$SOURCE" == "$DEST" ]]; then
       searchfile="$folder/search_k${K}.log"
       if [[ -f "$searchfile" ]]; then
-        SMALLSEARCH=$(grep "Small Plots Lookup Time:" "$searchfile" | sed -E 's/.*Small Plots Lookup Time: ([0-9.]+).*/\1/')
-        MERGEDSEARCH=$(grep "Merged Plot Lookup Time:" "$searchfile" | sed -E 's/.*Merged Plot Lookup Time: ([0-9.]+).*/\1/')
+        SMALLSEARCH=$(grep "Small Plots Latency:" "$searchfile" | sed -E 's/.*Small Plots Latency: ([0-9.]+).*/\1/')
+        MERGEDSEARCH=$(grep "Merged Plot Latency:" "$searchfile" | sed -E 's/.*Merged Plot Latency: ([0-9.]+).*/\1/')
       fi
     fi
 
