@@ -34,6 +34,7 @@ bool FULL_BUCKETS = false;
 
 char* SOURCE = 'ssd-raid0';
 char* DESTINATION = 'ssd-raid0';
+char user[256];
 
 uint8_t key[32];
 

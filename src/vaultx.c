@@ -204,6 +204,24 @@ int main(int argc, char* argv[]) {
 
     num_records_in_shuffled_bucket = num_records_in_bucket * rounds;
 
+    char cwd[1024];
+
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        char cwd_copy[1024];
+        strcpy(cwd_copy, cwd);
+
+        char* vaultx_dir = basename(cwd_copy); // last folder
+        if (strcmp(vaultx_dir, "vaultx") == 0) {
+            char parent_copy[1024];
+            strcpy(parent_copy, cwd); // dirname may modify string
+            strcpy(user, basename(dirname(parent_copy)));
+        } else {
+            fprintf(stderr, "Error: not inside vaultx folder\n");
+        }
+    } else {
+        perror("getcwd() error");
+    }
+
     // FIXME:
     if (BENCHMARK) {
         if (SEARCH) {
@@ -259,7 +277,7 @@ int main(int argc, char* argv[]) {
     if (HASHGEN) {
         // Reset plots folder
         char* FOLDER[256];
-        snprintf(FOLDER, sizeof(FOLDER), "/%s/arnav/vaultx/plots/", SOURCE);
+        snprintf(FOLDER, sizeof(FOLDER), "/%s/%s/vaultx/plots/", SOURCE, user);
         ensure_folder_exists(FOLDER);
         delete_contents(FOLDER);
 

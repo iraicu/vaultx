@@ -23,6 +23,7 @@
 #include "utils.h"
 #include <ctype.h>
 #include <dirent.h>
+#include <libgen.h>
 #include <numa.h>
 #include <numaif.h>
 #include <sched.h>
