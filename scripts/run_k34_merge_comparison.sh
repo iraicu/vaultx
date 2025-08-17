@@ -34,10 +34,9 @@ case $HOSTNAME in
 		MAKE="vaultx_arm_c"
 		;;
 	"rpi5")
-		MEMORY_VALUES=(320 640 1280 2560)
+		MEMORY_VALUES=(320 640 1280)
 		THREADS=4
 		DRIVES=(
-                        "/data-fast/varvara/vaultx/plots/"
                         "MIXED")
 		MIXED_F_G="/data-fast/varvara/vaultx/plots/"
                 MIXED_J="/data-a/varvara/vaultx/plots/"
