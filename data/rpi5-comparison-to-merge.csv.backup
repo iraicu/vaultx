@@ -1,8 +1,0 @@
-approach,drive,K,record_size,num_threads,memory_mb,file_size_gb,batch_size,write_batch_size,total_throughput_mhs,total_throughput_mbs,throughput_hash_mhs,throughput_io_mbs,hash_time,hash2_time,io_time,io2_time,other_time,total_time,match_percentage,storage_efficiency
-for,hdd,Running command: ./vaultx -a for -K 34 -m 320 -W 320 -t 4 -f /data-a/varvara/vaultx/plots/ -g /data-a/varvara/vaultx/plots/ -j /data-a/varvara/vaultx/plots/ -M 1 -x true -n true
-for,hdd,[vaultx] for,34,5,4,320,80.00,1024,320,1.48,14.77,1727.45,171.78,2495.08,4362.55,3815.18,135.59,5189.62,11635.46,64.66%,59.85%
-for,hdd,Running command: ./vaultx -a for -K 34 -m 640 -W 640 -t 4 -f /data-a/varvara/vaultx/plots/ -g /data-a/varvara/vaultx/plots/ -j /data-a/varvara/vaultx/plots/ -M 1 -x true -n true
-for,hdd,[vaultx] for,34,5,4,640,80.00,1024,640,1.52,15.21,830.62,222.47,2645.99,4813.58,2945.79,152.13,5549.88,11293.79,73.94%,70.28%
-for,hdd,Running command: ./vaultx -a for -K 34 -m 1280 -W 1280 -t 4 -f /data-a/varvara/vaultx/plots/ -g /data-a/varvara/vaultx/plots/ -j /data-a/varvara/vaultx/plots/ -M 1 -x true -n true
-for,hdd,[vaultx] for,34,5,4,1280,80.00,1024,1280,1.34,13.42,430.20,150.42,2556.62,5129.94,4356.83,143.60,5740.05,12797.11,81.04%,78.33%
-for,hdd,Running command: ./vaultx -a for -K 34 -m 2560 -W 2560 -t 4 -f /data-a/varvara/vaultx/plots/ -g /data-a/varvara/vaultx/plots/ -j /data-a/varvara/vaultx/plots/ -M 1 -x true -n true
