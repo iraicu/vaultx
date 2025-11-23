@@ -118,7 +118,7 @@ void print_usage(char *prog_name)
     printf("  -b NUM                    Batch size (default: 1024)\n");
     printf("  -h, --help                Display this help message\n");
     printf("\nExample:\n");
-    printf("  %s -a task -t 8 -K 20 -m 1024 -f output.dat\n", prog_name);
+    printf("  %s -t 16 -K 26 -m 1024 -g memo.tmp -f memo2.tmp -j k26-memo.x\n", prog_name);     
 }
 
 // Function to compute the bucket index based on hash prefix
