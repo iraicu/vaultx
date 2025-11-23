@@ -1,7 +1,7 @@
 #ifndef TABLE2_H
 #define TABLE2_H
 
-#include "crypt.h"
+#include "crypto.h"
 #include "globals.h"
 #include "sort.h"
 #include "vaultx.h"

@@ -1,10 +1,16 @@
 #define _GNU_SOURCE
 #include "merge.h"
 #include <errno.h>
-#include <sched.h>
 #include <stdio.h>
-#include <sys/syscall.h>
 #include <unistd.h>
+
+#if defined(__linux__)
+#include <sched.h>
+#include <sys/syscall.h>
+#define HAVE_CPU_PINNING 1
+#else
+#define HAVE_CPU_PINNING 0
+#endif
 
 #ifdef ENABLE_NUMA
 void print_numa_node(void* ptr, const char* label) {
@@ -19,10 +25,15 @@ void print_numa_node(void* ptr, const char* label) {
 #endif
 
 int get_current_cpu() {
+#if HAVE_CPU_PINNING
     return sched_getcpu(); // Returns the CPU number the calling thread is running on
+#else
+    return 0;
+#endif
 }
 
 void pin_thread_to_cpu(int cpu_num) {
+#if HAVE_CPU_PINNING
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(cpu_num, &cpuset);
@@ -34,6 +45,9 @@ void pin_thread_to_cpu(int cpu_num) {
     } else {
         // printf("Thread %d pinned to CPU %d\n", tid, cpu_num);
     }
+#else
+    (void)cpu_num;
+#endif
 }
 
 #define batch_read(batch_idx)                                                                                                   \
@@ -251,16 +265,33 @@ void merge() {
     printf("Memory Limit: %lluMB\n\n\n", MEMORY_LIMIT_MB);
 
     double t_start = omp_get_wtime();
+#if defined(__APPLE__)
+    int ret = ftruncate(merge_fd, size);
+#else
     int ret = posix_fallocate(merge_fd, 0, size);
+#endif
     double t_end = omp_get_wtime();
 
     if (ret != 0) {
+#if defined(__APPLE__)
+        perror("ftruncate");
+#else
+        errno = ret;
         perror("posix_fallocate");
+#endif
         close(merge_fd);
         return 1;
     }
 
-    printf("posix_fallocate (%llu bytes) took %.3f seconds\n\n\n", size, t_end - t_start);
+    printf("%s (%llu bytes) took %.3f seconds\n\n\n",
+#if defined(__APPLE__)
+        "ftruncate"
+#else
+        "posix_fallocate"
+#endif
+        ,
+        size,
+        t_end - t_start);
 
     // Preload Files
     FILE* files[TOTAL_FILES];

@@ -1,5 +1,5 @@
 NAME=blake3/blake3
-CC=gcc
+CC=gcc-13
 CCP=g++-14
 #torus
 #XCC=/ssd-raid0/shared/xgcc/bin/xgcc
@@ -98,10 +98,10 @@ vaultx_arm_c: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c sr
 	$(CC) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $(CFLAGS) $(EXTRAFLAGS) $^ -o vaultx $(LDFLAGS) -fopenmp
 
 vaultx_mac: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c src/globals.c src/io.c src/search.c src/crypto.c src/merge.c src/utils.c
-	$(CCP) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) -x c++ -std=c++17 -o vaultx vaultx.c -fopenmp -lblake3 -ltbb -O3  -I/opt/homebrew/opt/blake3/include -L/opt/homebrew/opt/blake3/lib -I/opt/homebrew/opt/tbb/include -L/opt/homebrew/opt/tbb/lib
+	$(CCP) -w -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $^ -x c++ -std=c++17 -o vaultx -fopenmp -ltbb -lblake3 -lsodium -O3 -I/opt/homebrew/include -I/opt/homebrew/opt/blake3/include -I/opt/homebrew/opt/tbb/include -L/opt/homebrew/lib -L/opt/homebrew/opt/blake3/lib -L/opt/homebrew/opt/tbb/lib
 
 vaultx_mac_c: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c src/globals.c src/io.c src/search.c src/crypto.c src/merge.c src/utils.c
-	$(CC) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) -o vaultx vaultx.c -fopenmp -lblake3 -O3  -I/opt/homebrew/opt/blake3/include -L/opt/homebrew/opt/blake3/lib
+	$(CC) -w -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $^ -O3 -o vaultx -fopenmp -lblake3 -lsodium -I/opt/homebrew/include -I/opt/homebrew/opt/blake3/include -L/opt/homebrew/lib -L/opt/homebrew/opt/blake3/lib
 
 clean: 
 	rm -f $(NAME) vaultx vaultx_* *.o
