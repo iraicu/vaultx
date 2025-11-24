@@ -29,8 +29,9 @@ int main(int argc, char* argv[]) {
         { "help", no_argument, 0, 'h' },
         { "total_files", required_argument, 0, 'n' },
         { "merge", required_argument, 0, 'M' },
-        { "Merge File destination", required_argument, 0, 'T' },
-        { "Small files source", required_argument, 0, 'F' },
+        { "Merge File destination what directory to store merge_<K val>_<total files>.plot", required_argument, 0, 'T' },
+        { "Small files source specifying directory /plots/ is in", required_argument, 0, 'F' },
+        { "difficulty", required_argument, 0, 'D' },
         { 0, 0, 0, 0 }
     };
 
@@ -38,7 +39,7 @@ int main(int argc, char* argv[]) {
     int option_index = 0;
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:b:w:c:v:s:S:x:y:d:h:n:M:T:F:r:", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:b:w:c:v:s:S:x:y:d:h:n:M:T:F:r:D:", long_options, &option_index)) != -1) {
         switch (opt) {
         case 'a':
             if (strcmp(optarg, "xtask") == 0 || strcmp(optarg, "task") == 0 || strcmp(optarg, "for") == 0 || strcmp(optarg, "tbb") == 0) {
@@ -170,6 +171,14 @@ int main(int argc, char* argv[]) {
         case 'F':
             SOURCE = optarg;
             break;
+        case 'D':
+            DIFFICULTY = atoi(optarg);
+            if (DIFFICULTY < 0) {
+                fprintf(stderr, "DIFFICULTY must be 0 or greater.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            break;
         case 'h':
         default:
             print_usage(argv[0]);
@@ -215,7 +224,6 @@ int main(int argc, char* argv[]) {
         if (strcmp(vaultx_dir, "vaultx") == 0) {
             char parent_copy[1024];
             strcpy(parent_copy, cwd); // dirname may modify string
-            strcpy(user, basename(dirname(parent_copy)));
         } else {
             fprintf(stderr, "Error: not inside vaultx folder\n");
         }
@@ -277,8 +285,8 @@ int main(int argc, char* argv[]) {
     // Generate plots
     if (HASHGEN) {
         // Reset plots folder
-        char* FOLDER[256];
-        snprintf(FOLDER, sizeof(FOLDER), "/%s/%s/vaultx/plots/", SOURCE, user);
+        char FOLDER[256];
+        snprintf(FOLDER, sizeof(FOLDER), "%splots/", SOURCE);
         ensure_folder_exists(FOLDER);
         delete_contents(FOLDER);
 
@@ -474,7 +482,7 @@ int main(int argc, char* argv[]) {
         int counter = 0;
 
         char dir_name[256];
-        snprintf(dir_name, sizeof(dir_name), "/%s/arnav/vaultx/plots", SOURCE);
+        snprintf(dir_name, sizeof(dir_name), "%splots", SOURCE);
 
         DIR* d = opendir(dir_name);
         if (!d) {
@@ -520,7 +528,7 @@ int main(int argc, char* argv[]) {
         double merge_setup_start_time = omp_get_wtime();
 
         char merge_filename[100];
-        snprintf(merge_filename, sizeof(merge_filename), "/%s/arnav/vaultx/merge_%d_%d.plot", DESTINATION, K, TOTAL_FILES);
+        snprintf(merge_filename, sizeof(merge_filename), "%smerge_%d_%d.plot", DESTINATION, K, TOTAL_FILES);
         int merge_fd = open(merge_filename, O_RDWR | O_CREAT | O_APPEND, 0644);
 
         if (merge_fd == -1) {
@@ -574,7 +582,12 @@ int main(int argc, char* argv[]) {
                 for (int i = 0; i < num_records_in_bucket; i++) {
                     if (byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE) != 0 || byteArrayToLongLong(bucket[i].nonce2, NONCE_SIZE) != 0) {
                         generateBlake3Pair(bucket[i].nonce1, bucket[i].nonce2, plotData[idx].key, hash);
-                        if (memcmp(hash, targetHash, HASH_SIZE) == 0) {
+
+                        int compare_bytes = (DIFFICULTY == 0) ? HASH_SIZE : DIFFICULTY;
+                        if (compare_bytes > HASH_SIZE)
+                            compare_bytes = HASH_SIZE;
+
+                        if (memcmp(hash, targetHash, compare_bytes) == 0) {
                             printf("Hash Match Found: %s, Nonce1: %llu, Nonce2: %llu, Key: %s\n",
                                 byteArrayToHexString(hash, HASH_SIZE),
                                 byteArrayToLongLong(bucket[i].nonce1, NONCE_SIZE),
@@ -611,7 +624,12 @@ int main(int argc, char* argv[]) {
                 if (byteArrayToLongLong(global_bucket[i].nonce1, NONCE_SIZE) != 0 || byteArrayToLongLong(global_bucket[i].nonce2, NONCE_SIZE) != 0) {
                     int plotIndex = i / num_records_in_bucket;
                     generateBlake3Pair(global_bucket[i].nonce1, global_bucket[i].nonce2, plotData_merge[plotIndex].key, hash);
-                    if (memcmp(hash, targetHash, HASH_SIZE) == 0) {
+
+                    int compare_bytes = (DIFFICULTY == 0) ? HASH_SIZE : DIFFICULTY;
+                    if (compare_bytes > HASH_SIZE)
+                        compare_bytes = HASH_SIZE;
+
+                    if (memcmp(hash, targetHash, compare_bytes) == 0) {
                         printf("Hash Match Found: %s, Nonce1: %llu, Nonce2: %llu, Key: %s\n",
                             byteArrayToHexString(hash, HASH_SIZE),
                             byteArrayToLongLong(global_bucket[i].nonce1, NONCE_SIZE),

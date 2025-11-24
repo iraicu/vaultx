@@ -125,7 +125,7 @@ uint64_t compute_hash_distance(const uint8_t* hash_output, const uint8_t* prev_h
 // FIXME: Dont write big buffer at once, write in batches based on data from varvara
 void writeTable2(uint8_t* plot_id) {
     char FILENAME[256];
-    snprintf(FILENAME, sizeof(FILENAME), "/%s/arnav/vaultx/plots/K%d_%s.plot", SOURCE, K, byteArrayToHexString(plot_id, 32));
+    snprintf(FILENAME, sizeof(FILENAME), "%splots/K%d_%s.plot", DESTINATION, K, byteArrayToHexString(plot_id, 32));
 
     int fd = open(FILENAME, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 

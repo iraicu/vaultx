@@ -57,6 +57,8 @@ void pin_thread_to_cpu(int cpu_num) {
         }                                                                                                                       \
                                                                                                                                 \
         double start_time = omp_get_wtime();                                                                                    \
+        uint64_t batch_read_syscalls = 0;                                                                                       \
+        uint64_t batch_read_bytes = 0;                                                                                          \
                                                                                                                                 \
         MergeBatch* mergeBatch = &mergeBatches[batch_idx];                                                                      \
         mergeBatch->buffer = (MemoTable2Record*)calloc(buckets_in_batch * records_per_global_bucket, sizeof(MemoTable2Record)); \
@@ -75,7 +77,12 @@ void pin_thread_to_cpu(int cpu_num) {
             char* dest = buf + f * total_bytes;                                                                                 \
                                                                                                                                 \
             while (bytes_read < total_bytes) {                                                                                  \
+                double read_syscall_start = (ENABLE_DETAILED_METRICS) ? omp_get_wtime() : 0;                                   \
                 ssize_t res = read(fd, dest + bytes_read, total_bytes - bytes_read);                                            \
+                if (ENABLE_DETAILED_METRICS) {                                                                                  \
+                    global_metrics.merge.total_read_time += omp_get_wtime() - read_syscall_start;                              \
+                    batch_read_syscalls++;                                                                                       \
+                }                                                                                                               \
                 if (res < 0) {                                                                                                  \
                     perror("read failed");                                                                                      \
                     close(fd);                                                                                                  \
@@ -85,6 +92,7 @@ void pin_thread_to_cpu(int cpu_num) {
                     break;                                                                                                      \
                 }                                                                                                               \
                 bytes_read += res;                                                                                              \
+                batch_read_bytes += res;                                                                                         \
             }                                                                                                                   \
                                                                                                                                 \
             if (bytes_read < total_bytes) {                                                                                     \
@@ -96,8 +104,13 @@ void pin_thread_to_cpu(int cpu_num) {
         mergeBatch->total_time += elapsed;                                                                                      \
         read_total_time += elapsed;                                                                                             \
                                                                                                                                 \
+        if (ENABLE_DETAILED_METRICS) {                                                                                          \
+            global_metrics.merge.read_syscalls += batch_read_syscalls;                                                          \
+            global_metrics.merge.total_bytes_read += batch_read_bytes;                                                          \
+        }                                                                                                                       \
+                                                                                                                                \
         if (DEBUG) {                                                                                                            \
-            printf("[%d] Read Complete: %.2fs\n", batch_idx, elapsed);                                                          \
+            printf("[%d] Read Complete: %.2fs (%llu syscalls, %lu bytes)\n", batch_idx, elapsed, batch_read_syscalls, batch_read_bytes); \
         }                                                                                                                       \
                                                                                                                                 \
         mergeBatch->readDone = true;                                                                                            \
@@ -111,13 +124,20 @@ void pin_thread_to_cpu(int cpu_num) {
                                                                                                       \
         MergeBatch* mergeBatch = &mergeBatches[batch_idx];                                            \
         double write_start_time = omp_get_wtime();                                                    \
+        uint64_t batch_write_syscalls = 0;                                                            \
+        uint64_t batch_write_bytes = 0;                                                               \
                                                                                                       \
         size_t total_bytes = buckets_in_batch * records_per_global_bucket * sizeof(MemoTable2Record); \
         size_t bytes_written = 0;                                                                     \
         char* src = (char*)mergeBatch->mergedBuckets;                                                 \
                                                                                                       \
         while (bytes_written < total_bytes) {                                                         \
+            double write_syscall_start = (ENABLE_DETAILED_METRICS) ? omp_get_wtime() : 0;             \
             ssize_t res = write(merge_fd, src + bytes_written, total_bytes - bytes_written);          \
+            if (ENABLE_DETAILED_METRICS) {                                                            \
+                global_metrics.merge.total_write_time += omp_get_wtime() - write_syscall_start;      \
+                batch_write_syscalls++;                                                               \
+            }                                                                                         \
             if (res < 0) {                                                                            \
                 perror("Error writing to merge file");                                                \
                 close(merge_fd);                                                                      \
@@ -127,6 +147,7 @@ void pin_thread_to_cpu(int cpu_num) {
                 break;                                                                                \
             }                                                                                         \
             bytes_written += res;                                                                     \
+            batch_write_bytes += res;                                                                 \
         }                                                                                             \
                                                                                                       \
         if (bytes_written < total_bytes) {                                                            \
@@ -139,8 +160,16 @@ void pin_thread_to_cpu(int cpu_num) {
         write_total_time += write_time;                                                               \
         mergeBatch->total_time += write_time;                                                         \
                                                                                                       \
+        if (ENABLE_DETAILED_METRICS) {                                                                \
+            global_metrics.merge.write_syscalls += batch_write_syscalls;                              \
+            global_metrics.merge.total_bytes_written += batch_write_bytes;                            \
+            if (write_time > 0) {                                                                     \
+                global_metrics.merge.write_throughput_MBps = (batch_write_bytes / 1e6) / write_time;  \
+            }                                                                                         \
+        }                                                                                             \
+                                                                                                      \
         if (DEBUG) {                                                                                  \
-            printf("[%d] Write Complete: %.2fs\n", batch_idx, write_time);                            \
+            printf("[%d] Write Complete: %.2fs (%llu syscalls, %lu bytes)\n", batch_idx, write_time, batch_write_syscalls, batch_write_bytes); \
         }                                                                                             \
                                                                                                       \
         double write_throughput_MBps = BATCH_MEMORY_MB / write_time;                                  \
@@ -159,7 +188,7 @@ void merge() {
     int MAX_FILENAME_LEN = 256;
     char filenames[TOTAL_FILES][MAX_FILENAME_LEN];
     char dir_name[256];
-    snprintf(dir_name, sizeof(dir_name), "/%s/%s/vaultx/plots", SOURCE, user);
+    snprintf(dir_name, sizeof(dir_name), "%splots", SOURCE);
 
     DIR* d = opendir(dir_name);
     struct dirent* dir;

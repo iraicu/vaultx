@@ -9,6 +9,7 @@ int TOTAL_FILES = 2;
 int BATCH_MEMORY_MB = 256;
 int MEMORY_LIMIT_MB = 307200;
 int num_threads = 8;
+int DIFFICULTY = 0;
 
 unsigned long long total_nonces;
 unsigned long long num_records_in_bucket = 1;
@@ -31,6 +32,9 @@ bool SEARCH = false;
 bool SEARCH_BATCH = false;
 bool VERIFY = false;
 bool FULL_BUCKETS = false;
+bool ENABLE_DETAILED_METRICS = false;
+bool METRICS_OUTPUT_JSON = false;
+bool METRICS_OUTPUT_CSV = false;
 
 char* SOURCE = 'ssd-raid0';
 char* DESTINATION = 'ssd-raid0';
@@ -48,3 +52,6 @@ BucketTable2* buckets_table2;
 BucketTable2* buckets2_phase2;
 
 MemoTable2Record* table2;
+
+// Initialize global metrics structure
+GlobalMetrics global_metrics = {0};

@@ -37,11 +37,19 @@ MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEA
                     uint8_t hash_output[HASH_SIZE_SEARCH];
 
                     // Compute Blake3 hash of the nonce
+                    double hash_start = (ENABLE_DETAILED_METRICS) ? omp_get_wtime() : 0;
                     blake3_hasher hasher;
                     blake3_hasher_init(&hasher);
                     blake3_hasher_update(&hasher, buffer[i].nonce1, NONCE_SIZE);
                     blake3_hasher_update(&hasher, buffer[i].nonce2, NONCE_SIZE);
                     blake3_hasher_finalize(&hasher, hash_output, HASH_SIZE_SEARCH);
+                    if (ENABLE_DETAILED_METRICS)
+                    {
+#pragma omp atomic
+                        global_metrics.lookup.hash_compute_time += omp_get_wtime() - hash_start;
+#pragma omp atomic
+                        global_metrics.lookup.hashes_computed++;
+                    }
 
                     // print bucket contents
                     if (DEBUG)
@@ -241,6 +249,7 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     }
 
     // Allocate memory for the batch of MemoRecords
+    double alloc_start = omp_get_wtime();
     buffer = (MemoTable2Record *)malloc(num_records_in_bucket_search * sizeof(MemoTable2Record));
     if (buffer == NULL)
     {
@@ -248,6 +257,8 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
         fclose(file);
         return;
     }
+    if (ENABLE_DETAILED_METRICS)
+        global_metrics.lookup.buffer_alloc_time += omp_get_wtime() - alloc_start;
 
     // Start walltime measurement
     double start_time = omp_get_wtime();
@@ -256,17 +267,37 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
 
     for (int i = 0; i < num_lookups; i++)
     {
-
-        for (int i = 0; i < search_size; ++i)
+        for (int j = 0; j < search_size; ++j)
         {
-            SEARCH_UINT8[i] = rand() % 256;
+            SEARCH_UINT8[j] = rand() % 256;
         }
 
-        fRecord = search_memo_record(file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8, SEARCH_LENGTH, num_records_in_bucket_search, buffer);
+        if (ENABLE_DETAILED_METRICS)
+        {
+            double lookup_start = omp_get_wtime();
+
+            // Phase: Seek
+            double seek_start = omp_get_wtime();
+            fRecord = search_memo_record(file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8, SEARCH_LENGTH, num_records_in_bucket_search, buffer);
+            global_metrics.lookup.file_seek_time += omp_get_wtime() - seek_start;
+            global_metrics.lookup.io_seek_calls++;
+
+            global_metrics.lookup.total_lookup_time += omp_get_wtime() - lookup_start;
+            global_metrics.lookup.bytes_read += num_records_in_bucket_search * sizeof(MemoTable2Record);
+            global_metrics.lookup.io_read_calls++;
+        }
+        else
+        {
+            fRecord = search_memo_record(file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8, SEARCH_LENGTH, num_records_in_bucket_search, buffer);
+        }
+
         if (fRecord != NULL)
             foundRecords++;
         else
             notFoundRecords++;
+
+        if (ENABLE_DETAILED_METRICS)
+            global_metrics.lookup.lookups_performed++;
     }
 
     double elapsed_time = (omp_get_wtime() - start_time) * 1000.0;
@@ -282,12 +313,20 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     free(buffer);
 
     // Print the total number of times the condition was met
-    // if (foundRecord == true)
-    //	printf("NONCE found (%zu) for HASH prefix %s\n",fRecord,SEARCH_STRING);
-    // else
-    //	printf("no NONCE found for HASH prefix %s\n",SEARCH_STRING);
     if (!BENCHMARK)
         printf("searched for %d lookups of %d bytes long, found %d, not found %d in %.2f seconds, %.4f ms per lookup\n", num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
     else
         printf("%s %zu %llu %llu %d %d %d %d %.2f %.2f\n", filename, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
+
+    // Print detailed metrics if enabled
+    if (ENABLE_DETAILED_METRICS && !BENCHMARK)
+    {
+        printf("\n=== Detailed Lookup Metrics ===\n");
+        printf("Total I/O read calls: %llu\n", global_metrics.lookup.io_read_calls);
+        printf("Total I/O seek calls: %llu\n", global_metrics.lookup.io_seek_calls);
+        printf("Total bytes read: %zu MB (%.2f)\n", global_metrics.lookup.bytes_read / (1024 * 1024),
+               (double)global_metrics.lookup.bytes_read / (1024 * 1024));
+        printf("Total seek time: %.2f ms\n", global_metrics.lookup.file_seek_time * 1000.0);
+        printf("Average time per lookup: %.4f ms\n", global_metrics.lookup.total_lookup_time * 1000.0 / num_lookups);
+    }
 }

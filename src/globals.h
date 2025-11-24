@@ -37,6 +37,7 @@ extern int TOTAL_FILES;
 extern int BATCH_MEMORY_MB;
 extern int MEMORY_LIMIT_MB;
 extern int num_threads;
+extern int DIFFICULTY;
 
 extern unsigned long long num_records_in_bucket;
 extern unsigned long long num_records_in_shuffled_bucket;
@@ -59,6 +60,9 @@ extern bool CIRCULAR_ARRAY;
 extern bool MEMORY_WRITE;
 extern bool VERIFY;
 extern bool FULL_BUCKETS;
+extern bool ENABLE_DETAILED_METRICS;
+extern bool METRICS_OUTPUT_JSON;
+extern bool METRICS_OUTPUT_CSV;
 
 extern char* SOURCE;
 extern char* DESTINATION;
@@ -131,6 +135,78 @@ typedef struct
     double total_time;
 } MergeBatch;
 
+// ============ Performance Metrics Structures ============
+
+typedef struct {
+    // Lookup/Search phase metrics
+    double total_lookup_time;
+    double file_seek_time;
+    double io_read_time;
+    double buffer_alloc_time;
+    double hash_compute_time;
+    double memory_search_time;
+
+    uint64_t io_read_calls;
+    uint64_t io_seek_calls;
+    size_t bytes_read;
+    size_t bytes_loaded;
+
+    uint64_t hashes_computed;
+    uint64_t lookups_performed;
+} LookupMetrics;
+
+typedef struct {
+    // Hash generation phase metrics
+    double total_hashgen_time;
+    double actual_compute_time;
+    double thread_wait_time;
+    double bucket_insert_time;
+    double bucket_lock_time;
+
+    uint64_t total_hashes_generated;
+    uint64_t bucket_overflows;
+    uint64_t atomic_operations;
+    uint64_t full_buckets_count;
+
+    double hash_throughput_MHps;
+    double compute_efficiency;
+} HashgenMetrics;
+
+typedef struct {
+    // Merge phase I/O metrics
+    double total_read_time;
+    double total_write_time;
+    double total_merge_compute_time;
+
+    uint64_t read_syscalls;
+    uint64_t write_syscalls;
+    uint64_t total_bytes_read;
+    uint64_t total_bytes_written;
+
+    double read_throughput_MBps;
+    double write_throughput_MBps;
+
+    // Pipeline efficiency
+    double pipeline_efficiency;
+    uint64_t pipeline_stalls;
+} MergeMetrics;
+
+typedef struct {
+    // Overall metrics
+    LookupMetrics lookup;
+    HashgenMetrics hashgen;
+    MergeMetrics merge;
+
+    // Thread utilization (per-thread)
+    int num_threads;
+    double thread_idle_time[256];
+    uint64_t thread_wait_events[256];
+
+    // Global timing
+    double total_execution_time;
+} GlobalMetrics;
+
+extern GlobalMetrics global_metrics;
 extern Bucket* buckets;
 extern Bucket* buckets_phase2;
 extern BucketTable2* buckets2;
