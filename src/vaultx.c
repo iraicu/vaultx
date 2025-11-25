@@ -408,6 +408,39 @@ int main(int argc, char *argv[])
         }
     }
 
+   // Hardcoding the match-factors based on k values used. 
+
+    switch (K)
+    {
+        case 25:
+            matching_factor = 0.11680;
+            break;
+        case 26:
+            matching_factor = 0.00010;
+            break;
+        case 27:
+            matching_factor = 0.13639;
+            break;
+        case 28:
+            matching_factor = 0.33318;
+            break;
+        case 29:
+            matching_factor = 0.50763;
+            break;
+        case 30:
+            matching_factor = 0.62341;
+            break;
+        case 31:
+            matching_factor = 0.73366;
+            break;
+        case 32:
+            matching_factor = 0.83706;
+            break;
+        default:
+        matching_factor = 1.0;
+            break;
+    }
+
     if (K >= 33 && NONCE_SIZE == 4)
     {
         fprintf(stderr, "K >= 33 requires NONCE_SIZE to be 5. Please recompile with a different NONCE_SIZE.\n");
