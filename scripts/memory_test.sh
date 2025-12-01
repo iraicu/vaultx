@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Simple VaultX K34 Memory Test Script
+# Simple VaultX K32 Memory Test Script
 # Tests K=32 with match_factor=0.83706 across different memory values
 # Usage: ./memory_test.sh
 
