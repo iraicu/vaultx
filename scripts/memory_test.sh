@@ -1,15 +1,16 @@
 #!/bin/bash
 
 # Simple VaultX K34 Memory Test Script
-# Tests K=34 with match_factor=0.8706 across different memory values
+# Tests K=32 with match_factor=0.83706 across different memory values
 # Usage: ./memory_test.sh
 
 # Memory values to test (MB)
-MEMORY_VALUES=(320 640 1280 2560 5120 10240 20480 40960)
+# MEMORY_VALUES=(320 640 1280 2560 5120 10240 20480 40960)
+MEMORY_VALUES=(1280 2560 5120 10240 20480)
 
 # Fixed parameters
-K=34
-MATCH_FACTOR=0.8706
+K=32
+MATCH_FACTOR=0.83706
 
 echo "Testing VaultX K=$K with match_factor=$MATCH_FACTOR"
 echo "Memory values: ${MEMORY_VALUES[*]} MB"
@@ -20,7 +21,7 @@ RESULTS_FILE="./data/memory_test_results.csv"
 echo "memory_mb,total_time,throughput_mh,io_throughput,storage_efficiency" > "$RESULTS_FILE"
 
 make clean
-make vaultx_x86_c NONCE_SIZE=5 RECORD_SIZE=16
+make vaultx_x86_c NONCE_SIZE=4 RECORD_SIZE=16
 
 for memory in "${MEMORY_VALUES[@]}"; do
     echo "=== Testing Memory: $memory MB ==="
