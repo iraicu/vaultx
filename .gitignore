@@ -13,3 +13,5 @@ perf.data.old
 *.plot
 secp256k1/
 scripts/__pycache__
+=======
+memo.*

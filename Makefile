@@ -1,5 +1,5 @@
 NAME=blake3/blake3
-CC=gcc
+CC=gcc-13
 CCP=g++-14
 #torus
 #XCC=/ssd-raid0/shared/xgcc/bin/xgcc
