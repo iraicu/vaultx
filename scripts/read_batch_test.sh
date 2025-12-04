@@ -2,35 +2,38 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Robust VaultX K32 Memory Test Script
-# - Uses repository-local directories for plots/tmps/data
-# - Writes per-run logs and a results CSV
-# - Avoids unsafe deletes and logs environment information
+# VaultX Read-Batch Test Script
+# - Memory fixed at 24 GB (24576 MB)
+# - Varies the -R (Read) parameter across a set of values
+# - Uses repository-local directories for plots/tmps/data and writes per-run logs and a results CSV
 
-# Determine repository root (script is expected at <repo>/scripts/memory_test.sh)
+# Determine repository root (script is expected at <repo>/scripts/read_batch_test.sh)
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLOTS_DIR="$REPO_ROOT/plots"
 LOG_DIR="$REPO_ROOT/tmps"
 DATA_DIR="$REPO_ROOT/data"
 
-# Create directories if they don't exist
 mkdir -p "$PLOTS_DIR" "$LOG_DIR" "$DATA_DIR"
 
-# Memory values to test (MB) 2560 5120 10240 
-MEMORY_VALUES=(256 512)
+# Fixed memory value in MB (24 GB)
+MEMORY=16384
+
+# Read values to test (the -R flag stands for Read)
+READ_VALUES=(64 128 256 512 1024)
 
 # Fixed parameters
-K=27
-MATCH_FACTOR=0.13639     # 0.83706 for k32
+K=32
+MATCH_FACTOR=0.83706
 
 echo "Repo root: $REPO_ROOT"
 echo "Testing VaultX K=$K with match_factor=$MATCH_FACTOR"
-echo "Memory values: ${MEMORY_VALUES[*]} MB"
+echo "Memory fixed: ${MEMORY} MB"
+echo "Read values: ${READ_VALUES[*]}"
 echo ""
 
-# Create results file (overwrite from fresh run)
-RESULTS_FILE="$DATA_DIR/memory_test_results.csv"
-echo "memory_mb,total_time,throughput_mh,io_throughput,storage_efficiency" > "$RESULTS_FILE"
+
+RESULTS_FILE="$DATA_DIR/read_batch_test_results.csv"
+echo "read,mem_mb,total_time,throughput_mh,io_throughput,storage_efficiency" > "$RESULTS_FILE"
 
 # Build the binary once (log output)
 BUILD_LOG="$LOG_DIR/build_$(date +%Y%m%d-%H%M%S).log"
@@ -55,9 +58,9 @@ fi
 
 echo "Using vaultx: $VAULTX_BIN"
 
-for memory in "${MEMORY_VALUES[@]}"; do
-    echo "=== Testing Memory: $memory MB ==="
-    RUN_LOG="$LOG_DIR/memory_${memory}_$(date +%Y%m%d-%H%M%S).log"
+for read in "${READ_VALUES[@]}"; do
+    echo "=== Testing Read: $read (Memory: $MEMORY MB) ==="
+    RUN_LOG="$LOG_DIR/read_${read}_$(date +%Y%m%d-%H%M%S).log"
     echo "Run log: $RUN_LOG"
 
     # Safe cleanup: remove files inside plots directory but never remove directories outside repo
@@ -66,13 +69,13 @@ for memory in "${MEMORY_VALUES[@]}"; do
     fi
 
     # Run VaultX and capture stdout+stderr to per-run log
-    echo "Running: $VAULTX_BIN -a for -K $K -m $memory -M $MATCH_FACTOR -R 1024 -f $PLOTS_DIR -g $LOG_DIR -j $PLOTS_DIR -t 128 -x true" | tee -a "$RUN_LOG"
-    "$VAULTX_BIN" -a for -K "$K" -m "$memory" -M "$MATCH_FACTOR" -R 1024 -f "$PLOTS_DIR" -g "$LOG_DIR" -j "$PLOTS_DIR" -t 128 -x true 2>&1 | tee -a "$RUN_LOG"
+    echo "Running: $VAULTX_BIN -a for -K $K -m $MEMORY -M $MATCH_FACTOR -R $read -f $PLOTS_DIR -g $LOG_DIR -j $PLOTS_DIR -t 128 -x true" | tee -a "$RUN_LOG"
+    "$VAULTX_BIN" -a for -K "$K" -m "$MEMORY" -M "$MATCH_FACTOR" -R "$read" -f "$PLOTS_DIR" -g "$LOG_DIR" -j "$PLOTS_DIR" -t 128 -x true 2>&1 | tee -a "$RUN_LOG"
     rc=${PIPESTATUS[0]}
 
     if [ "$rc" -ne 0 ]; then
         echo "  FAILED - VaultX error (exit $rc)" | tee -a "$RUN_LOG"
-        echo "$memory,FAILED,FAILED,FAILED,FAILED" >> "$RESULTS_FILE"
+        echo "$read,$MEMORY,FAILED,FAILED,FAILED,FAILED" >> "$RESULTS_FILE"
         echo "" >> "$RUN_LOG"
         continue
     fi
@@ -89,25 +92,22 @@ for memory in "${MEMORY_VALUES[@]}"; do
     fi
 
     if [ -n "$csv_line" ]; then
-        # Try to extract fields robustly; these indexes are best-effort and fallback to UNKNOWN
-        # If the CSV layout differs, adjust the awk field numbers accordingly.
         total_time="$(echo "$csv_line" | awk -F, '{print $(NF-2)}' | tr -d '[:space:]' )"
         throughput="$(echo "$csv_line" | awk -F, '{print $(NF-11)}' | tr -d '[:space:]' )"
         io_throughput="$(echo "$csv_line" | awk -F, '{print $(NF-8)}' | tr -d '[:space:]' )"
         storage_eff_raw="$(echo "$csv_line" | awk -F, '{print $(NF)}' | tr -d '[:space:]' )"
         storage_eff="${storage_eff_raw//%/}"
 
-        # Validate, fallback to UNKNOWN
         [[ "$total_time" =~ [0-9] ]] || total_time="UNKNOWN"
         [[ "$throughput" =~ [0-9] ]] || throughput="UNKNOWN"
         [[ "$io_throughput" =~ [0-9] ]] || io_throughput="UNKNOWN"
         [[ "$storage_eff" =~ [0-9] ]] || storage_eff="UNKNOWN"
 
         echo "  Time: ${total_time}s, Throughput: ${throughput} MH/s, Storage: ${storage_eff}%" | tee -a "$RUN_LOG"
-        echo "$memory,$total_time,$throughput,$io_throughput,$storage_eff" >> "$RESULTS_FILE"
+        echo "$read,$MEMORY,$total_time,$throughput,$io_throughput,$storage_eff" >> "$RESULTS_FILE"
     else
         echo "  FAILED - No CSV output found" | tee -a "$RUN_LOG"
-        echo "$memory,FAILED,FAILED,FAILED,FAILED" >> "$RESULTS_FILE"
+        echo "$read,$MEMORY,FAILED,FAILED,FAILED,FAILED" >> "$RESULTS_FILE"
     fi
 
     echo "" >> "$RUN_LOG"
