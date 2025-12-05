@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
             break;
         case 'k':
             K = atoi(optarg);
-            if (NONCE_SIZE == 4 && (K < 27 || K > 32)) || (NONCE_SIZE == 5 && (K < 33 || K > 40))
+            if ((NONCE_SIZE == 4 && (K < 27 || K > 32)) || (NONCE_SIZE == 5 && (K < 33 || K > 40)))
             { // Limiting K to avoid overflow
                 fprintf(stderr, "Exponent 27 <= k <= 32 for NONCE_SIZE=4 or 33 <= k <= 40 for NONCE_SIZE=5; NONCE_SIZE can be configured at compile time.\n");
                 print_usage(argv[0]);
