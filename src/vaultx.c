@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
                 DIR_TMP_TABLE2 = optarg;
             }
             break;
-        case 'b':
+        case 'x':
             BATCH_SIZE = atoi(optarg);
             if (BATCH_SIZE < 1)
             {
@@ -425,7 +425,7 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
-        case 'x':
+        case 'b':
             if (strcmp(optarg, "true") == 0)
             {
                 BENCHMARK = true;
