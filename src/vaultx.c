@@ -10,7 +10,7 @@ void print_usage(char *prog_name)
     printf("  -i, --threads_io NUM                  Number of I/O threads (default: 1)\n");
     printf("  -k, --exponent NUM                    Exponent k to compute 2^K number of records (default: 27)\n");
     printf("  -m, --memory NUM                      Memory size in MB (default: 128)\n");
-    printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
+    printf("  -x, --batch-size NUM                  Batch size (default: 1024)\n");
     printf("  -W, --write-batch-size NUM            Write batch size (default: 1024)\n");
     printf("  -R, --read-batch-size NUM             Read batch size (default: 1024)\n");
     printf("  -M, --matching-factor NUM             Matching factor for table2 generation (0.0 < factor <= 1.0, default: 1.0)\n");
@@ -21,13 +21,13 @@ void print_usage(char *prog_name)
     printf("  -s, --search STRING                   Search for a specific hash prefix in the file\n");
     printf("  -S, --search-batch NUM                Search for a specific hash prefix in the file in batch mode\n");
     printf("  -v, --verify [true|false]             Enable verification mode (default: false)\n");
-    printf("  -x, --benchmark [true|false]          Enable benchmark mode (default: false)\n");
+    printf("  -b, --benchmark [true|false]          Enable benchmark mode (default: false)\n");
     printf("  -h, --help                            Display this help message\n");
     printf("\nExample:\n");
-    printf("IN-MEMORY:          %s -a for -t 8 -i 8 -K 28 -m 1024 -f /home/vaults/ -j /home/vaults/\n", prog_name);
-    printf("IN-MEMORY BENCH:    %s -a for -t 8 -i 8 -K 28 -m 1024 -f /home/vaults/ -j /home/vaults/ -x true (Only prints time)\n", prog_name);
-    printf("OUT-OF-MEMORY:      %s -a for -t 8 -K 28 -m 512 -f /home/vaults/ -g /home/vaults/ -j /home/vaults/\n", prog_name);
-    // printf("SEARCH:             %s -a for -t 8 -K 28 -m 1024 -f memo.t -j memo.x -s 000000\n", prog_name);
+    printf("IN-MEMORY K=27 with max threading:          %s -k 27 -f ./\n", prog_name);
+    printf("IN-MEMORY K=27 with max threading BENCHMARK:    %s -k 27 -f ./ -b true (Only prints 1 line performance data)\n", prog_name);
+    printf("OUT-OF-MEMORY K=27 with 4 threads:      %s -t 4 -K 27 -m 128 -g ./ -j ./ -f ./\n", prog_name);
+    //printf("SEARCH:             %s -t 8 -k 27 -f memo.x -s 000000\n", prog_name);
 }
 
 // Function to compute the bucket index based on hash prefix
@@ -235,10 +235,10 @@ int main(int argc, char *argv[])
         {"threads_io", required_argument, 0, 'i'},
         {"exponent", required_argument, 0, 'k'},
         {"memory", required_argument, 0, 'm'},
-        {"file_tmp", required_argument, 0, 'f'},
-        {"file_tmp_table2", required_argument, 0, 'g'},
-        {"file_table2", required_argument, 0, 'j'},
-        {"batch_size", required_argument, 0, 'b'},
+        {"file_tmp", required_argument, 0, 'g'},
+        {"file_tmp_table2", required_argument, 0, 'j'},
+        {"file_table2", required_argument, 0, 'f'},
+        {"batch_size", required_argument, 0, 'x'},
         {"write_batch_size_mb", required_argument, 0, 'W'},
         {"read_batch_size", required_argument, 0, 'R'},
         {"matching_factor", required_argument, 0, 'M'},
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
         {"verify", required_argument, 0, 'v'},
         {"search", required_argument, 0, 's'},
         {"prefix_search_size", required_argument, 0, 'S'},
-        {"benchmark", required_argument, 0, 'x'},
+        {"benchmark", required_argument, 0, 'b'},
         {"monitor", required_argument, 0, 'n'},
         {"full_buckets", required_argument, 0, 'y'},
         {"debug", required_argument, 0, 'd'},
@@ -320,17 +320,27 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
-        case 'f':
+        case 'g':
             DIR_TMP = optarg;
             writeDataTmp = true;
             break;
-        case 'g':
+        case 'j':
             DIR_TMP_TABLE2 = optarg;
             writeDataTmpTable2 = true;
             break;
-        case 'j':
+        case 'f':
             DIR_TABLE2 = optarg;
             writeDataTable2 = true;
+            if (writeDataTmp == false)
+            {
+                writeDataTmp = true; // Need tmp file for reading
+                DIR_TMP = optarg;
+            }
+            if (writeDataTmpTable2 == false)
+            {
+                writeDataTmpTable2 = true; // Need tmp file for reading
+                DIR_TMP_TABLE2 = optarg;
+            }
             break;
         case 'b':
             BATCH_SIZE = atoi(optarg);
