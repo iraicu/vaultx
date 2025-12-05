@@ -202,6 +202,17 @@ int get_num_cores() {
 #endif
 }
 
+int largest_power_of_two_le(int m) {
+    if (m < 1)
+        return 0;
+
+    int p = 1;
+    while ((p << 1) > 0 && (p << 1) <= m) {
+        p <<= 1;
+    }
+    return p;
+}
+
 int main(int argc, char *argv[])
 {
     // printf("size of MemoTable2Record: %zu\n", sizeof(MemoTable2Record));
@@ -312,7 +323,7 @@ int main(int argc, char *argv[])
             MEMORY_SIZE_MB = num_records_total * NONCE_SIZE / (1024 * 1024); // Default memory size to fit all records
             break;
         case 'm':
-            MEMORY_SIZE_MB = atoi(optarg);
+            MEMORY_SIZE_MB = largest_power_of_two_le((atoi(optarg) - 1300) / 3);
             if (MEMORY_SIZE_MB < 128)
             {
                 fprintf(stderr, "Memory size must be at least 128 MB.\n");
