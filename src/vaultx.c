@@ -1788,8 +1788,8 @@ int main(int argc, char *argv[])
                 elapsed_time_io_total += elapsed_time_io;
             }
         }
-        // NOTE: Is there any point in this piece of code? Why are we moving
-        else if (writeDataTable2 && rounds == 1 && DIR_TMP != DIR_TABLE2)
+        // Finalize in-memory plot output by moving the tmp file to the final path
+        else if (writeDataTable2 && rounds == 1)
         {
             start_time_io = omp_get_wtime();
             if (MONITOR)
@@ -1798,19 +1798,25 @@ int main(int argc, char *argv[])
                 fflush(stdout);
             }
 
-            // Call the rename_file function
-            if (move_file_overwrite(FILENAME_TMP, FILENAME_TABLE2) == 0)
+            // Move/rename tmp to final plot; always ensure the final file exists
+            if (strcmp(FILENAME_TMP, FILENAME_TABLE2) != 0)
             {
-                if (!BENCHMARK)
-                    printf("File renamed/moved successfully from '%s' to '%s'.\n", FILENAME_TMP, FILENAME_TABLE2);
+                if (move_file_overwrite(FILENAME_TMP, FILENAME_TABLE2) == 0)
+                {
+                    if (!BENCHMARK)
+                        printf("File renamed/moved successfully from '%s' to '%s'.\n", FILENAME_TMP, FILENAME_TABLE2);
+                }
+                else
+                {
+                    printf("Error in moving file '%s' to '%s'.\n", FILENAME_TMP, FILENAME_TABLE2);
+                    return EXIT_FAILURE;
+                }
             }
             else
             {
-                printf("Error in moving file '%s' to '%s'.\n", FILENAME_TMP, FILENAME_TABLE2);
-                return EXIT_FAILURE;
-                // Error message already printed by rename_file via perror()
-                // Additional handling can be done here if necessary
-                // return 1;
+                // File already at the final path; nothing to move
+                if (!BENCHMARK)
+                    printf("Final plot already written to '%s'.\n", FILENAME_TABLE2);
             }
             if (MONITOR)
             {
