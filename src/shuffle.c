@@ -17,7 +17,7 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
     
     // Allocate the buffer for the chunk we can handle
     if (DEBUG)
-        printf("allocating %lu bytes for buffer\n", chunk_buffer_size * sizeof(MemoTable2Record));
+        printf("allocating %zu bytes for buffer\n", chunk_buffer_size * sizeof(MemoTable2Record));
     MemoTable2Record *buffer_table2 = (MemoTable2Record *)malloc(chunk_buffer_size * sizeof(MemoTable2Record));
     if (buffer_table2 == NULL)
     {
@@ -27,7 +27,7 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
     }
 
     if (DEBUG)
-        printf("allocating %lu bytes for bufferShuffled\n", chunk_buffer_size * sizeof(MemoTable2Record));
+        printf("allocating %zu bytes for bufferShuffled\n", chunk_buffer_size * sizeof(MemoTable2Record));
     MemoTable2Record *buffer_table2_shuffled = (MemoTable2Record *)malloc(chunk_buffer_size * sizeof(MemoTable2Record));
     if (buffer_table2_shuffled == NULL)
     {
@@ -79,8 +79,8 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
                 //  Calculate the source offset
                 off_t offset_src = ((actual_round * total_num_buckets + i) * num_records_in_bucket) * sizeof(MemoTable2Record);
                 if (DEBUG)
-                    printf("read data: offset_src=%lu bytes=%lu\n",
-                           offset_src, records_per_batch * sizeof(MemoTable2Record));
+                    printf("read data: offset_src=%jd bytes=%zu\n",
+                           (intmax_t)offset_src, records_per_batch * sizeof(MemoTable2Record));
 
                 if (fseeko(fd_src, offset_src, SEEK_SET) < 0)
                 {
@@ -92,7 +92,7 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
                 // Store in buffer at position for this chunk
                 size_t index = r * records_per_batch;
                 if (DEBUG)
-                    printf("storing read data at index %lu\n", index);
+                    printf("storing read data at index %zu\n", index);
                 size_t records_read = fread(&buffer_table2[index],
                                             sizeof(MemoTable2Record),
                                             records_per_batch,
@@ -132,7 +132,7 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size, size_t reco
                 {
                     if (!BENCHMARK)
                     {
-                        fprintf(stderr, "Warning: Record with one zero nonce at index %lu\n", k);
+                        fprintf(stderr, "Warning: Record with one zero nonce at index %zu\n", k);
                         fprintf(stderr, "nonce1: ");
                         for (int b = 0; b < NONCE_SIZE; b++)
                             fprintf(stderr, "%02x", buffer_table2[k].nonce1[b]);

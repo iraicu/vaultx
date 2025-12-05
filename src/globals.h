@@ -14,9 +14,11 @@
 #include <fcntl.h>     // For open, O_RDWR, O_CREAT, O_TRUNC
 #include <sys/types.h> // For data types
 #include <sys/stat.h>  // For file modes
+#include <sys/resource.h> // For getrusage
 #include <math.h>
 #include <errno.h>
 #include <sodium.h>
+#include <inttypes.h>
 // #include <secp256k1.h>
 
 #include "../blake3/blake3.h" // Include Blake3 header

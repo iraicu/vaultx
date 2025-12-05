@@ -1,5 +1,5 @@
 NAME=blake3/blake3
-CC=gcc
+CC=gcc-13
 CCP=g++-14
 #torus
 #XCC=/ssd-raid0/shared/xgcc/bin/xgcc
@@ -103,11 +103,11 @@ vaultx_arm_c: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c sr
 
 vaultx_mac: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c src/globals.c src/io.c src/search.c src/crypto.c
 #-D NONCE_SIZE=$(NONCE_SIZE)
-	$(CCP) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) -x c++ -std=c++17 -o vaultx vaultx.c -fopenmp -lblake3 -ltbb -O3  -I/opt/homebrew/opt/blake3/include -L/opt/homebrew/opt/blake3/lib -I/opt/homebrew/opt/tbb/include -L/opt/homebrew/opt/tbb/lib
+	$(CCP) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $(CFLAGS) $^ -x c++ -std=c++17 -o vaultx -fopenmp -O3 -lblake3 -lsodium -ltbb -I/opt/homebrew/opt/blake3/include -L/opt/homebrew/opt/blake3/lib -I/opt/homebrew/opt/tbb/include -L/opt/homebrew/opt/tbb/lib -I/opt/homebrew/opt/libsodium/include -L/opt/homebrew/opt/libsodium/lib
 
 vaultx_mac_c: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c src/globals.c src/io.c src/search.c src/crypto.c
 #-D NONCE_SIZE=$(NONCE_SIZE)
-	$(CC) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) -o vaultx vaultx.c -fopenmp -lblake3 -O3  -I/opt/homebrew/opt/blake3/include -L/opt/homebrew/opt/blake3/lib
+	$(CC) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $(CFLAGS) $^ -o vaultx -fopenmp -O3 -lblake3 -lsodium -I/opt/homebrew/opt/blake3/include -L/opt/homebrew/opt/blake3/lib -I/opt/homebrew/opt/libsodium/include -L/opt/homebrew/opt/libsodium/lib
 
 blake3_bench: src/blake3_bench.c blake3/blake3.c blake3/blake3_dispatch.c blake3/blake3_portable.c $(ASM_TARGETS)
 	$(CC) $(CFLAGS) $(EXTRAFLAGS) -I/usr/include $(CFLAGS) $(EXTRAFLAGS) $^ -o blake3_bench $(LDFLAGS) -fopenmp

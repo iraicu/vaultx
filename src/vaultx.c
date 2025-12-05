@@ -158,6 +158,22 @@ uint64_t largest_power_of_two_less_than(uint64_t number)
     return (number + 1) >> 1;
 }
 
+// Returns peak resident set size in MB; ru_maxrss units differ per platform
+static double get_peak_memory_mb(void)
+{
+    struct rusage usage;
+    if (getrusage(RUSAGE_SELF, &usage) != 0)
+    {
+        return -1.0;
+    }
+
+#ifdef __APPLE__
+    return usage.ru_maxrss / (1024.0 * 1024.0); // ru_maxrss in bytes
+#else
+    return usage.ru_maxrss / 1024.0; // ru_maxrss in kilobytes
+#endif
+}
+
 int main(int argc, char *argv[])
 {
     // printf("size of MemoTable2Record: %zu\n", sizeof(MemoTable2Record));
@@ -174,6 +190,7 @@ int main(int argc, char *argv[])
     unsigned long long record_counts = 0;
     unsigned long long record_counts_waste = 0;
     unsigned long long bucket_batch = 0; // Number of buckets to write at once
+    double peak_memory_mb = 0.0;
     char *DIR_TMP = NULL;                // Default output file name
     char *DIR_TMP_TABLE2 = NULL;
     char *DIR_TABLE2 = NULL;
@@ -1234,7 +1251,7 @@ int main(int argc, char *argv[])
                 uint64_t ratio = total_num_buckets / num_diff_pref_buckets_to_read;
                 uint64_t result = largest_power_of_two_less_than(ratio);
                 if (DEBUG)
-                    printf("Largest power of 2 less than %lu is %lu\n", ratio, result);
+                    printf("Largest power of 2 less than %" PRIu64 " is %" PRIu64 "\n", ratio, result);
                 num_diff_pref_buckets_to_read = total_num_buckets / result;
                 printf("num_diff_pref_buckets_to_read (if total_num_buckets mod num_diff_pref_buckets_to_read != 0)=%llu\n", num_diff_pref_buckets_to_read);
                 if (DEBUG)
@@ -1654,7 +1671,7 @@ int main(int argc, char *argv[])
                     uint64_t ratio = total_num_buckets / num_buckets_to_read;
                     uint64_t result = largest_power_of_two_less_than(ratio);
                     if (DEBUG)
-                        printf("Largest power of 2 less than %lu is %lu\n", ratio, result);
+                        printf("Largest power of 2 less than %" PRIu64 " is %" PRIu64 "\n", ratio, result);
                     num_buckets_to_read = total_num_buckets / result;
                     printf("num_buckets_to_read (if num_buckets mod num_buckets_to_read != 0)=%llu\n", num_buckets_to_read);
                     if (DEBUG)
@@ -1810,6 +1827,8 @@ int main(int argc, char *argv[])
             throughput_io = 0.0;
         }
 
+        peak_memory_mb = get_peak_memory_mb();
+
         if (!BENCHMARK)
         {
             printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput, (rounds > 1) ? total_throughput * sizeof(MemoRecord) : total_throughput * sizeof(MemoTable2Record));
@@ -1824,12 +1843,12 @@ int main(int argc, char *argv[])
             if (rounds == 1)
             {
                 // In-memory case
-                printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoRecord), throughput_hash, throughput_io, elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_shuffle_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_shuffle_total, elapsed_time, total_matches * 100.0 / (num_records_in_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_bucket));
+                printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%,%.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoRecord), throughput_hash, throughput_io, elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_shuffle_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_shuffle_total, elapsed_time, total_matches * 100.0 / (num_records_in_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_bucket), peak_memory_mb);
             }
             else
             {
                 // Out-of-memory case - use shuffled bucket size for match percentage
-                printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoTable2Record), throughput_hash, throughput_io, elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_shuffle_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_shuffle_total, elapsed_time, total_matches * 100.0 / (num_records_in_shuffled_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_shuffled_bucket));
+                printf("%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%,%.2f\n", approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB, file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput, total_throughput * sizeof(MemoTable2Record), throughput_hash, throughput_io, elapsed_time_hash_total, elapsed_time_hash2_total, elapsed_time_io_total, elapsed_time_shuffle_total, elapsed_time - elapsed_time_hash_total - elapsed_time_io_total - elapsed_time_shuffle_total, elapsed_time, total_matches * 100.0 / (num_records_in_shuffled_bucket * total_num_buckets), record_counts * 100.0 / (total_num_buckets * num_records_in_shuffled_bucket), peak_memory_mb);
             }
             // return 0;
         }
@@ -1864,6 +1883,12 @@ int main(int argc, char *argv[])
             printf("[%.6f] VAULTX_STAGE_MARKER: END Verification\n", omp_get_wtime() - program_start_time);
             fflush(stdout);
         }
+    }
+
+    peak_memory_mb = get_peak_memory_mb();
+    if (!BENCHMARK && peak_memory_mb >= 0.0)
+    {
+        printf("Peak Memory Usage: %.2f MB\n", peak_memory_mb);
     }
 
     if (DEBUG)

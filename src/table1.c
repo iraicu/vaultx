@@ -14,7 +14,7 @@ void generate_hash(uint8_t *nonce, uint8_t *hash)
 void generateBlake3(uint8_t *record_hash, MemoRecord *record, unsigned long long seed)
 {
     // Ensure that the pointers are valid
-    if (record_hash == NULL || record->nonce == NULL)
+    if (record_hash == NULL || record == NULL)
     {
         fprintf(stderr, "Error: NULL pointer passed to generateBlake3.\n");
         return;
