@@ -258,8 +258,11 @@ int main(int argc, char *argv[])
     int option_index = 0;
     //default values
     num_threads = get_num_cores();
+    num_threads_io = 1;
     K = 27;
     MEMORY_SIZE_MB = 128;
+    num_records_total = 1ULL << K; // Compute 2^K
+    approach = "for";
 
 
     // Parse command-line arguments
