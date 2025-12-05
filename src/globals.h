@@ -21,6 +21,12 @@
 #include <inttypes.h>
 // #include <secp256k1.h>
 
+#ifdef __APPLE__
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
+
+
 #include "../blake3/blake3.h" // Include Blake3 header
 
 #ifndef NONCE_SIZE

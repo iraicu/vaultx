@@ -8,8 +8,8 @@ void print_usage(char *prog_name)
     printf("  -a, --approach [xtask|task|for|tbb]   Select parallelization approach (default: for)\n");
     printf("  -t, --threads NUM                     Number of threads to use (default: number of available cores)\n");
     printf("  -i, --threads_io NUM                  Number of I/O threads (default: 1)\n");
-    printf("  -K, --exponent NUM                    Exponent K to compute 2^K number of records (default: 4)\n");
-    printf("  -m, --memory NUM                      Memory size in MB (default: 1)\n");
+    printf("  -k, --exponent NUM                    Exponent k to compute 2^K number of records (default: 27)\n");
+    printf("  -m, --memory NUM                      Memory size in MB (default: 128)\n");
     printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
     printf("  -W, --write-batch-size NUM            Write batch size (default: 1024)\n");
     printf("  -R, --read-batch-size NUM             Read batch size (default: 1024)\n");
@@ -174,6 +174,34 @@ static double get_peak_memory_mb(void)
 #endif
 }
 
+int get_num_cores() {
+#ifdef __APPLE__
+    // macOS: use sysctl
+    int mib[2];
+    int cores;
+    size_t len = sizeof(cores);
+
+    mib[0] = CTL_HW;
+    mib[1] = HW_NCPU;
+
+    if (sysctl(mib, 2, &cores, &len, NULL, 0) == -1) {
+        return -1; // error
+    }
+    return cores;
+
+#elif defined(__linux__)
+    // Linux: use sysconf
+    long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+    if (nprocs < 1) {
+        return -1; // error
+    }
+    return (int)nprocs;
+
+#else
+    return -1; // unsupported platform
+#endif
+}
+
 int main(int argc, char *argv[])
 {
     // printf("size of MemoTable2Record: %zu\n", sizeof(MemoTable2Record));
@@ -205,7 +233,7 @@ int main(int argc, char *argv[])
         {"approach", required_argument, 0, 'a'},
         {"threads", required_argument, 0, 't'},
         {"threads_io", required_argument, 0, 'i'},
-        {"exponent", required_argument, 0, 'K'},
+        {"exponent", required_argument, 0, 'k'},
         {"memory", required_argument, 0, 'm'},
         {"file_tmp", required_argument, 0, 'f'},
         {"file_tmp_table2", required_argument, 0, 'g'},
@@ -228,9 +256,14 @@ int main(int argc, char *argv[])
 
     int opt;
     int option_index = 0;
+    //default values
+    num_threads = get_num_cores();
+    K = 27;
+    MEMORY_SIZE_MB = 128;
+
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:K:m:f:g:j:b:W:R:M:w:c:v:s:S:x:n:y:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:k:m:f:g:j:b:W:R:M:w:c:v:s:S:x:n:y:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -264,21 +297,22 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
-        case 'K':
+        case 'k':
             K = atoi(optarg);
-            if (K < 24 || K > 40)
+            if (NONCE_SIZE == 4 && (K < 27 || K > 32)) || (NONCE_SIZE == 5 && (K < 33 || K > 40))
             { // Limiting K to avoid overflow
-                fprintf(stderr, "Exponent K must be between 24 and 40.\n");
+                fprintf(stderr, "Exponent 27 <= k <= 32 for NONCE_SIZE=4 or 33 <= k <= 40 for NONCE_SIZE=5; NONCE_SIZE can be configured at compile time.\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
             num_records_total = 1ULL << K; // Compute 2^K
+            MEMORY_SIZE_MB = num_records_total * NONCE_SIZE / (1024 * 1024); // Default memory size to fit all records
             break;
         case 'm':
             MEMORY_SIZE_MB = atoi(optarg);
-            if (MEMORY_SIZE_MB < 64)
+            if (MEMORY_SIZE_MB < 128)
             {
-                fprintf(stderr, "Memory size must be at least 64 MB.\n");
+                fprintf(stderr, "Memory size must be at least 128 MB.\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
