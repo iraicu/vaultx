@@ -8,7 +8,7 @@ void print_usage(char *prog_name)
     printf("  -a, --approach [xtask|task|for|tbb]   Select parallelization approach (default: for)\n");
     printf("  -t, --threads NUM                     Number of threads to use (default: number of available cores)\n");
     printf("  -i, --threads_io NUM                  Number of I/O threads (default: 1)\n");
-    printf("  -k, --exponent NUM                    Exponent k to compute 2^K number of records (default: 27)\n");
+    printf("  -k, --exponent NUM                    Exponent k to compute 2^k number of records (default: 27)\n");
     printf("  -m, --memory NUM                      Memory size in MB (default: 128)\n");
     printf("  -x, --batch-size NUM                  Batch size (default: 1024)\n");
     printf("  -W, --write-batch-size NUM            Write batch size (default: 1024)\n");
@@ -24,9 +24,9 @@ void print_usage(char *prog_name)
     printf("  -b, --benchmark [true|false]          Enable benchmark mode (default: false)\n");
     printf("  -h, --help                            Display this help message\n");
     printf("\nExample:\n");
-    printf("IN-MEMORY K=27 with max threading:          %s -k 27 -f ./\n", prog_name);
-    printf("IN-MEMORY K=27 with max threading BENCHMARK:    %s -k 27 -f ./ -b true (Only prints 1 line performance data)\n", prog_name);
-    printf("OUT-OF-MEMORY K=27 with 4 threads:      %s -t 4 -K 27 -m 128 -g ./ -j ./ -f ./\n", prog_name);
+    printf("IN-MEMORY k=27 with max threading:          %s -k 27 -f ./\n", prog_name);
+    printf("IN-MEMORY k=27 with max threading BENCHMARK:    %s -k 27 -f ./ -b true (Only prints 1 line performance data)\n", prog_name);
+    printf("OUT-OF-MEMORY k=27 with 4 threads:      %s -t 4 -k 27 -m 128 -g ./ -j ./ -f ./\n", prog_name);
     //printf("SEARCH:             %s -t 8 -k 27 -f memo.x -s 000000\n", prog_name);
 }
 
@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
             printf("Selected Approach           : %s\n", approach);
             printf("Number of Threads           : %d\n", num_threads > 0 ? num_threads : omp_get_max_threads());
             printf("Number of Threads I/O       : %d\n", num_threads_io > 0 ? num_threads_io : omp_get_max_threads());
-            printf("Exponent K                  : %d\n", K);
+            printf("Exponent k                  : %d\n", K);
         }
     }
 

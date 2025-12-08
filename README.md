@@ -67,7 +67,7 @@ To see available options:
 Monitoring: 
 
 ```bash
-  ./scripts/vaultx_system_monitor_pidstat.py --plot-file ./test.svg --csv-output ./test.csv -- ./vaultx -a for -K 28 -m 512 -W 512 -t 64 -f ./plots/ -g ./plots/ -j ./plots/ -M 1 -x true -n true
+  ./scripts/vaultx_system_monitor_pidstat.py --plot-file ./test.svg --csv-output ./test.csv -- ./vaultx -a for -k 28 -m 512 -W 512 -t 64 -f ./plots/ -g ./plots/ -j ./plots/ -M 1 -x true -n true
 ```
 
 
