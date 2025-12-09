@@ -32,12 +32,12 @@ bool SEARCH = false;
 bool SEARCH_BATCH = false;
 bool VERIFY = false;
 bool FULL_BUCKETS = false;
-bool ENABLE_DETAILED_METRICS = false;
-bool METRICS_OUTPUT_JSON = false;
-bool METRICS_OUTPUT_CSV = false;
+// bool ENABLE_DETAILED_METRICS = false;
+// bool METRICS_OUTPUT_JSON = false;
+// bool METRICS_OUTPUT_CSV = false;
 
-char* SOURCE = 'ssd-raid0';
-char* DESTINATION = 'ssd-raid0';
+char* SOURCE = "ssd-raid0";
+char* DESTINATION = "ssd-raid0";
 char user[256];
 
 uint8_t key[32];
@@ -54,4 +54,4 @@ BucketTable2* buckets2_phase2;
 MemoTable2Record* table2;
 
 // Initialize global metrics structure
-GlobalMetrics global_metrics = {0};
+// GlobalMetrics global_metrics = {0};

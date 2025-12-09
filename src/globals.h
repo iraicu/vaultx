@@ -60,9 +60,9 @@ extern bool CIRCULAR_ARRAY;
 extern bool MEMORY_WRITE;
 extern bool VERIFY;
 extern bool FULL_BUCKETS;
-extern bool ENABLE_DETAILED_METRICS;
-extern bool METRICS_OUTPUT_JSON;
-extern bool METRICS_OUTPUT_CSV;
+// extern bool ENABLE_DETAILED_METRICS;
+// extern bool METRICS_OUTPUT_JSON;
+// extern bool METRICS_OUTPUT_CSV;
 
 extern char* SOURCE;
 extern char* DESTINATION;
@@ -136,7 +136,7 @@ typedef struct
 } MergeBatch;
 
 // ============ Performance Metrics Structures ============
-
+/*
 typedef struct {
     // Lookup/Search phase metrics
     double total_lookup_time;
@@ -207,6 +207,7 @@ typedef struct {
 } GlobalMetrics;
 
 extern GlobalMetrics global_metrics;
+*/
 extern Bucket* buckets;
 extern Bucket* buckets_phase2;
 extern BucketTable2* buckets2;

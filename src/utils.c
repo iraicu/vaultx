@@ -4,25 +4,46 @@
 // Function to display usage information
 void print_usage(char* prog_name) {
     printf("Usage: %s [OPTIONS]\n", prog_name);
-    printf("\nOptions:\n");
-    printf("  -a, --approach [xtask|task|for|tbb]   Select parallelization approach (default: for)\n");
-    printf("  -t, --threads NUM                     Number of threads to use (default: number of available cores)\n");
-    printf("  -i, --threads_io NUM                  Number of I/O threads (default: number of available cores)\n");
-    printf("  -K, --exponent NUM                    Exponent K to compute 2^K number of records (default: 4)\n");
-    printf("  -m, --size of merge batch NUM         Memory size per merge batch in MB (default: 256)\n");
-    printf("  -r, --memory limit in MB              Memory size in MB (default: 16384)\n");
-    printf("  -b, --batch-size NUM                  Batch size (default: 1024)\n");
-    printf("  -S, --lookup-count NUM                Perofrm lookup for NUM hashes in small plots and merged plot\n");
-    printf("  -x, --benchmark                       Enable benchmark mode (default: false)\n");
+
+    printf("\nCore Options:\n");
+    printf("  -K, --exponent NUM                    Exponent K to compute 2^K records (default: 24)\n");
+    printf("  -n, --total_files NUM                 Number of plot files to generate or merge\n");
+    printf("  -t, --threads NUM                     Number of threads (default: available cores)\n");
+    printf("  -a, --approach [xtask|task|for|tbb]   Parallelization approach (default: for)\n");
+
+    printf("\nGeneration/Merge Options:\n");
+    printf("  -m, --merge-batch-size NUM            Memory per merge batch in MB (default: 256)\n");
+    printf("  -r, --memory-limit NUM                Total memory limit in MB (default: 16384)\n");
+    printf("  -b, --batch-size NUM                  Hash generation batch size (default: 1024)\n");
+    printf("  -M, --merge-approach [0|1|2]          Merge approach: 0=parallel, 1=serial, 2=pipelined\n");
+    printf("  -F, --source PATH                     Source directory containing plot files\n");
+    printf("  -T, --destination PATH                Destination directory for output files\n");
+
+    printf("\nSearch Options:\n");
+    printf("  -S, --search NUM                      Perform NUM random lookups on plots\n");
+    printf("  -D, --difficulty NUM                  Hash comparison bytes (0=full hash, >0=prefix bytes)\n");
+
+    printf("\nAdvanced/Debug Options:\n");
+    printf("  -i, --threads-io NUM                  Number of I/O threads (default: 1)\n");
+    printf("  -w, --memory-write [true|false]       Enable memory write mode (default: true)\n");
+    printf("  -c, --circular-array [true|false]     Use circular array (default: false)\n");
+    printf("  -v, --verify [true|false]             Verify merged plot after creation (default: false)\n");
+    printf("  -y, --full-buckets [true|false]       Stop when buckets are full (default: false)\n");
+    printf("  -x, --benchmark [true|false]          Enable benchmark output mode (default: false)\n");
+    printf("  -d, --debug [true|false]              Enable debug output (default: false)\n");
+
+    printf("\nHelp:\n");
     printf("  -h, --help                            Display this help message\n");
-    printf("  -n, --total_files NUM                 Number of K fiels to generate\n");
-    printf("  -M, --merge                           Merge k files into a big file\n");
-    printf("  -T, --destination (To)                Merge File destination\n");
-    printf("  -F, --source (From)                   Small files source\n");
-    printf("\nExample:\n");
-    printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo\n", prog_name);
-    printf("  %s -a for -t 8 -i 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo -x true (Only prints time)\n", prog_name);
-    printf("  %s -a for -t 8 -K 25 -m 1024 -f vaultx25_tmp.memo -g vaultx25.memo -2 true\n", prog_name);
+
+    printf("\nExamples:\n");
+    printf("  Generate plots:\n");
+    printf("    %s -K 27 -n 128 -t 32 -T /data/plots/\n", prog_name);
+    printf("\n");
+    printf("  Merge plots:\n");
+    printf("    %s -M 0 -K 27 -n 128 -F /data/plots/ -T /data/merged/ -t 32 -m 1024\n", prog_name);
+    printf("\n");
+    printf("  Search merged plot:\n");
+    printf("    %s -S 1000 -K 27 -n 128 -T /data/merged/ -D 3 -t 32\n", prog_name);
 }
 
 unsigned char* getRandomHash(size_t num_bytes) {
