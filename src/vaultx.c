@@ -10,24 +10,25 @@ void print_usage(char *prog_name)
     printf("  -i, --threads_io NUM                  Number of I/O threads (default: 1)\n");
     printf("  -k, --exponent NUM                    Exponent k to compute 2^k number of records (default: 27)\n");
     printf("  -m, --memory NUM                      Memory size in MB (default: 128)\n");
-    printf("  -x, --batch-size NUM                  Batch size (default: 1024)\n");
-    printf("  -W, --write-batch-size NUM            Write batch size (default: 1024)\n");
-    printf("  -R, --read-batch-size NUM             Read batch size (default: 1024)\n");
+    printf("  -x, --batch-size NUM                  Batch size for task-based parallelism (default: 1024)\n");
+    printf("  -W, --write-batch-size NUM            Write batch size in MB (default: 1024)\n");
+    printf("  -R, --read-batch-size NUM             Read batch size in MB (default: 1024)\n");
     printf("  -M, --matching-factor NUM             Matching factor for table2 generation (0.0 < factor <= 1.0, default: 1.0)\n");
-    printf("  -f, --dir tmp NAME                    Temporary table1 (out-of-memory)/table2 (in-memory) directory name\n");
-    printf("  -g, --dir tmp table2 NAME             Temporary table2 directory name (only for out-of-memory)\n");
-    printf("  -j, --dir table2 NAME                 Table2 directory name\n");
+    printf("  -g, --dir_tmp PATH                    Directory for temporary table1 file (required for generation)\n");
+    printf("  -j, --dir_tmp_table2 PATH             Directory for temporary table2 file (required for out-of-memory mode)\n");
+    printf("  -f, --dir_table2 PATH                 Directory for final table2 vault file (required for all modes)\n");
     // printf("  -2, --table2 file NAME                Use Table2 approach (should specify -f (table1 file), if table1 was created previously, turn off HASHGEN)\n");
     printf("  -s, --search STRING                   Search for a specific hash prefix in the file\n");
     printf("  -S, --search-batch NUM                Search for a specific hash prefix in the file in batch mode\n");
     printf("  -v, --verify [true|false]             Enable verification mode (default: false)\n");
     printf("  -b, --benchmark [true|false]          Enable benchmark mode (default: false)\n");
     printf("  -h, --help                            Display this help message\n");
-    printf("\nExample:\n");
-    printf("IN-MEMORY k=27 with max threading:          %s -k 27 -f ./\n", prog_name);
-    printf("IN-MEMORY k=27 with max threading BENCHMARK:    %s -k 27 -f ./ -b true (Only prints 1 line performance data)\n", prog_name);
-    printf("OUT-OF-MEMORY k=27 with 4 threads:      %s -t 4 -k 27 -m 128 -g ./ -j ./ -f ./\n", prog_name);
-    //printf("SEARCH:             %s -t 8 -k 27 -f memo.x -s 000000\n", prog_name);
+    printf("\nExamples:\n");
+    printf("IN-MEMORY generation (k=27):              %s -k 27 -g ./ -f ./\n", prog_name);
+    printf("IN-MEMORY with benchmark mode:            %s -k 27 -g ./ -f ./ -b true\n", prog_name);
+    printf("OUT-OF-MEMORY generation (k=27, 256MB):  %s -t 4 -k 27 -m 256 -g ./ -j ./ -f ./\n", prog_name);
+    printf("Search for hash prefix:                   %s -f ./ -s a1b2c3\n", prog_name);
+    printf("Batch search (3-byte prefixes):           %s -f ./ -S 3\n", prog_name);
 }
 
 // Function to compute the bucket index based on hash prefix
@@ -235,9 +236,15 @@ int main(int argc, char *argv[])
     char *DIR_TABLE2 = NULL;
     char *SEARCH_STRING = NULL;
 
-    char FILENAME_TMP[150];
-    char FILENAME_TMP_TABLE2[150];
-    char FILENAME_TABLE2[150];
+    // I'm using larger buffer sizes - allocated on heap to avoid stack issues
+    char *FILENAME_TMP = malloc(4096);
+    char *FILENAME_TMP_TABLE2 = malloc(4096);
+    char *FILENAME_TABLE2_buf = malloc(4096);
+    if (!FILENAME_TMP || !FILENAME_TMP_TABLE2 || !FILENAME_TABLE2_buf) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+    char *FILENAME_TABLE2 = FILENAME_TABLE2_buf;
 
     // Define long options
     static struct option long_options[] = {
@@ -323,7 +330,8 @@ int main(int argc, char *argv[])
             MEMORY_SIZE_MB = num_records_total * NONCE_SIZE / (1024 * 1024); // Default memory size to fit all records
             break;
         case 'm':
-            MEMORY_SIZE_MB = largest_power_of_two_le((atoi(optarg) - 1300) / 3);
+            MEMORY_SIZE_MB = atoi(optarg);
+            //  MEMORY_SIZE_MB = largest_power_of_two_le((atoi(optarg) - 1300) / 3);
             if (MEMORY_SIZE_MB < 128)
             {
                 fprintf(stderr, "Memory size must be at least 128 MB.\n");
@@ -621,6 +629,44 @@ int main(int argc, char *argv[])
             sprintf(FILENAME_TMP_TABLE2, "%sk%d-%s.tmp2", DIR_TMP_TABLE2, K, hex_plot_id);
             sprintf(FILENAME_TABLE2, "%sk%d-%s.plot", DIR_TABLE2, K, hex_plot_id);
         }
+    }
+    else if (SEARCH || SEARCH_BATCH)
+    {
+        // For search mode, auto-discover the vault file in the directory
+        DIR *dir = opendir(DIR_TABLE2);
+        if (dir == NULL)
+        {
+            fprintf(stderr, "Error: Cannot open directory '%s'\n", DIR_TABLE2);
+            exit(EXIT_FAILURE);
+        }
+
+        struct dirent *entry;
+        char found_file[256] = {0};
+        int found_count = 0;
+        
+        while ((entry = readdir(dir)) != NULL)
+        {
+            // Look for .plot files matching k{K}-*.plot pattern
+            if (strstr(entry->d_name, ".plot") != NULL)
+            {
+                found_count++;
+                if (found_count > 1) {
+                    fprintf(stderr, "Error: Multiple vault files found in directory. Please clean directory and regenerate.\n");
+                    closedir(dir);
+                    exit(EXIT_FAILURE);
+                }
+                strncpy(found_file, entry->d_name, sizeof(found_file) - 1);
+            }
+        }
+        closedir(dir);
+
+        if (found_count == 0)
+        {
+            fprintf(stderr, "Error: No vault file (*.plot) found in directory '%s'\n", DIR_TABLE2);
+            exit(EXIT_FAILURE);
+        }
+
+        snprintf(FILENAME_TABLE2, 4096, "%s/%s", DIR_TABLE2, found_file);
     }
 
     // Print out configuration

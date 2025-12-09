@@ -6,7 +6,7 @@ CCP=g++-14
 #s8
 XCC=/home/wwang/xgcc/bin/xgcc
 
-CFLAGS=-g -O3 -DBLAKE3_USE_NEON=0 -Wall -Wextra -pedantic -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -fvisibility=hidden 
+CFLAGS=-g -O3 -DBLAKE3_USE_NEON=0 -Wall -Wextra -pedantic -fstack-protector -D_FORTIFY_SOURCE=2 -fPIE -fvisibility=hidden 
 
 #CFLAGS=-O3 -Wall -Wextra -pedantic -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -fvisibility=hidden
 LDFLAGS=-lm -lpthread -pie -Wl,-z,relro,-z,now -lsodium

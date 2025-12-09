@@ -7,9 +7,9 @@ MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEA
     MemoTable2Record *foundRecord = NULL;
 
     // Define the offset you want to seek to
-    long offset = bucketIndex * num_records_in_bucket_search * sizeof(MemoTable2Record); // For example, seek to byte 1024 from the beginning
+    off_t offset = bucketIndex * (off_t)num_records_in_bucket_search * (off_t)sizeof(MemoTable2Record);
     if (DEBUG)
-        printf("SEARCH: seek to %zu offset\n", offset);
+        printf("SEARCH: seek to %" PRIuMAX " offset\n", (uintmax_t)offset);
 
     // Seek to the specified offset
     if (fseek(file, offset, SEEK_SET) != 0)
@@ -125,9 +125,27 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
 
     long filesize = get_file_size(filename);
 
+    // Extract just the basename from the full path (filename contains directory path now)
+    const char *basename = strrchr(filename, '/');
+    if (basename == NULL) {
+        basename = filename;
+    } else {
+        basename++;  // Skip the '/'
+    }
+
+    // Extract hex plot ID from filename format: k{K}-{hex_id}.plot
     char plot_id_string[65];
-    strcpy(plot_id_string, filename);
+    char *dash = strchr(basename, '-');
+    if (dash == NULL || dash - basename < 1) {
+        printf("Error: Invalid filename format '%s'. Expected k{K}-{hex_id}.plot\n", basename);
+        return;
+    }
+    
+    // Start from the character after the dash
+    const char *hex_start = dash + 1;
+    strncpy(plot_id_string, hex_start, sizeof(plot_id_string) - 1);
     plot_id_string[64] = '\0';
+    
     char *dot = strchr(plot_id_string, '.');
     if (dot != NULL)
     {
@@ -136,7 +154,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
 
     if (hex_string_to_byte_array(plot_id_string, plot_id, 32) != 0)
     {
-        printf("Error: Invalid plot ID in filename '%s'. Expected 32 bytes.\n", filename);
+        printf("Error: Invalid plot ID in filename '%s'. Expected 32 bytes hex (64 chars). Got '%s'\n", basename, plot_id_string);
         return;
     }
 

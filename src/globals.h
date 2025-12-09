@@ -14,6 +14,7 @@
 #include <fcntl.h>     // For open, O_RDWR, O_CREAT, O_TRUNC
 #include <sys/types.h> // For data types
 #include <sys/stat.h>  // For file modes
+#include <dirent.h>    // For directory scanning (opendir, readdir)
 #include <sys/resource.h> // For getrusage
 #include <math.h>
 #include <errno.h>
