@@ -94,6 +94,7 @@ To see available options:
 | `-v` | `--verify` | Enable verification mode (true/false) |
 | `-n` | `--monitor` | Enable monitoring (true/false) |
 | `-h` | `--help` | Display help message |
+| `-p` | `--print` | Print NUM records and exit (true/false)|
 
 ### Usage Examples
 

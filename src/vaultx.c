@@ -19,6 +19,7 @@ void print_usage(char *prog_name)
     printf("  -f, --dir_table2 PATH                 Directory for final table2 vault file (required for all modes)\n");
     // printf("  -2, --table2 file NAME                Use Table2 approach (should specify -f (table1 file), if table1 was created previously, turn off HASHGEN)\n");
     printf("  -s, --search STRING                   Search for a specific hash prefix in the file\n");
+    printf("  -p, --print NUM             Print NUM records and exit\n");
     printf("  -S, --search-batch NUM                Search for a specific hash prefix in the file in batch mode\n");
     printf("  -v, --verify [true|false]             Enable verification mode (default: false)\n");
     printf("  -b, --benchmark [true|false]          Enable benchmark mode (default: false)\n");
@@ -108,6 +109,152 @@ bool is_nonce_nonzero(const uint8_t *nonce, size_t nonce_size)
     // All bytes are zero
     return false;
 }
+
+long get_file_size(const char *filename);
+
+// Print first `count` records from a vault file (.tmp or .plot)
+// .tmp files contain MemoRecord (NONCE_SIZE bytes per record)
+// .plot files contain MemoTable2Record (2 * NONCE_SIZE bytes per record)
+void print_records_from_file(const char *filename, unsigned long long count, int K) {
+    if (filename == NULL) {
+        fprintf(stderr, "Error: No filename provided. Use -f or -g to specify a file.\n");
+        return;
+    }
+
+    FILE *f = fopen(filename, "rb");
+    if (!f) {
+        fprintf(stderr, "Error: Cannot open file '%s'\n", filename);
+        perror("fopen");
+        return;
+    }
+
+    // Determine file type from extension
+    const char *ext = strrchr(filename, '.');
+    bool is_table2_file = (ext != NULL && strcmp(ext, ".plot") == 0);
+    
+    // Determine record size and structure
+    size_t record_size;
+    size_t nonce_field_size = NONCE_SIZE;
+    
+    if (is_table2_file) {
+        // .plot files: MemoTable2Record (nonce1 + nonce2)
+        record_size = 2 * NONCE_SIZE;
+    } else {
+        // .tmp files: MemoRecord (single nonce)
+        record_size = NONCE_SIZE;
+    }
+
+    // Get actual file size
+    long actual_size = get_file_size(filename);
+    if (actual_size < 0) {
+        fprintf(stderr, "Error: Cannot determine file size\n");
+        fclose(f);
+        return;
+    }
+
+    unsigned long long actual_size_ull = (unsigned long long)actual_size;
+    unsigned long long num_records_in_file = actual_size_ull / record_size;
+
+    if (!BENCHMARK) {
+        printf("File: %s\n", filename);
+        printf("File size: %llu bytes\n", actual_size_ull);
+        printf("Record size: %zu bytes\n", record_size);
+        printf("Total records in file: %llu\n", num_records_in_file);
+        
+        if (K >= 0 && K < 64) {
+            unsigned long long expected_records = 1ULL << (unsigned int)K;
+            printf("Expected records for k=%d: %llu\n", K, expected_records);
+            
+            if (is_table2_file) {
+                // For Table2, records per bucket depends on buckets
+                unsigned long long total_buckets = 1ULL << (PREFIX_SIZE * 8);
+                unsigned long long expected_recs_per_bucket = expected_records / total_buckets;
+                unsigned long long expected_total = expected_recs_per_bucket * total_buckets;
+                printf("Expected total Table2 records: %llu (%llu buckets × %llu records/bucket)\n", 
+                       expected_total, total_buckets, expected_recs_per_bucket);
+            } else {
+                printf("File size matches expected: %s\n",
+                       (num_records_in_file == expected_records) ? "YES" : "NO (may be partial/different k)");
+            }
+        }
+        printf("\nPrinting first %llu records:\n", count);
+        printf("---\n");
+    }
+
+    // Read and print records
+    unsigned long long records_printed = 0;
+    uint8_t *buf = malloc(record_size);
+    if (!buf) {
+        fprintf(stderr, "Error: Memory allocation failed\n");
+        fclose(f);
+        return;
+    }
+
+    for (unsigned long long i = 0; i < count && i < num_records_in_file; i++) {
+        size_t bytes_read = fread(buf, 1, record_size, f);
+        if (bytes_read == 0) {
+            break; // EOF
+        }
+        if (bytes_read != record_size) {
+            fprintf(stderr, "Warning: Short read at record %llu (got %zu bytes, expected %zu)\n", 
+                    i, bytes_read, record_size);
+            break;
+        }
+
+        printf("[Record %llu] ", i);
+        
+        if (is_table2_file) {
+            // MemoTable2Record: nonce1 (NONCE_SIZE bytes) + nonce2 (NONCE_SIZE bytes)
+            uint8_t *nonce1 = buf;
+            uint8_t *nonce2 = buf + NONCE_SIZE;
+            
+            printf("nonce1: ");
+            for (size_t j = 0; j < NONCE_SIZE; j++) {
+                printf("%02x", nonce1[j]);
+            }
+            printf(" | nonce2: ");
+            for (size_t j = 0; j < NONCE_SIZE; j++) {
+                printf("%02x", nonce2[j]);
+            }
+            
+            // Check if either nonce is non-zero
+            bool nonce1_nonzero = is_nonce_nonzero(nonce1, NONCE_SIZE);
+            bool nonce2_nonzero = is_nonce_nonzero(nonce2, NONCE_SIZE);
+            
+            printf(" | Status: ");
+            if (!nonce1_nonzero && !nonce2_nonzero) {
+                printf("BLANK");
+            } else if (nonce1_nonzero && nonce2_nonzero) {
+                printf("MATCH");
+            } else {
+                printf("PARTIAL");
+            }
+        } else {
+            // MemoRecord: single nonce
+            uint8_t *nonce = buf;
+            
+            printf("nonce: ");
+            for (size_t j = 0; j < NONCE_SIZE; j++) {
+                printf("%02x", nonce[j]);
+            }
+            
+            bool nonce_nonzero = is_nonce_nonzero(nonce, NONCE_SIZE);
+            printf(" | Status: %s", nonce_nonzero ? "SET" : "ZERO");
+        }
+        
+        printf("\n");
+        records_printed++;
+    }
+
+    printf("---\n");
+    if (!BENCHMARK) {
+        printf("Printed %llu records\n", records_printed);
+    }
+
+    free(buf);
+    fclose(f);
+}
+
 
 int hex_string_to_byte_array(const char *hex_string, uint8_t *out, size_t out_len)
 {
@@ -235,6 +382,8 @@ int main(int argc, char *argv[])
     char *DIR_TMP_TABLE2 = NULL;
     char *DIR_TABLE2 = NULL;
     char *SEARCH_STRING = NULL;
+    bool printMode = false;
+    unsigned long long printCount = 0;
 
     char FILENAME_TMP[250];
     char FILENAME_TMP_TABLE2[250];
@@ -245,6 +394,7 @@ int main(int argc, char *argv[])
         {"approach", required_argument, 0, 'a'},
         {"threads", required_argument, 0, 't'},
         {"threads_io", required_argument, 0, 'i'},
+        {"print",       required_argument, 0, 'p'},
         {"exponent", required_argument, 0, 'k'},
         {"memory", required_argument, 0, 'm'},
         {"file_tmp", required_argument, 0, 'g'},
@@ -278,7 +428,7 @@ int main(int argc, char *argv[])
 
 
     // Parse command-line arguments
-    while ((opt = getopt_long(argc, argv, "a:t:i:k:m:f:g:j:b:W:R:M:w:c:v:s:S:x:n:y:d:h", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "a:t:i:p:k:m:f:g:j:b:W:R:M:w:c:v:s:S:x:n:y:d:h", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -308,6 +458,15 @@ int main(int argc, char *argv[])
             if (num_threads_io <= 0)
             {
                 fprintf(stderr, "Number of I/O threads must be positive.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'p':
+            printCount = strtoull(optarg, NULL, 10);
+            printMode = true;
+            if (printCount == 0) {
+                fprintf(stderr, "Print count must be > 0\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
@@ -548,6 +707,22 @@ int main(int argc, char *argv[])
             printf("Number of Threads I/O       : %d\n", num_threads_io > 0 ? num_threads_io : omp_get_max_threads());
             printf("Exponent K                  : %d\n", K);
         }
+    }
+
+        // If print mode is requested, simply print the count and exit (skip all other work)
+    if (printMode) {
+        // Prefer final output file if provided, otherwise temporary file
+        const char *file_to_print = NULL;
+        if (DIR_TABLE2 != NULL) file_to_print = DIR_TABLE2;
+        else if (DIR_TMP != NULL) file_to_print = DIR_TMP;
+
+        if (file_to_print == NULL) {
+            fprintf(stderr, "No file specified to read records from. Use -g or -f to specify a file.\n");
+            return EXIT_FAILURE;
+        }
+
+        print_records_from_file(file_to_print, printCount, K);
+        return 0;
     }
 
     unsigned long long file_size_bytes = num_records_total * NONCE_SIZE;
