@@ -9,10 +9,10 @@ void print_usage(char *prog_name)
     printf("  -t, --threads NUM                     Number of threads to use (default: number of available cores)\n");
     printf("  -i, --threads_io NUM                  Number of I/O threads (default: 1)\n");
     printf("  -k, --exponent NUM                    Exponent k to compute 2^k number of records (default: 27)\n");
-    printf("  -m, --memory NUM                      Memory size in MB (default: 128)\n");
+    printf("  -m, --memory NUM                      Memory size in GB (default: 0.125)\n");
     printf("  -x, --batch-size NUM                  Batch size for task-based parallelism (default: 1024)\n");
-    printf("  -W, --write-batch-size NUM            Write batch size in MB (default: 1024)\n");
-    printf("  -R, --read-batch-size NUM             Read batch size in MB (default: 1024)\n");
+    printf("  -W, --write-batch-size NUM            Write batch size in GB (default: 1)\n");
+    printf("  -R, --read-batch-size NUM             Read batch size in GB (default: 1)\n");
     printf("  -M, --matching-factor NUM             Matching factor for table2 generation (0.0 < factor <= 1.0, default: 1.0)\n");
     printf("  -g, --dir_tmp PATH                    Directory for temporary table1 file (required for generation)\n");
     printf("  -j, --dir_tmp_table2 PATH             Directory for temporary table2 file (required for out-of-memory mode)\n");
@@ -27,7 +27,7 @@ void print_usage(char *prog_name)
     printf("\nExamples:\n");
     printf("IN-MEMORY generation (k=27):              %s -k 27 -g ./ -f ./\n", prog_name);
     printf("IN-MEMORY with benchmark mode:            %s -k 27 -g ./ -f ./ -b true\n", prog_name);
-    printf("OUT-OF-MEMORY generation (k=27, 256MB):  %s -t 4 -k 27 -m 256 -g ./ -j ./ -f ./\n", prog_name);
+    printf("OUT-OF-MEMORY generation (k=27, 0.25GB):  %s -t 4 -k 27 -m 0.25 -g ./ -j ./ -f ./\n", prog_name);
     printf("Search for hash prefix:                   %s -f ./ -s a1b2c3\n", prog_name);
     printf("Batch search (3-byte prefixes):           %s -f ./ -S 3\n", prog_name);
 }
@@ -482,15 +482,18 @@ int main(int argc, char *argv[])
             num_records_total = 1ULL << K; // Compute 2^K
             MEMORY_SIZE_MB = num_records_total * NONCE_SIZE / (1024 * 1024); // Default memory size to fit all records
             break;
-        case 'm':
+        case 'm': {
+            double memory_input_gb = atof(optarg); // in GB
+            MEMORY_SIZE_MB = (unsigned long long)(memory_input_gb * 1024); // Convert to MB
             MEMORY_SIZE_MB = largest_power_of_two_le((atoi(optarg) - 1300) / 3);
             if (MEMORY_SIZE_MB < 128)
             {
-                fprintf(stderr, "Memory size must be at least 128 MB.\n");
+                fprintf(stderr, "Memory size must be at least 0.125 GB (128 MB).\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
             break;
+        }
         case 'g':
             DIR_TMP = optarg;
             writeDataTmp = true;
@@ -522,8 +525,9 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
-        case 'W':
-            WRITE_BATCH_SIZE_MB = atoi(optarg); // in MB
+        case 'W': {
+            double write_batch_input_gb = atof(optarg); // in GB
+            WRITE_BATCH_SIZE_MB = (size_t)(write_batch_input_gb * 1024); // Convert to MB
             if (WRITE_BATCH_SIZE_MB < 1)
             {
                 fprintf(stderr, "WRITE_BATCH_SIZE must be 1 or greater.\n");
@@ -531,8 +535,10 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
-        case 'R':
-            READ_BATCH_SIZE = atoi(optarg); // in MB
+        }
+        case 'R': {
+            double read_batch_input_gb = atof(optarg); // in GB
+            READ_BATCH_SIZE = (size_t)(read_batch_input_gb * 1024); // Convert to MB
             if (READ_BATCH_SIZE < 1)
             {
                 fprintf(stderr, "READ_BATCH_SIZE must be 1 or greater.\n");
@@ -540,6 +546,7 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
+        }
         case 'M':
             matching_factor = atof(optarg);
             if (matching_factor <= 0.0 || matching_factor > 1.0)
@@ -762,13 +769,13 @@ int main(int argc, char *argv[])
     if (!BENCHMARK && rounds == 1 && WRITE_BATCH_SIZE_MB > file_size_bytes / (1024 * 1024))
     {
         printf("WRITE_BATCH_SIZE is greater than the total file size.\n");
-        printf("Setting WRITE_BATCH_SIZE to %llu MB.\n", file_size_bytes / (1024 * 1024));
+        printf("Setting WRITE_BATCH_SIZE to %.3f GB.\n", file_size_bytes / (1024.0 * 1024 * 1024));
         WRITE_BATCH_SIZE_MB = file_size_bytes / (1024 * 1024);
     }
     else if (!BENCHMARK && rounds > 1 && WRITE_BATCH_SIZE_MB > MEMORY_SIZE_MB)
     {
         printf("WRITE_BATCH_SIZE is greater than the memory size.\n");
-        printf("Setting WRITE_BATCH_SIZE to %llu MB.\n", MEMORY_SIZE_MB);
+        printf("Setting WRITE_BATCH_SIZE to %.3f GB.\n", MEMORY_SIZE_MB / 1024.0);
         WRITE_BATCH_SIZE_MB = MEMORY_SIZE_MB;
     }
     // READ_BATCH_SIZE is checked later in the code. it should be smaller than num_diff_pref_buckets_to_read
@@ -814,7 +821,7 @@ int main(int argc, char *argv[])
             printf("Table2 File Size (GB)       : %.2f\n", file_size_gb * 2);
             printf("Table2 File Size (bytes)    : %llu\n", file_size_bytes * 2);
 
-            printf("Memory Size (MB)            : %llu\n", MEMORY_SIZE_MB);
+            printf("Memory Size (GB)            : %.3f\n", MEMORY_SIZE_MB / 1024.0);
             printf("Memory Size (bytes)         : %llu\n", MEMORY_SIZE_bytes);
 
             printf("Number of Hashes (RAM)      : %llu\n", num_records_per_round);
@@ -827,7 +834,7 @@ int main(int argc, char *argv[])
             printf("Number of Records in Bucket : %llu\n", num_records_in_bucket);
 
             printf("BATCH_SIZE                  : %zu\n", BATCH_SIZE);
-            printf("WRITE_BATCH_SIZE            : %zu\n", WRITE_BATCH_SIZE_MB);
+            printf("WRITE_BATCH_SIZE (GB)       : %.3f\n", WRITE_BATCH_SIZE_MB / 1024.0);
             printf("READ_BATCH_SIZE             : %zu\n", READ_BATCH_SIZE);
 
             if (HASHGEN)
@@ -2128,7 +2135,7 @@ int main(int argc, char *argv[])
     peak_memory_mb = get_peak_memory_mb();
     if (!BENCHMARK && peak_memory_mb >= 0.0)
     {
-        printf("Peak Memory Usage: %.2f MB\n", peak_memory_mb);
+        printf("Peak Memory Usage: %.3f GB\n", peak_memory_mb / 1024.0);
     }
 
     if (DEBUG)
