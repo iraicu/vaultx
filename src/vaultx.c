@@ -236,15 +236,9 @@ int main(int argc, char *argv[])
     char *DIR_TABLE2 = NULL;
     char *SEARCH_STRING = NULL;
 
-    // I'm using larger buffer sizes - allocated on heap to avoid stack issues
-    char *FILENAME_TMP = malloc(4096);
-    char *FILENAME_TMP_TABLE2 = malloc(4096);
-    char *FILENAME_TABLE2_buf = malloc(4096);
-    if (!FILENAME_TMP || !FILENAME_TMP_TABLE2 || !FILENAME_TABLE2_buf) {
-        fprintf(stderr, "Memory allocation failed\n");
-        exit(EXIT_FAILURE);
-    }
-    char *FILENAME_TABLE2 = FILENAME_TABLE2_buf;
+    char FILENAME_TMP[250];
+    char FILENAME_TMP_TABLE2[250];
+    char FILENAME_TABLE2[250];
 
     // Define long options
     static struct option long_options[] = {
@@ -330,8 +324,7 @@ int main(int argc, char *argv[])
             MEMORY_SIZE_MB = num_records_total * NONCE_SIZE / (1024 * 1024); // Default memory size to fit all records
             break;
         case 'm':
-            MEMORY_SIZE_MB = atoi(optarg);
-            //  MEMORY_SIZE_MB = largest_power_of_two_le((atoi(optarg) - 1300) / 3);
+            MEMORY_SIZE_MB = largest_power_of_two_le((atoi(optarg) - 1300) / 3);
             if (MEMORY_SIZE_MB < 128)
             {
                 fprintf(stderr, "Memory size must be at least 128 MB.\n");
@@ -553,7 +546,7 @@ int main(int argc, char *argv[])
             printf("Selected Approach           : %s\n", approach);
             printf("Number of Threads           : %d\n", num_threads > 0 ? num_threads : omp_get_max_threads());
             printf("Number of Threads I/O       : %d\n", num_threads_io > 0 ? num_threads_io : omp_get_max_threads());
-            printf("Exponent k                  : %d\n", K);
+            printf("Exponent K                  : %d\n", K);
         }
     }
 
@@ -629,44 +622,6 @@ int main(int argc, char *argv[])
             sprintf(FILENAME_TMP_TABLE2, "%sk%d-%s.tmp2", DIR_TMP_TABLE2, K, hex_plot_id);
             sprintf(FILENAME_TABLE2, "%sk%d-%s.plot", DIR_TABLE2, K, hex_plot_id);
         }
-    }
-    else if (SEARCH || SEARCH_BATCH)
-    {
-        // For search mode, auto-discover the vault file in the directory
-        DIR *dir = opendir(DIR_TABLE2);
-        if (dir == NULL)
-        {
-            fprintf(stderr, "Error: Cannot open directory '%s'\n", DIR_TABLE2);
-            exit(EXIT_FAILURE);
-        }
-
-        struct dirent *entry;
-        char found_file[256] = {0};
-        int found_count = 0;
-        
-        while ((entry = readdir(dir)) != NULL)
-        {
-            // Look for .plot files matching k{K}-*.plot pattern
-            if (strstr(entry->d_name, ".plot") != NULL)
-            {
-                found_count++;
-                if (found_count > 1) {
-                    fprintf(stderr, "Error: Multiple vault files found in directory. Please clean directory and regenerate.\n");
-                    closedir(dir);
-                    exit(EXIT_FAILURE);
-                }
-                strncpy(found_file, entry->d_name, sizeof(found_file) - 1);
-            }
-        }
-        closedir(dir);
-
-        if (found_count == 0)
-        {
-            fprintf(stderr, "Error: No vault file (*.plot) found in directory '%s'\n", DIR_TABLE2);
-            exit(EXIT_FAILURE);
-        }
-
-        snprintf(FILENAME_TABLE2, 4096, "%s/%s", DIR_TABLE2, found_file);
     }
 
     // Print out configuration
