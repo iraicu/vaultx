@@ -1,15 +1,48 @@
-vaultx 
-vaultx*.memo
+# IDE & Editor
 .vscode/
+.clang-format
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# C/C++
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+
+# Build & Artifacts
+blake3_bench
+perf.data
+perf.data.old
+secp256k1/
+plots/
+
+# Temporary Files
+*.tmp
+*.tmp2
+*.plot
+
+# Development
 memo.t
 memo2.t
 memo.x
 memo.xx
-blake3_bench
-perf.data
-perf.data.old
-*.tmp
-*.tmp2
-*.plot
-secp256k1/
-scripts/__pycache__
+vaultx*
+
+# Environment
+.env
+node_modules/
