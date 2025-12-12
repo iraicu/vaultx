@@ -594,6 +594,8 @@ int main(int argc, char *argv[]) {
       if (SEARCH) {
         printf("SEARCH                      : true\n");
       } else {
+        printf("Threads (Hash/Sort)         : %lu\n", num_threads);
+        printf("Threads (I/O)               : %lu\n", num_threads_io);
         printf("Table1 File Size (GB)       : %.2f\n", file_size_gb);
         printf("Table1 File Size (bytes)    : %llu\n", file_size_bytes);
 

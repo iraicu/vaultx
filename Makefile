@@ -1,12 +1,33 @@
 NAME=blake3/blake3
-CC=gcc-13
-CCP=g++-14
+CC ?= gcc-13
+CCP ?= g++-14
+
+# On macOS prefer clang and ensure the macOS SDK is used so system headers
+# like <dirent.h> and the fixed includes under sys/_types are found.
+ifeq ($(shell uname -s),Darwin)
+	# On macOS prefer a Homebrew-provided LLVM/clang (if installed) with libomp,
+	# because Apple's clang doesn't ship OpenMP and Homebrew gcc needs the
+	# SDK path manually. If Homebrew LLVM is present, use it and point to
+	# libomp include/lib paths; otherwise fall back to Homebrew gcc and add
+	# the macOS SDK sysroot so system headers are found.
+	ifneq ($(wildcard /opt/homebrew/opt/llvm/bin/clang),)
+		CC = /opt/homebrew/opt/llvm/bin/clang
+		CCP = /opt/homebrew/opt/llvm/bin/clang++
+		CFLAGS += -isysroot $(shell xcrun --show-sdk-path) -I/opt/homebrew/opt/libomp/include
+		LDFLAGS += -L/opt/homebrew/opt/libomp/lib -Wl,-rpath,/opt/homebrew/opt/libomp/lib
+		EXTRAFLAGS += -fopenmp
+	else
+		CC = gcc-13
+		CCP = g++-14
+		CFLAGS += -isysroot $(shell xcrun --show-sdk-path)
+	endif
+endif
 #torus
 #XCC=/ssd-raid0/shared/xgcc/bin/xgcc
 #s8
 XCC=/home/wwang/xgcc/bin/xgcc
 
-CFLAGS=-g -O3 -DBLAKE3_USE_NEON=0 -Wall -Wextra -pedantic -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -fvisibility=hidden
+CFLAGS=-O3 -DBLAKE3_USE_NEON=0 -Wall -Wextra -pedantic -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -fvisibility=hidden
 LDFLAGS = -lm -lpthread -pie -Wl,-z,relro,-z,now -lsodium -lnuma
 TARGETS=
 ASM_TARGETS=
@@ -98,10 +119,10 @@ vaultx_arm_c: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c sr
 	$(CC) -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $(CFLAGS) $(EXTRAFLAGS) $^ -o vaultx $(LDFLAGS) -fopenmp
 
 vaultx_mac: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c src/globals.c src/io.c src/search.c src/crypto.c src/merge.c src/utils.c
-	$(CCP) -w -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $^ -x c++ -std=c++17 -o vaultx -fopenmp -ltbb -lblake3 -lsodium -O3 -I/opt/homebrew/include -I/opt/homebrew/opt/blake3/include -I/opt/homebrew/opt/tbb/include -L/opt/homebrew/lib -L/opt/homebrew/opt/blake3/lib -L/opt/homebrew/opt/tbb/lib
+	$(CCP) $(CFLAGS) $(EXTRAFLAGS) -w -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $^ -x c++ -std=c++17 -o vaultx -fopenmp -ltbb -lblake3 -lsodium -O3 -I/opt/homebrew/include -I/opt/homebrew/opt/blake3/include -I/opt/homebrew/opt/tbb/include -L/opt/homebrew/lib -L/opt/homebrew/opt/blake3/lib -L/opt/homebrew/opt/tbb/lib
 
 vaultx_mac_c: src/vaultx.c src/table1.c src/sort.c src/table2.c src/shuffle.c src/globals.c src/io.c src/search.c src/crypto.c src/merge.c src/utils.c
-	$(CC) -w -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $^ -O3 -o vaultx -fopenmp -lblake3 -lsodium -I/opt/homebrew/include -I/opt/homebrew/opt/blake3/include -L/opt/homebrew/lib -L/opt/homebrew/opt/blake3/lib
+	$(CC) $(CFLAGS) $(EXTRAFLAGS) -w -DNONCE_SIZE=$(NONCE_SIZE) -DRECORD_SIZE=$(RECORD_SIZE) $^ -O3 -o vaultx -fopenmp -lblake3 -lsodium -I/opt/homebrew/include -I/opt/homebrew/opt/blake3/include -L/opt/homebrew/lib -L/opt/homebrew/opt/blake3/lib
 
 clean: 
 	rm -f $(NAME) vaultx vaultx_* *.o
