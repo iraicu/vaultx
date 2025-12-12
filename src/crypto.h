@@ -3,7 +3,8 @@
 
 #include "globals.h"
 
-void derive_key();
-int generate_plot_id();
+/* Explicit (void) in prototypes to avoid deprecated non-prototype declarations */
+void derive_key(void);
+int generate_plot_id(void);
 
 #endif // CRYYPTO_H

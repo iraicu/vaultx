@@ -8,6 +8,10 @@ int compare_memo_all_record(const void *a, const void *b)
     return memcmp(recA->hash, recB->hash, HASH_SIZE);
 }
 
+/* EOF */
+
+
+
 
 // why? 
 // memory overhead

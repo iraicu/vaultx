@@ -298,6 +298,8 @@ size_t process_memo_records_table2(const char *filename, const size_t BATCH_SIZE
     size_t total_records = 0;
     size_t zero_nonce_count = 0;
     size_t full_buckets = 0;
+    /* mark as used to suppress compiler warnings when analysis doesn't see later usage */
+    (void)full_buckets;
     size_t count_condition_met = 0;
     size_t count_condition_not_met = 0;
 

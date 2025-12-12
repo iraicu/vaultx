@@ -14,6 +14,11 @@ int rename_file(const char *old_name, const char *new_name)
     return 0;
 }
 
+
+/* EOF */
+
+
+
 void remove_file(const char *fileName)
 {
     // Attempt to remove the file

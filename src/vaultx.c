@@ -32,6 +32,7 @@ void print_usage(char *prog_name)
     printf("Batch search (3-byte prefixes):           %s -f ./ -S 3\n", prog_name);
 }
 
+
 // Function to compute the bucket index based on hash prefix
 off_t getBucketIndex(const uint8_t *hash)
 {
@@ -135,6 +136,8 @@ void print_records_from_file(const char *filename, unsigned long long count, int
     // Determine record size and structure
     size_t record_size;
     size_t nonce_field_size = NONCE_SIZE;
+    /* silence unused-variable when nonce field size is intentionally unused in C code */
+    (void)nonce_field_size;
     
     if (is_table2_file) {
         // .plot files: MemoTable2Record (nonce1 + nonce2)
@@ -322,7 +325,7 @@ static double get_peak_memory_mb(void)
 #endif
 }
 
-int get_num_cores() {
+int get_num_cores(void) {
 #ifdef __APPLE__
     // macOS: use sysctl
     int mib[2];
@@ -1231,6 +1234,8 @@ int main(int argc, char *argv[])
                     bytesWritten += elements_written * sizeof(MemoTable2Record);
                     total_bytes_written += elements_written * sizeof(MemoTable2Record);
                 }
+                /* bytesWritten is an auxiliary local counter; mark as used to silence "set but not used" warnings */
+                (void)bytesWritten;
 
                 // End I/O time measurement
                 end_time_io = omp_get_wtime();
@@ -1351,6 +1356,8 @@ int main(int argc, char *argv[])
                     bytesWritten += elements_written * sizeof(MemoRecord);
                     total_bytes_written += elements_written * sizeof(MemoRecord);
                 }
+                /* bytesWritten is an auxiliary local counter; mark as used to silence "set but not used" warnings */
+                (void)bytesWritten;
 
                 // End I/O time measurement
                 end_time_io = omp_get_wtime();
@@ -2142,3 +2149,5 @@ int main(int argc, char *argv[])
         printf("SUCCESS!\n");
     return 0;
 }
+
+/* EOF */

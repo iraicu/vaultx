@@ -2,7 +2,8 @@
 
 MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH, unsigned long long num_records_in_bucket_search, MemoTable2Record *buffer)
 {
-    const int HASH_SIZE_SEARCH = 8;
+    /* Make HASH_SIZE_SEARCH a compile-time constant to avoid VLAs */
+    enum { HASH_SIZE_SEARCH = 8 };
     size_t records_read;
     MemoTable2Record *foundRecord = NULL;
 
@@ -18,6 +19,7 @@ MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEA
         fclose(file);
         return NULL;
     }
+
 
     records_read = fread(buffer, sizeof(MemoTable2Record), num_records_in_bucket_search, file);
     if (records_read > 0)
@@ -103,7 +105,16 @@ MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEA
         printf("error reading from file..\n");
     }
     return foundRecord;
+
 }
+
+
+
+
+
+/* EOF */
+
+
 
 // not sure if the search of more than PREFIX_LENGTH works
 void search_memo_records(const char *filename, const char *SEARCH_STRING)

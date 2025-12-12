@@ -1,7 +1,7 @@
 #include "crypto.h"
 
 
-void derive_key()
+void derive_key(void)
 {
     uint8_t key[33];
     memcpy(key, plot_id, 32);
@@ -10,7 +10,12 @@ void derive_key()
     crypto_hash_sha256(hashed_key, key, sizeof(key));
 }
 
-int generate_plot_id()
+
+/* EOF */
+
+
+
+int generate_plot_id(void)
 {
     // NOTE: we could also generate a priv key and derive a pub key from it. But why?
     uint8_t public_key[32];
