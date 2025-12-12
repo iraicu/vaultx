@@ -85,6 +85,7 @@ int main(int argc, char *argv[]) {
   unsigned long long num_records_total = 1ULL << K; // 2^K iterations
   unsigned long long num_records_per_round = num_records_total;
   unsigned long long MEMORY_SIZE_MB = 1;
+  double memory_input_gb = 0.0;
   unsigned long long total_matches = 0;
   unsigned long long full_buckets = 0;
   unsigned long long record_counts = 0;
@@ -200,13 +201,22 @@ int main(int argc, char *argv[]) {
                        (1024 * 1024); // Default memory size to fit all records
       break;
     case 'm':
-      MEMORY_SIZE_MB = atoi(optarg);
-      if (MEMORY_SIZE_MB < 128) {
-        fprintf(stderr, "Memory size must be at least 128 MB.\n");
-        print_usage(argv[0]);
-        exit(EXIT_FAILURE);
-      }
-      break;
+            memory_input_gb = atof(optarg); // in GB
+            if (memory_input_gb < 2.0)
+            {
+                fprintf(stderr, "Memory size must be at least 2 GB (2048 MB); increase -m size allocated.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            MEMORY_SIZE_MB = (unsigned long long)(memory_input_gb * 1024); // Convert to MB
+            MEMORY_SIZE_MB = largest_power_of_two_le((MEMORY_SIZE_MB - 1300) / 3);
+            if (MEMORY_SIZE_MB < 128)
+            {
+                fprintf(stderr, "Table 1 memory size is set to %lu; memory size must be at least 0.125 GB (128 MB) for table 1; increase -m size allocated.\n", MEMORY_SIZE_MB);
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            break;
     case 'g':
       DIR_TMP = optarg;
       writeDataTmp = true;
@@ -596,15 +606,21 @@ int main(int argc, char *argv[]) {
       } else {
         printf("Threads (Hash/Sort)         : %lu\n", num_threads);
         printf("Threads (I/O)               : %lu\n", num_threads_io);
-        printf("Table1 File Size (GB)       : %.2f\n", file_size_gb);
-        printf("Table1 File Size (bytes)    : %llu\n", file_size_bytes);
+        printf("Table1 Size (GB)            : %.1f\n", file_size_gb);
+        //printf("Table1 Size (bytes)         : %llu\n", file_size_bytes);
 
-        printf("Table2 File Size (GB)       : %.2f\n", file_size_gb * 2);
-        printf("Table2 File Size (bytes)    : %llu\n", file_size_bytes * 2);
+        printf("Table2 Size (GB)            : %.1f\n", file_size_gb * 2);
+        //printf("Table2 Size (bytes)         : %llu\n", file_size_bytes * 2);
 
-        printf("Memory Size (MB)            : %llu\n", MEMORY_SIZE_MB);
+        printf("Max Memory Size (GB)        : %.1f\n", memory_input_gb);
+        printf("Expected Memory Size (GB)   : %.1f\n", (MEMORY_SIZE_MB*3+1300)*1.0/1024.0);
 
         printf("Number of Hashes (Disk)     : %llu\n", total_nonces);
+        printf("File Size (GB)              : %.1f\n", file_size_gb * 2);
+        if (rounds > 1)
+          printf("Temporary Data Size (GB)    : %.1f\n", file_size_gb * 3);
+        else
+          printf("Temporary Data Size (GB)    : 0\n");
         printf("Size of MemoRecord          : %lu\n", sizeof(MemoRecord));
         printf("Rounds                      : %llu\n", rounds);
 
@@ -635,10 +651,10 @@ int main(int argc, char *argv[]) {
         else
           printf("FULL_BUCKETS                : false\n");
 
-        if (writeDataTmp) {
+        if (writeDataTmp && rounds > 1) {
           printf("File Table 1 (tmp)          : %s\n", FILENAME_TMP);
         }
-        if (writeDataTmpTable2) {
+        if (writeDataTmpTable2 && rounds > 1) {
           printf("File Table 2 (tmp)          : %s\n", FILENAME_TMP_TABLE2);
         }
         if (writeDataTable2) {
