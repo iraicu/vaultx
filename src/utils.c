@@ -8,8 +8,8 @@ void print_usage(char *prog_name) {
   printf("\nCore Options:\n");
   printf("  -k, --exponent NUM                    Exponent K to compute 2^K "
          "records (default: 27)\n");
-  printf("  -m, --memory NUM                      Memory size in MB (default: "
-         "128)\n");
+  printf("  -m, --memory NUM                      Memory size in GB (default: "
+         "2)\n");
   printf("  -t, --threads NUM                     Number of threads (default: "
          "available cores)\n");
   printf("  -i, --threads_io NUM                  Number of I/O threads "

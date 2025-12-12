@@ -148,6 +148,7 @@ int main(int argc, char *argv[]) {
   num_threads_io = 1;
   K = 27;
   MEMORY_SIZE_MB = 128;
+  memory_input_gb = 2.0;
   num_records_total = 1ULL << K; // Compute 2^K
   approach = "for";
 
