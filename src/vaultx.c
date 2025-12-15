@@ -691,6 +691,24 @@ int main(int argc, char *argv[])
             break;
     }
 
+
+    // If user requested verification and supplied a specific Table2 file with -f,
+    if (VERIFY && writeDataTable2 && DIR_TABLE2 != NULL)
+    {
+        struct stat st;
+        if (stat(DIR_TABLE2, &st) == 0 && S_ISREG(st.st_mode))
+        {
+            HASHGEN = false; // skip generation
+            // Use the provided path as the final table2 filename
+            strncpy(FILENAME_TABLE2, DIR_TABLE2, sizeof(FILENAME_TABLE2) - 1);
+            FILENAME_TABLE2[sizeof(FILENAME_TABLE2) - 1] = '\0';
+            if (!BENCHMARK)
+            {
+                printf("VERIFY mode: using existing file %s for verification, skipping generation\n", FILENAME_TABLE2);
+            }
+        }
+    }
+
     if (K >= 33 && NONCE_SIZE == 4)
     {
         fprintf(stderr, "K >= 33 requires NONCE_SIZE to be 5. Please recompile with a different NONCE_SIZE.\n");
