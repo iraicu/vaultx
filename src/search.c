@@ -160,37 +160,56 @@ SearchResult search_memo_records(const char *filename,
 
   long filesize = get_file_size(filename);
 
-  // Extract K value and hex plot ID from filename format: k{K}-{hex_id}.plot
+  // Extract K value and hex plot ID from filename
+  // Supports both formats: k{K}-{hex}.plot and merge_{K}_{N}.plot
   int k_value;
   char plot_id_string[65];
-  char *dash = strchr(basename, '-');
-  if (dash == NULL || dash - basename < 2) {
-    printf("Error: Invalid filename format '%s'. Expected k{K}-{hex_id}.plot\n",
-           basename);
-    return result;
-  }
 
-  // Extract K value from k{K} prefix
-  if (sscanf(basename, "k%d", &k_value) != 1) {
-    printf("Error: Could not parse K value from filename '%s'\n", basename);
-    return result;
-  }
+  if (strncmp(basename, "merge_", 6) == 0) {
+    // Handle merge file format: merge_{K}_{N}.plot
+    int num_files;
+    if (sscanf(basename, "merge_%d_%d.plot", &k_value, &num_files) != 2) {
+      printf("Error: Invalid merge filename format '%s'. Expected "
+             "merge_{K}_{N}.plot\n",
+             basename);
+      return result;
+    }
+    // For merged files, use the filename as the plot ID seed
+    memset(plot_id, 0, 32);
+    strncpy((char *)plot_id, basename, 31);
+  } else {
+    // Handle regular file format: k{K}-{hex_id}.plot
+    char *dash = strchr(basename, '-');
+    if (dash == NULL || dash - basename < 2) {
+      printf(
+          "Error: Invalid filename format '%s'. Expected k{K}-{hex_id}.plot\n",
+          basename);
+      return result;
+    }
 
-  // Start from the character after the dash
-  const char *hex_start = dash + 1;
-  strncpy(plot_id_string, hex_start, sizeof(plot_id_string) - 1);
-  plot_id_string[64] = '\0';
+    // Extract K value from k{K} prefix
+    if (sscanf(basename, "k%d", &k_value) != 1) {
+      printf("Error: Could not parse K value from filename '%s'\n", basename);
+      return result;
+    }
 
-  char *dot = strchr(plot_id_string, '.');
-  if (dot != NULL) {
-    *dot = '\0';
-  }
+    // Start from the character after the dash
+    const char *hex_start = dash + 1;
+    strncpy(plot_id_string, hex_start, sizeof(plot_id_string) - 1);
+    plot_id_string[64] = '\0';
 
-  if (hex_string_to_byte_array(plot_id_string, plot_id, 32) != 0) {
-    printf("Error: Invalid plot ID in filename '%s'. Expected 32 bytes hex (64 "
-           "chars). Got '%s'\n",
-           basename, plot_id_string);
-    return result;
+    char *dot = strchr(plot_id_string, '.');
+    if (dot != NULL) {
+      *dot = '\0';
+    }
+
+    if (hex_string_to_byte_array(plot_id_string, plot_id, 32) != 0) {
+      printf(
+          "Error: Invalid plot ID in filename '%s'. Expected 32 bytes hex (64 "
+          "chars). Got '%s'\n",
+          basename, plot_id_string);
+      return result;
+    }
   }
 
   derive_key(k_value, plot_id, key);
@@ -305,6 +324,60 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
 
   long filesize = get_file_size(filename);
   result.filesize = filesize;
+
+  // Extract K value and derive key from filename
+  // Supports both formats: k{K}-{hex}.plot and merge_{K}_{N}.plot
+  int k_value;
+  char plot_id_string[65];
+
+  if (strncmp(basename, "merge_", 6) == 0) {
+    // Handle merge file format: merge_{K}_{N}.plot
+    int num_files;
+    if (sscanf(basename, "merge_%d_%d.plot", &k_value, &num_files) != 2) {
+      printf("Error: Invalid merge filename format '%s'. Expected "
+             "merge_{K}_{N}.plot\n",
+             basename);
+      return result;
+    }
+    // For merged files, use the filename as the plot ID seed
+    memset(plot_id, 0, 32);
+    strncpy((char *)plot_id, basename, 31);
+  } else {
+    // Handle regular file format: k{K}-{hex_id}.plot
+    char *dash = strchr(basename, '-');
+    if (dash == NULL || dash - basename < 2) {
+      printf(
+          "Error: Invalid filename format '%s'. Expected k{K}-{hex_id}.plot\n",
+          basename);
+      return result;
+    }
+
+    // Extract K value from k{K} prefix
+    if (sscanf(basename, "k%d", &k_value) != 1) {
+      printf("Error: Could not parse K value from filename '%s'\n", basename);
+      return result;
+    }
+
+    // Start from the character after the dash
+    const char *hex_start = dash + 1;
+    strncpy(plot_id_string, hex_start, sizeof(plot_id_string) - 1);
+    plot_id_string[64] = '\0';
+
+    char *dot = strchr(plot_id_string, '.');
+    if (dot != NULL) {
+      *dot = '\0';
+    }
+
+    if (hex_string_to_byte_array(plot_id_string, plot_id, 32) != 0) {
+      printf(
+          "Error: Invalid plot ID in filename '%s'. Expected 32 bytes hex (64 "
+          "chars). Got '%s'\n",
+          basename, plot_id_string);
+      return result;
+    }
+  }
+
+  derive_key(k_value, plot_id, key);
 
   if (filesize != -1) {
     if (!BENCHMARK)

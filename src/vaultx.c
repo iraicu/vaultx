@@ -205,22 +205,26 @@ int main(int argc, char *argv[]) {
                        (1024 * 1024); // Default memory size to fit all records
       break;
     case 'm':
-            memory_input_gb = atof(optarg); // in GB
-            if (memory_input_gb < 2.0)
-            {
-                fprintf(stderr, "Memory size must be at least 2 GB (2048 MB); increase -m size allocated.\n");
-                print_usage(argv[0]);
-                exit(EXIT_FAILURE);
-            }
-            MEMORY_SIZE_MB = (unsigned long long)(memory_input_gb * 1024); // Convert to MB
-            MEMORY_SIZE_MB = largest_power_of_two_le((MEMORY_SIZE_MB - 1300) / 3);
-            if (MEMORY_SIZE_MB < 128)
-            {
-                fprintf(stderr, "Table 1 memory size is set to %lu; memory size must be at least 0.125 GB (128 MB) for table 1; increase -m size allocated.\n", MEMORY_SIZE_MB);
-                print_usage(argv[0]);
-                exit(EXIT_FAILURE);
-            }
-            break;
+      memory_input_gb = atof(optarg); // in GB
+      if (memory_input_gb < 2.0) {
+        fprintf(stderr, "Memory size must be at least 2 GB (2048 MB); increase "
+                        "-m size allocated.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+      MEMORY_SIZE_MB =
+          (unsigned long long)(memory_input_gb * 1024); // Convert to MB
+      MEMORY_SIZE_MB = largest_power_of_two_le((MEMORY_SIZE_MB - 1300) / 3);
+      if (MEMORY_SIZE_MB < 128) {
+        fprintf(
+            stderr,
+            "Table 1 memory size is set to %lu; memory size must be at least "
+            "0.125 GB (128 MB) for table 1; increase -m size allocated.\n",
+            MEMORY_SIZE_MB);
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+      break;
     case 'g':
       DIR_TMP = optarg;
       writeDataTmp = true;
@@ -456,46 +460,54 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  unsigned long long file_size_bytes = total_nonces * NONCE_SIZE;
-  double file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
+  // Declare variables that are used both in generation and display
+  unsigned long long file_size_bytes = 0;
+  double file_size_gb = 0.0;
 
-  total_buckets = 1ULL << (PREFIX_SIZE * 8);
+  // Only do generation-specific calculations if not searching
+  if (!SEARCH && !SEARCH_BATCH) {
+    file_size_bytes = total_nonces * NONCE_SIZE;
+    file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
 
-  // Convert MEMORY_SIZE_MB to bytes before calculations
-  MEMORY_SIZE_bytes = (unsigned long long)MEMORY_SIZE_MB * 1024 * 1024;
+    total_buckets = 1ULL << (PREFIX_SIZE * 8);
 
-  rounds = ceil(file_size_bytes / MEMORY_SIZE_bytes);
-  MEMORY_SIZE_bytes = file_size_bytes / rounds;
-  num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
+    // Convert MEMORY_SIZE_MB to bytes before calculations
+    MEMORY_SIZE_bytes = (unsigned long long)MEMORY_SIZE_MB * 1024 * 1024;
 
-  MEMORY_SIZE_bytes = num_records_per_round * NONCE_SIZE;
-  file_size_bytes = MEMORY_SIZE_bytes * rounds;
-  file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
-  MEMORY_SIZE_MB = (unsigned long long)(MEMORY_SIZE_bytes / (1024 * 1024));
+    rounds = ceil(file_size_bytes / MEMORY_SIZE_bytes);
+    MEMORY_SIZE_bytes = file_size_bytes / rounds;
+    num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
 
-  num_records_per_round = MEMORY_SIZE_bytes / NONCE_SIZE;
-  num_records_in_bucket = num_records_per_round / total_buckets;
-  num_records_in_shuffled_bucket = num_records_in_bucket * rounds;
+    MEMORY_SIZE_bytes = num_records_per_round * NONCE_SIZE;
+    file_size_bytes = MEMORY_SIZE_bytes * rounds;
+    file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
+    MEMORY_SIZE_MB = (unsigned long long)(MEMORY_SIZE_bytes / (1024 * 1024));
 
-  MEMORY_SIZE_bytes =
-      total_buckets * num_records_in_bucket * sizeof(MemoRecord);
-  MEMORY_SIZE_MB = (unsigned long long)(MEMORY_SIZE_bytes / (1024 * 1024));
+    num_records_per_round = MEMORY_SIZE_bytes / NONCE_SIZE;
+    num_records_in_bucket = num_records_per_round / total_buckets;
+    num_records_in_shuffled_bucket = num_records_in_bucket * rounds;
 
-  file_size_bytes = MEMORY_SIZE_bytes * rounds;
-  file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
-  num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
-  num_records_total = num_records_per_round * rounds;
+    MEMORY_SIZE_bytes =
+        total_buckets * num_records_in_bucket * sizeof(MemoRecord);
+    MEMORY_SIZE_MB = (unsigned long long)(MEMORY_SIZE_bytes / (1024 * 1024));
 
-  if (!BENCHMARK && rounds == 1 &&
-      WRITE_BATCH_SIZE_MB > file_size_bytes / (1024 * 1024)) {
-    printf("WRITE_BATCH_SIZE is greater than the total file size.\n");
-    printf("Setting WRITE_BATCH_SIZE to %llu MB.\n",
-           file_size_bytes / (1024 * 1024));
-    WRITE_BATCH_SIZE_MB = file_size_bytes / (1024 * 1024);
-  } else if (!BENCHMARK && rounds > 1 && WRITE_BATCH_SIZE_MB > MEMORY_SIZE_MB) {
-    printf("WRITE_BATCH_SIZE is greater than the memory size.\n");
-    printf("Setting WRITE_BATCH_SIZE to %llu MB.\n", MEMORY_SIZE_MB);
-    WRITE_BATCH_SIZE_MB = MEMORY_SIZE_MB;
+    file_size_bytes = MEMORY_SIZE_bytes * rounds;
+    file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
+    num_records_per_round = floor(MEMORY_SIZE_bytes / NONCE_SIZE);
+    num_records_total = num_records_per_round * rounds;
+
+    if (!BENCHMARK && rounds == 1 &&
+        WRITE_BATCH_SIZE_MB > file_size_bytes / (1024 * 1024)) {
+      printf("WRITE_BATCH_SIZE is greater than the total file size.\n");
+      printf("Setting WRITE_BATCH_SIZE to %llu MB.\n",
+             file_size_bytes / (1024 * 1024));
+      WRITE_BATCH_SIZE_MB = file_size_bytes / (1024 * 1024);
+    } else if (!BENCHMARK && rounds > 1 &&
+               WRITE_BATCH_SIZE_MB > MEMORY_SIZE_MB) {
+      printf("WRITE_BATCH_SIZE is greater than the memory size.\n");
+      printf("Setting WRITE_BATCH_SIZE to %llu MB.\n", MEMORY_SIZE_MB);
+      WRITE_BATCH_SIZE_MB = MEMORY_SIZE_MB;
+    }
   }
   // READ_BATCH_SIZE is checked later in the code. it should be smaller than
   // num_diff_pref_buckets_to_read
@@ -559,6 +571,8 @@ int main(int argc, char *argv[]) {
                hex_plot_id);
       path_join(FILENAME_TABLE2, 4096, plot_dir, filename_table2);
     } else if (SEARCH || SEARCH_BATCH) {
+      fprintf(stderr, "DEBUG: File discovery starting for path: '%s'\n",
+              DIR_TABLE2);
       struct stat path_stat;
       if (stat(DIR_TABLE2, &path_stat) != 0) {
         fprintf(stderr, "Error: Cannot access path '%s'\n", DIR_TABLE2);
@@ -567,6 +581,7 @@ int main(int argc, char *argv[]) {
       }
 
       if (S_ISREG(path_stat.st_mode)) {
+        fprintf(stderr, "DEBUG: Path is a regular file\n");
         SEARCH_FILES = malloc(sizeof(char *));
         SEARCH_FILES[0] = malloc(4096);
         strncpy(SEARCH_FILES[0], DIR_TABLE2, 4096);
@@ -574,7 +589,9 @@ int main(int argc, char *argv[]) {
         SEARCH_FILES_COUNT = 1;
         strncpy(FILENAME_TABLE2, DIR_TABLE2, 4096);
         FILENAME_TABLE2[4095] = '\0';
+        fprintf(stderr, "DEBUG: File added: '%s'\n", SEARCH_FILES[0]);
       } else if (S_ISDIR(path_stat.st_mode)) {
+        fprintf(stderr, "DEBUG: Path is a directory\n");
         DIR *dir = opendir(DIR_TABLE2);
         if (dir == NULL) {
           fprintf(stderr, "Error: Cannot open directory '%s'\n", DIR_TABLE2);
@@ -606,6 +623,9 @@ int main(int argc, char *argv[]) {
         }
         closedir(dir);
 
+        fprintf(stderr, "DEBUG: Found %d plot files in directory\n",
+                SEARCH_FILES_COUNT);
+
         if (SEARCH_FILES_COUNT == 0) {
           fprintf(stderr, "Error: No vault file found in directory '%s'\n",
                   DIR_TABLE2);
@@ -629,13 +649,14 @@ int main(int argc, char *argv[]) {
         printf("Threads (Hash/Sort)         : %lu\n", num_threads);
         printf("Threads (I/O)               : %lu\n", num_threads_io);
         printf("Table1 Size (GB)            : %.1f\n", file_size_gb);
-        //printf("Table1 Size (bytes)         : %llu\n", file_size_bytes);
+        // printf("Table1 Size (bytes)         : %llu\n", file_size_bytes);
 
         printf("Table2 Size (GB)            : %.1f\n", file_size_gb * 2);
-        //printf("Table2 Size (bytes)         : %llu\n", file_size_bytes * 2);
+        // printf("Table2 Size (bytes)         : %llu\n", file_size_bytes * 2);
 
         printf("Max Memory Size (GB)        : %.1f\n", memory_input_gb);
-        printf("Expected Memory Size (GB)   : %.1f\n", (MEMORY_SIZE_MB*3+1300)*1.0/1024.0);
+        printf("Expected Memory Size (GB)   : %.1f\n",
+               (MEMORY_SIZE_MB * 3 + 1300) * 1.0 / 1024.0);
 
         printf("Number of Hashes (Disk)     : %llu\n", total_nonces);
         printf("File Size (GB)              : %.1f\n", file_size_gb * 2);
@@ -2018,6 +2039,18 @@ int main(int argc, char *argv[]) {
   }
 
   if (SEARCH_BATCH) {
+    fprintf(stderr, "DEBUG: Entering SEARCH_BATCH\n");
+    fprintf(stderr, "DEBUG: SEARCH_FILES_COUNT = %d\n", SEARCH_FILES_COUNT);
+    fprintf(stderr, "DEBUG: num_threads = %d\n", num_threads);
+    fprintf(stderr, "DEBUG: LOOKUP_COUNT = %d\n", LOOKUP_COUNT);
+    fprintf(stderr, "DEBUG: DIFFICULTY = %d\n", DIFFICULTY);
+
+    if (SEARCH_FILES_COUNT == 0) {
+      fprintf(stderr, "ERROR: SEARCH_FILES_COUNT is 0, which will cause "
+                      "division by zero\n");
+      exit(EXIT_FAILURE);
+    }
+
     int num_threads_bucket;
     if (SEARCH_FILES_COUNT == 1) {
       num_threads_bucket = num_threads;

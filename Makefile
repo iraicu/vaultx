@@ -34,8 +34,8 @@ ASM_TARGETS=
 EXTRAFLAGS=-Wa,--noexecstack
 
 # You can set values with a default, but allow it to be overridden
-NONCE_SIZE ?= 5
-RECORD_SIZE ?= 8
+NONCE_SIZE ?= 4
+RECORD_SIZE ?= 12
 
 ifdef BLAKE3_NO_SSE2
 EXTRAFLAGS += -DBLAKE3_NO_SSE2
