@@ -1,4 +1,6 @@
 #include "vaultx.h"
+#include <dirent.h>
+#include <limits.h>
 
 // Function to display usage information
 void print_usage(char *prog_name)
@@ -2131,16 +2133,68 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Search for a single record
-    if (SEARCH && !SEARCH_BATCH)
+    // Search for a single record or a batch. Support passing either a file path
+    // or a directory in `-f`.
+    if (SEARCH || SEARCH_BATCH)
     {
-        search_memo_records(FILENAME_TABLE2, SEARCH_STRING);
-    }
+        const char *search_target = DIR_TABLE2 != NULL ? DIR_TABLE2 : FILENAME_TABLE2;
+        if (search_target == NULL)
+        {
+            fprintf(stderr, "No file or directory specified for search. Use -f to specify path.\n");
+        }
+        else
+        {
+            struct stat st;
+            if (stat(search_target, &st) == 0 && S_ISREG(st.st_mode))
+            {
+                if (SEARCH && !SEARCH_BATCH)
+                    search_memo_records(search_target, SEARCH_STRING);
+                else if (SEARCH_BATCH)
+                    search_memo_records_batch(search_target, BATCH_SIZE, PREFIX_SEARCH_SIZE);
+            }
+            else if (stat(search_target, &st) == 0 && S_ISDIR(st.st_mode))
+            {
+                DIR *d = opendir(search_target);
+                if (d == NULL)
+                {
+                    fprintf(stderr, "Error: cannot open directory %s\n", search_target);
+                }
+                else
+                {
+                    struct dirent *ent;
+                    bool any = false;
+                    while ((ent = readdir(d)) != NULL)
+                    {
+                        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+                            continue;
 
-    // Search for a batch of random records of size PREFIX_SEARCH_SIZE
-    if (SEARCH_BATCH)
-    {
-        search_memo_records_batch(FILENAME_TABLE2, BATCH_SIZE, PREFIX_SEARCH_SIZE);
+                        char fullpath[PATH_MAX];
+                        snprintf(fullpath, sizeof(fullpath), "%s/%s", search_target, ent->d_name);
+                        struct stat stf;
+                        if (stat(fullpath, &stf) != 0)
+                            continue;
+                        if (!S_ISREG(stf.st_mode))
+                            continue;
+
+                        any = true;
+                        printf("\n===== Processing file: %s =====\n", fullpath);
+                        if (SEARCH && !SEARCH_BATCH)
+                            search_memo_records(fullpath, SEARCH_STRING);
+                        else if (SEARCH_BATCH)
+                            search_memo_records_batch(fullpath, BATCH_SIZE, PREFIX_SEARCH_SIZE);
+                    }
+                    closedir(d);
+                    if (!any)
+                    {
+                        fprintf(stderr, "No regular files found in directory %s\n", search_target);
+                    }
+                }
+            }
+            else
+            {
+                fprintf(stderr, "Error: Path '%s' does not exist or is not accessible.\n", search_target);
+            }
+        }
     }
 
     // Check if data within the file is sorted and what is the storage efficiency

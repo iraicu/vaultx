@@ -2,3 +2,9 @@
 
 ./vaultx -k 27 -f ./plots/  -v true
 
+./vaultx -k 27 -f ./plots/ -S 3
+
+./vaultx -k 27 -f ./plots/<filename> -S 3
+
+
+

@@ -8,15 +8,14 @@ MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEA
     MemoTable2Record *foundRecord = NULL;
 
     // Define the offset you want to seek to
-    long offset = bucketIndex * num_records_in_bucket_search * sizeof(MemoTable2Record); // For example, seek to byte 1024 from the beginning
+    long offset = (long)(bucketIndex * num_records_in_bucket_search * sizeof(MemoTable2Record)); // For example, seek to byte 1024 from the beginning
     if (DEBUG)
-        printf("SEARCH: seek to %zu offset\n", offset);
+        printf("SEARCH: seek to %ld offset\n", offset);
 
     // Seek to the specified offset
     if (fseek(file, offset, SEEK_SET) != 0)
     {
         perror("Error seeking in file");
-        fclose(file);
         return NULL;
     }
 
@@ -137,13 +136,22 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
     long filesize = get_file_size(filename);
 
     char plot_id_string[65];
-    strcpy(plot_id_string, filename);
-    plot_id_string[64] = '\0';
+    // Extract base filename (strip directory)
+    const char *base = strrchr(filename, '/');
+    base = (base != NULL) ? base + 1 : filename;
+    // If filename like k27-<hex>.plot, extract part after the first '-' if present
+    const char *hexpart = strchr(base, '-');
+    if (hexpart != NULL)
+        hexpart++;
+    else
+        hexpart = base;
+
+    // Copy up to 64 chars and strip extension (first '.') from hexpart
+    strncpy(plot_id_string, hexpart, sizeof(plot_id_string) - 1);
+    plot_id_string[sizeof(plot_id_string) - 1] = '\0';
     char *dot = strchr(plot_id_string, '.');
     if (dot != NULL)
-    {
         *dot = '\0';
-    }
 
     if (hex_string_to_byte_array(plot_id_string, plot_id, 32) != 0)
     {
@@ -164,8 +172,8 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
     if (!BENCHMARK)
     {
         printf("SEARCH: filename=%s\n", filename);
-        printf("SEARCH: filesize=%zu\n", filesize);
-        printf("SEARCH: num_buckets=%lluu\n", num_buckets_search);
+        printf("SEARCH: filesize=%ld\n", filesize);
+        printf("SEARCH: num_buckets=%llu\n", num_buckets_search);
         printf("SEARCH: num_records_in_bucket=%llu\n", num_records_in_bucket_search);
         printf("SEARCH: SEARCH_STRING=%s\n", SEARCH_STRING);
     }
@@ -254,7 +262,7 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     if (!BENCHMARK)
     {
         printf("SEARCH: filename=%s\n", filename);
-        printf("SEARCH: filesize=%zu\n", filesize);
+        printf("SEARCH: filesize=%ld\n", filesize);
         printf("SEARCH: num_buckets=%llu\n", num_buckets_search);
         printf("SEARCH: num_records_in_bucket=%llu\n", num_records_in_bucket_search);
     }
@@ -318,5 +326,5 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     if (!BENCHMARK)
         printf("searched for %d lookups of %d bytes long, found %d, not found %d in %.2f seconds, %.4f ms per lookup\n", num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
     else
-        printf("%s %zu %llu %llu %d %d %d %d %.2f %.2f\n", filename, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
+        printf("%s %ld %llu %llu %d %d %d %d %.2f %.2f\n", filename, filesize, num_buckets_search, num_records_in_bucket_search, num_lookups, search_size, foundRecords, notFoundRecords, elapsed_time / 1000.0, elapsed_time / num_lookups);
 }
