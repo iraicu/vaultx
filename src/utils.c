@@ -7,19 +7,21 @@ void print_usage(char *prog_name) {
 
   printf("\nCore Options:\n");
   printf("  -k, --exponent NUM                    Exponent K to compute 2^K "
-         "records (default: 27)\n");
-  printf("  -m, --memory NUM                      Memory size in GB (default: "
-         "2)\n");
-  printf("  -t, --threads NUM                     Number of threads (default: "
-         "available cores)\n");
+         "records (default: 27, optional for search)\n");
+  printf("  -m, --memory NUM                      Memory size in MB (default: "
+         "128)\n");
+  printf("  -t, --threads NUM                     Number of threads for "
+         "generation/search (default: available cores)\n");
+  printf("                                        For multi-file search: "
+         "splits threads across files and buckets\n");
   printf("  -i, --threads_io NUM                  Number of I/O threads "
          "(default: 1)\n");
   printf("  -a, --approach [xtask|task|for|tbb]   Parallelization approach "
          "(default: for)\n");
 
   printf("\nFile/Directory Options:\n");
-  printf("  -f, --file_table2 PATH                Directory for plot files "
-         "(search/generation)\n");
+  printf("  -f, --file_table2 PATH                Plot file or directory "
+         "(file for search, directory for generation)\n");
   printf("  -g, --file_tmp PATH                   Directory for temporary "
          "Table 1 files\n");
   printf("  -j, --file_tmp_table2 PATH            Directory for temporary "
@@ -49,10 +51,8 @@ void print_usage(char *prog_name) {
          "(batch search)\n");
   printf("  -D NUM                                Number of hash bytes to "
          "match (0=full hash, >0=prefix)\n");
-  printf("  Note: Search auto-discovers plot files based on K value\n");
-  printf("        -D 0  = match entire hash (hardest)\n");
-  printf("        -D 1  = match first byte only (easiest)\n");
-  printf("        -D 3  = match first 3 bytes (default bucket size)\n");
+  printf("  Note: Search discovers ALL plot files in directory and searches "
+         "each one\n");
 
   printf("\nBatch/Performance Options:\n");
   printf("  -x, --batch_size NUM                  Batch size for operations\n");
@@ -99,16 +99,16 @@ void print_usage(char *prog_name) {
          "/output\n");
 
   printf("\n  Search Operations:\n");
-  printf("    Search for hash prefix in any K=27 plot:\n");
-  printf("      %s -s a1b2c3 -k 27 -f /data\n", prog_name);
-  printf("    Batch search with 1000 lookups, match first byte only:\n");
-  printf("      %s -S 1000 -D 1 -k 27 -f /data\n", prog_name);
-  printf("    Batch search with full hash matching (hardest):\n");
-  printf("      %s -S 100 -D 0 -k 27 -f /data\n", prog_name);
-  printf("    Search in merged plot with 3-byte prefix:\n");
-  printf("      %s -S 500 -D 3 -k 28 -f /output\n", prog_name);
-  printf(
-      "    Note: Search auto-discovers k27-*.plot or merge_27_*.plot files\n");
+  printf("    Search all plot files in directory:\n");
+  printf("      %s -s a1b2c3 -f /data\n", prog_name);
+  printf("    Search specific plot file with all 32 threads for Blake3:\n");
+  printf("      %s -s a1b2c3 -f /data/k27-abc123def.plot -t 32\n", prog_name);
+  printf("    Batch search all files with 1000 lookups each:\n");
+  printf("      %s -S 1000 -D 1 -f /data\n", prog_name);
+  printf("    Compare search performance with nested parallelism:\n");
+  printf("      %s -S 100 -D 3 -f /data -t 32\n", prog_name);
+  printf("    Search single large file with maximum parallelism:\n");
+  printf("      %s -S 500 -D 3 -f /output/merge_30_5.plot -t 64\n", prog_name);
 }
 
 unsigned char *getRandomHash(size_t num_bytes) {

@@ -1,8 +1,10 @@
 #include "search.h"
 
-MemoTable2Record *search_memo_record(
-    FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH,
-    unsigned long long num_records_in_bucket_search, MemoTable2Record *buffer) {
+MemoTable2Record *
+search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8,
+                   size_t SEARCH_LENGTH,
+                   unsigned long long num_records_in_bucket_search,
+                   MemoTable2Record *buffer, int num_threads_bucket) {
   const int HASH_SIZE_SEARCH = 8;
   size_t records_read;
   MemoTable2Record *foundRecord = NULL;
@@ -23,38 +25,56 @@ MemoTable2Record *search_memo_record(
   records_read = fread(buffer, sizeof(MemoTable2Record),
                        num_records_in_bucket_search, file);
   if (records_read > 0) {
-    int found = 0; // Shared flag to indicate termination
+    if (DEBUG) {
+      printf("\n=== SEARCH DEBUG ===\n");
+      printf("Query (hex):     ");
+      for (size_t n = 0; n < SEARCH_LENGTH; ++n)
+        printf("%02X ", SEARCH_UINT8[n]);
+      printf("\n");
+      printf("Bucket Index:    %lld\n", (long long)bucketIndex);
+      printf("Bucket Records:  %llu\n",
+             (unsigned long long)num_records_in_bucket_search);
+      printf("Comparing:       %zu bytes\n", SEARCH_LENGTH);
+      printf("\nScanning bucket...\n");
+    }
 
-#pragma omp parallel shared(found)
+    int found = 0; // Shared flag to indicate termination
+    size_t records_checked = 0;
+
+#pragma omp parallel shared(found) num_threads(num_threads_bucket)
     {
 #pragma omp for
       for (size_t i = 0; i < records_read; ++i) {
-        // Check for cancellation
 #pragma omp cancellation point for
         if (!found && is_nonce_nonzero(buffer[i].nonce1, NONCE_SIZE) &&
             is_nonce_nonzero(buffer[i].nonce2, NONCE_SIZE)) {
           uint8_t hash_output[HASH_SIZE_SEARCH];
 
-          // Compute Blake3 hash of the nonce pair
           generateBlake3Pair(buffer[i].nonce1, buffer[i].nonce2, key,
                              hash_output);
 
-          // print bucket contents
-          if (DEBUG) {
-            printf("bucket[");
+#pragma omp atomic
+          records_checked++;
 
-            for (size_t n = 0; n < PREFIX_SIZE; ++n)
-              printf("%02X", SEARCH_UINT8[n]);
-            printf("][%zu] = ", i);
-            for (size_t n = 0; n < NONCE_SIZE; ++n)
-              printf("%02X", buffer[i].nonce1[n]);
-            printf(" & ");
-            for (size_t n = 0; n < NONCE_SIZE; ++n)
-              printf("%02X", buffer[i].nonce2[n]);
-            printf(" => ");
-            for (size_t n = 0; n < HASH_SIZE_SEARCH; ++n)
-              printf("%02X", hash_output[n]);
-            printf("\n");
+          if (DEBUG) {
+#pragma omp critical
+            {
+              int is_match =
+                  (memcmp(hash_output, SEARCH_UINT8, SEARCH_LENGTH) == 0);
+              printf("[%s] Query: ", is_match ? "MATCH" : "MISS ");
+              for (size_t n = 0; n < SEARCH_LENGTH; ++n)
+                printf("%02X ", SEARCH_UINT8[n]);
+              printf("| Hash: ");
+              for (size_t n = 0; n < SEARCH_LENGTH; ++n)
+                printf("%02X ", hash_output[n]);
+              printf("| Nonce1: ");
+              for (size_t n = 0; n < NONCE_SIZE; ++n)
+                printf("%02X", buffer[i].nonce1[n]);
+              printf(" | Nonce2: ");
+              for (size_t n = 0; n < NONCE_SIZE; ++n)
+                printf("%02X", buffer[i].nonce2[n]);
+              printf("\n");
+            }
           }
 
           // Compare the first PREFIX_SIZE bytes of the current hash to the
@@ -97,6 +117,12 @@ MemoTable2Record *search_memo_record(
         }
       }
     }
+
+    if (DEBUG) {
+      printf("\nBucket scan complete: %zu records checked, %s\n",
+             records_checked, found ? "MATCH FOUND" : "NO MATCH");
+      printf("===================\n\n");
+    }
   } else {
     printf("error reading from file..\n");
   }
@@ -104,7 +130,18 @@ MemoTable2Record *search_memo_record(
 }
 
 // not sure if the search of more than PREFIX_LENGTH works
-void search_memo_records(const char *filename, const char *SEARCH_STRING) {
+SearchResult search_memo_records(const char *filename,
+                                 const char *SEARCH_STRING,
+                                 int num_threads_bucket) {
+  SearchResult result = {0};
+  const char *basename = strrchr(filename, '/');
+  if (basename == NULL) {
+    basename = filename;
+  } else {
+    basename++;
+  }
+  strncpy(result.filename, basename, sizeof(result.filename) - 1);
+  result.num_lookups = 1;
   uint8_t SEARCH_UINT8[HASH_SIZE];
   size_t SEARCH_LENGTH = strlen(SEARCH_STRING) / 2;
 
@@ -112,7 +149,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING) {
       0) {
     printf("Error: Invalid search string '%s'. Expected %zu bytes.\n",
            SEARCH_STRING, SEARCH_LENGTH);
-    return;
+    return result;
   }
   off_t bucketIndex = getBucketIndex(SEARCH_UINT8);
   MemoTable2Record *buffer = NULL;
@@ -123,15 +160,6 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING) {
 
   long filesize = get_file_size(filename);
 
-  // Extract just the basename from the full path (filename contains directory
-  // path now)
-  const char *basename = strrchr(filename, '/');
-  if (basename == NULL) {
-    basename = filename;
-  } else {
-    basename++; // Skip the '/'
-  }
-
   // Extract K value and hex plot ID from filename format: k{K}-{hex_id}.plot
   int k_value;
   char plot_id_string[65];
@@ -139,13 +167,13 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING) {
   if (dash == NULL || dash - basename < 2) {
     printf("Error: Invalid filename format '%s'. Expected k{K}-{hex_id}.plot\n",
            basename);
-    return;
+    return result;
   }
 
   // Extract K value from k{K} prefix
   if (sscanf(basename, "k%d", &k_value) != 1) {
     printf("Error: Could not parse K value from filename '%s'\n", basename);
-    return;
+    return result;
   }
 
   // Start from the character after the dash
@@ -162,12 +190,13 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING) {
     printf("Error: Invalid plot ID in filename '%s'. Expected 32 bytes hex (64 "
            "chars). Got '%s'\n",
            basename, plot_id_string);
-    return;
+    return result;
   }
 
   derive_key(k_value, plot_id, key);
 
   if (filesize != -1) {
+    result.filesize = filesize;
     if (!BENCHMARK)
       printf("Size of '%s' is %ld bytes.\n", filename, filesize);
   }
@@ -190,7 +219,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING) {
     printf("Error opening file %s (#3)\n", filename);
 
     perror("Error opening file");
-    return;
+    return result;
   }
 
   // Allocate memory for the batch of MemoRecords
@@ -199,7 +228,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING) {
   if (buffer == NULL) {
     fprintf(stderr, "Error: Unable to allocate memory.\n");
     fclose(file);
-    return;
+    return result;
   }
 
   // Start walltime measurement
@@ -207,7 +236,8 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING) {
   // double end_time = omp_get_wtime();
 
   fRecord = search_memo_record(file, bucketIndex, SEARCH_UINT8, SEARCH_LENGTH,
-                               num_records_in_bucket_search, buffer);
+                               num_records_in_bucket_search, buffer,
+                               num_threads_bucket);
   if (fRecord != NULL)
     foundRecord = true;
   else
@@ -224,6 +254,16 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING) {
   fclose(file);
   free(buffer);
 
+  result.search_time_ms = elapsed_time;
+  result.avg_time_per_lookup_ms = elapsed_time;
+  if (foundRecord) {
+    result.found_count = 1;
+    result.not_found_count = 0;
+  } else {
+    result.found_count = 0;
+    result.not_found_count = 1;
+  }
+
   // Print the total number of times the condition was met
   if (foundRecord == true) {
     printf("NONCE found (");
@@ -236,11 +276,23 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING) {
   } else
     printf("no NONCE found for HASH prefix %s\n", SEARCH_STRING);
   printf("search time %.2f ms\n", elapsed_time);
+
+  return result;
 }
 
 // not sure if the search of more than PREFIX_LENGTH works
-void search_memo_records_batch(const char *filename, int num_lookups,
-                               int difficulty) {
+SearchResult search_memo_records_batch(const char *filename, int num_lookups,
+                                       int difficulty, int num_threads_bucket) {
+  SearchResult result = {0};
+  const char *basename = strrchr(filename, '/');
+  if (basename == NULL) {
+    basename = filename;
+  } else {
+    basename++;
+  }
+  strncpy(result.filename, basename, sizeof(result.filename) - 1);
+  result.num_lookups = num_lookups;
+
   srand((unsigned int)time(NULL));
 
   size_t SEARCH_LENGTH = (difficulty == 0) ? HASH_SIZE : difficulty;
@@ -252,6 +304,7 @@ void search_memo_records_batch(const char *filename, int num_lookups,
   MemoTable2Record *fRecord = NULL;
 
   long filesize = get_file_size(filename);
+  result.filesize = filesize;
 
   if (filesize != -1) {
     if (!BENCHMARK)
@@ -276,7 +329,7 @@ void search_memo_records_batch(const char *filename, int num_lookups,
     printf("Error opening file %s (#3)\n", filename);
 
     perror("Error opening file");
-    return;
+    return result;
   }
 
   buffer = (MemoTable2Record *)malloc(num_records_in_bucket_search *
@@ -284,7 +337,7 @@ void search_memo_records_batch(const char *filename, int num_lookups,
   if (buffer == NULL) {
     fprintf(stderr, "Error: Unable to allocate memory.\n");
     fclose(file);
-    return;
+    return result;
   }
 
   double start_time = omp_get_wtime();
@@ -314,9 +367,9 @@ void search_memo_records_batch(const char *filename, int num_lookups,
     // }
     // else
     // {
-    fRecord =
-        search_memo_record(file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8,
-                           SEARCH_LENGTH, num_records_in_bucket_search, buffer);
+    fRecord = search_memo_record(
+        file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8, SEARCH_LENGTH,
+        num_records_in_bucket_search, buffer, num_threads_bucket);
     // }
 
     if (fRecord != NULL)
@@ -339,6 +392,11 @@ void search_memo_records_batch(const char *filename, int num_lookups,
   fclose(file);
   free(buffer);
 
+  result.found_count = foundRecords;
+  result.not_found_count = notFoundRecords;
+  result.search_time_ms = elapsed_time;
+  result.avg_time_per_lookup_ms = elapsed_time / num_lookups;
+
   if (!BENCHMARK)
     printf("searched for %d lookups of %zu bytes long, found %d, not found %d "
            "in %.2f seconds, %.4f ms per lookup\n",
@@ -350,19 +408,5 @@ void search_memo_records_batch(const char *filename, int num_lookups,
            SEARCH_LENGTH, foundRecords, notFoundRecords, elapsed_time / 1000.0,
            elapsed_time / num_lookups);
 
-  // Print detailed metrics if enabled
-  // if (ENABLE_DETAILED_METRICS && !BENCHMARK)
-  // {
-  //     printf("\n=== Detailed Lookup Metrics ===\n");
-  //     printf("Total I/O read calls: %llu\n",
-  //     global_metrics.lookup.io_read_calls); printf("Total I/O seek calls:
-  //     %llu\n", global_metrics.lookup.io_seek_calls); printf("Total bytes
-  //     read: %zu MB (%.2f)\n", global_metrics.lookup.bytes_read / (1024 *
-  //     1024),
-  //            (double)global_metrics.lookup.bytes_read / (1024 * 1024));
-  //     printf("Total seek time: %.2f ms\n",
-  //     global_metrics.lookup.file_seek_time * 1000.0); printf("Average time
-  //     per lookup: %.4f ms\n", global_metrics.lookup.total_lookup_time *
-  //     1000.0 / num_lookups);
-  // }
+  return result;
 }

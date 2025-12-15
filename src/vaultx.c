@@ -110,6 +110,9 @@ int main(int argc, char *argv[]) {
   }
   char *FILENAME_TABLE2 = FILENAME_TABLE2_buf;
 
+  char **SEARCH_FILES = NULL;
+  int SEARCH_FILES_COUNT = 0;
+
   // Define long options
   static struct option long_options[] = {
       {"approach", required_argument, 0, 'a'},
@@ -556,48 +559,66 @@ int main(int argc, char *argv[]) {
                hex_plot_id);
       path_join(FILENAME_TABLE2, 4096, plot_dir, filename_table2);
     } else if (SEARCH || SEARCH_BATCH) {
-      DIR *dir = opendir(DIR_TABLE2);
-      if (dir == NULL) {
-        fprintf(stderr, "Error: Cannot open directory '%s'\n", DIR_TABLE2);
+      struct stat path_stat;
+      if (stat(DIR_TABLE2, &path_stat) != 0) {
+        fprintf(stderr, "Error: Cannot access path '%s'\n", DIR_TABLE2);
+        perror("stat");
         exit(EXIT_FAILURE);
       }
 
-      struct dirent *entry;
-      char found_file[256] = {0};
-      int found_count = 0;
-      char merge_pattern[256];
-      char regular_pattern[32];
-
-      snprintf(merge_pattern, sizeof(merge_pattern), "merge_%d_", K);
-      snprintf(regular_pattern, sizeof(regular_pattern), "k%d-", K);
-      size_t merge_pattern_len = strlen(merge_pattern);
-      size_t regular_pattern_len = strlen(regular_pattern);
-
-      while ((entry = readdir(dir)) != NULL) {
-        if (strncmp(entry->d_name, merge_pattern, merge_pattern_len) == 0 &&
-            strstr(entry->d_name, ".plot") != NULL) {
-          found_count++;
-          strncpy(found_file, entry->d_name, sizeof(found_file) - 1);
-          break;
+      if (S_ISREG(path_stat.st_mode)) {
+        SEARCH_FILES = malloc(sizeof(char *));
+        SEARCH_FILES[0] = malloc(4096);
+        strncpy(SEARCH_FILES[0], DIR_TABLE2, 4096);
+        SEARCH_FILES[0][4095] = '\0';
+        SEARCH_FILES_COUNT = 1;
+        strncpy(FILENAME_TABLE2, DIR_TABLE2, 4096);
+        FILENAME_TABLE2[4095] = '\0';
+      } else if (S_ISDIR(path_stat.st_mode)) {
+        DIR *dir = opendir(DIR_TABLE2);
+        if (dir == NULL) {
+          fprintf(stderr, "Error: Cannot open directory '%s'\n", DIR_TABLE2);
+          exit(EXIT_FAILURE);
         }
-        if (strncmp(entry->d_name, regular_pattern, regular_pattern_len) == 0 &&
-            strstr(entry->d_name, ".plot") != NULL) {
-          found_count++;
-          strncpy(found_file, entry->d_name, sizeof(found_file) - 1);
-        }
-      }
-      closedir(dir);
 
-      if (found_count == 0) {
-        fprintf(stderr,
-                "Error: No vault file for k=%d found in directory '%s'\n", K,
+        struct dirent *entry;
+        int capacity = 16;
+        SEARCH_FILES = malloc(capacity * sizeof(char *));
+        SEARCH_FILES_COUNT = 0;
+
+        while ((entry = readdir(dir)) != NULL) {
+          int is_merge = (strncmp(entry->d_name, "merge_", 6) == 0 &&
+                          strstr(entry->d_name, ".plot") != NULL);
+          int is_regular =
+              (entry->d_name[0] == 'k' && isdigit(entry->d_name[1]) &&
+               strstr(entry->d_name, ".plot") != NULL);
+
+          if (is_merge || is_regular) {
+            if (SEARCH_FILES_COUNT >= capacity) {
+              capacity *= 2;
+              SEARCH_FILES = realloc(SEARCH_FILES, capacity * sizeof(char *));
+            }
+            SEARCH_FILES[SEARCH_FILES_COUNT] = malloc(4096);
+            path_join(SEARCH_FILES[SEARCH_FILES_COUNT], 4096, DIR_TABLE2,
+                      entry->d_name);
+            SEARCH_FILES_COUNT++;
+          }
+        }
+        closedir(dir);
+
+        if (SEARCH_FILES_COUNT == 0) {
+          fprintf(stderr, "Error: No vault file found in directory '%s'\n",
+                  DIR_TABLE2);
+          fprintf(stderr, "Expected either 'merge_*_*.plot' or 'k*-*.plot'\n");
+          exit(EXIT_FAILURE);
+        }
+
+        path_join(FILENAME_TABLE2, 4096, DIR_TABLE2, "");
+      } else {
+        fprintf(stderr, "Error: '%s' is neither a file nor a directory\n",
                 DIR_TABLE2);
-        fprintf(stderr, "Expected either 'merge_%d_*.plot' or 'k%d-*.plot'\n",
-                K, K);
         exit(EXIT_FAILURE);
       }
-
-      path_join(FILENAME_TABLE2, 4096, DIR_TABLE2, found_file);
     }
 
     // Print out configuration
@@ -1947,11 +1968,118 @@ int main(int argc, char *argv[]) {
 
   // Search for a single record
   if (SEARCH && !SEARCH_BATCH) {
-    search_memo_records(FILENAME_TABLE2, SEARCH_STRING);
+    int num_threads_bucket;
+    if (SEARCH_FILES_COUNT == 1) {
+      num_threads_bucket = num_threads;
+    } else {
+      printf("\n=== Searching %d files with %d threads ===\n\n",
+             SEARCH_FILES_COUNT, num_threads);
+      num_threads_bucket = num_threads / SEARCH_FILES_COUNT;
+      if (num_threads_bucket < 1)
+        num_threads_bucket = 1;
+      omp_set_nested(1);
+      omp_set_max_active_levels(2);
+    }
+
+    SearchResult *results = malloc(SEARCH_FILES_COUNT * sizeof(SearchResult));
+
+    if (SEARCH_FILES_COUNT > 1) {
+      omp_set_num_threads(num_threads);
+#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+#pragma omp critical
+        printf("--- File %d/%d: %s ---\n", i + 1, SEARCH_FILES_COUNT,
+               SEARCH_FILES[i]);
+        results[i] = search_memo_records(SEARCH_FILES[i], SEARCH_STRING,
+                                         num_threads_bucket);
+#pragma omp critical
+        printf("\n");
+      }
+    } else {
+      results[0] = search_memo_records(SEARCH_FILES[0], SEARCH_STRING,
+                                       num_threads_bucket);
+    }
+
+    if (SEARCH_FILES_COUNT > 1) {
+      printf("=== Search Summary ===\n");
+      printf("%-70s %15s %10s %15s\n", "Filename", "Size (bytes)", "Found",
+             "Time (ms)");
+      printf("-----------------------------------------------------------------"
+             "-------------------------------------------------\n");
+      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+        printf("%-70s %15ld %10d %15.2f\n", results[i].filename,
+               results[i].filesize, results[i].found_count,
+               results[i].search_time_ms);
+      }
+      printf("\n");
+    }
+
+    free(results);
   }
 
   if (SEARCH_BATCH) {
-    search_memo_records_batch(FILENAME_TABLE2, LOOKUP_COUNT, DIFFICULTY);
+    int num_threads_bucket;
+    if (SEARCH_FILES_COUNT == 1) {
+      num_threads_bucket = num_threads;
+    } else {
+      printf("\n=== Searching %d files with %d threads ===\n\n",
+             SEARCH_FILES_COUNT, num_threads);
+      num_threads_bucket = num_threads / SEARCH_FILES_COUNT;
+      if (num_threads_bucket < 1)
+        num_threads_bucket = 1;
+      omp_set_nested(1);
+      omp_set_max_active_levels(2);
+    }
+
+    SearchResult *results = malloc(SEARCH_FILES_COUNT * sizeof(SearchResult));
+    double total_time = 0.0;
+    int total_found = 0;
+    int total_not_found = 0;
+
+    if (SEARCH_FILES_COUNT > 1) {
+      omp_set_num_threads(num_threads);
+#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+#pragma omp critical
+        printf("--- File %d/%d: %s ---\n", i + 1, SEARCH_FILES_COUNT,
+               SEARCH_FILES[i]);
+        results[i] = search_memo_records_batch(SEARCH_FILES[i], LOOKUP_COUNT,
+                                               DIFFICULTY, num_threads_bucket);
+#pragma omp critical
+        printf("\n");
+      }
+    } else {
+      results[0] = search_memo_records_batch(SEARCH_FILES[0], LOOKUP_COUNT,
+                                             DIFFICULTY, num_threads_bucket);
+    }
+
+    for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+      total_time += results[i].search_time_ms;
+      total_found += results[i].found_count;
+      total_not_found += results[i].not_found_count;
+    }
+
+    if (SEARCH_FILES_COUNT > 1) {
+      printf("=== Search Summary ===\n");
+      printf("%-70s %15s %10s %10s %12s %15s\n", "Filename", "Size (bytes)",
+             "Lookups", "Found", "Not Found", "Avg Time (ms)");
+      printf("-----------------------------------------------------------------"
+             "-------------------------------------------------\n");
+      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+        printf("%-70s %15ld %10d %10d %12d %15.4f\n", results[i].filename,
+               results[i].filesize, results[i].num_lookups,
+               results[i].found_count, results[i].not_found_count,
+               results[i].avg_time_per_lookup_ms);
+      }
+      printf("-----------------------------------------------------------------"
+             "-------------------------------------------------\n");
+      printf("%-70s %15s %10d %10d %12d %15.4f\n", "TOTAL", "",
+             LOOKUP_COUNT * SEARCH_FILES_COUNT, total_found, total_not_found,
+             total_time / (LOOKUP_COUNT * SEARCH_FILES_COUNT));
+      printf("\n");
+    }
+
+    free(results);
   }
 
   // Check if data within the file is sorted and what is the storage efficiency
@@ -1982,6 +2110,17 @@ int main(int argc, char *argv[]) {
   if (MERGE && (MERGE_MODE == 0 || MERGE_MODE == 2)) {
     merge();
   }
+
+  if (SEARCH_FILES != NULL) {
+    for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+      free(SEARCH_FILES[i]);
+    }
+    free(SEARCH_FILES);
+  }
+
+  free(FILENAME_TMP);
+  free(FILENAME_TMP_TABLE2);
+  free(FILENAME_TABLE2_buf);
 
   if (DEBUG)
     printf("SUCCESS!\n");
