@@ -209,7 +209,8 @@ int merge() {
 
   if (d) {
     while ((dir = readdir(d)) != NULL && count < TOTAL_FILES) {
-      if (dir->d_name[0] != '.') {
+      if (dir->d_name[0] != '.' && dir->d_name[0] == 'k' &&
+          isdigit(dir->d_name[1]) && strstr(dir->d_name, ".plot") != NULL) {
         path_join(filenames[count], MAX_FILENAME_LEN, dir_name, dir->d_name);
         filenames[count][MAX_FILENAME_LEN - 1] = '\0'; // safety null-terminate
         count++;

@@ -1,6 +1,6 @@
 NAME=blake3/blake3
-CC ?= gcc-13
-CCP ?= g++-14
+CC ?= gcc
+CCP ?= g++
 
 # On macOS prefer clang and ensure the macOS SDK is used so system headers
 # like <dirent.h> and the fixed includes under sys/_types are found.
