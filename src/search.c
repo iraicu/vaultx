@@ -2,18 +2,17 @@
 
 MemoTable2Record *search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH, unsigned long long num_records_in_bucket_search, MemoTable2Record *buffer)
 {
-    /* Make HASH_SIZE_SEARCH a compile-time constant to avoid VLAs */
-    enum { HASH_SIZE_SEARCH = 8 };
+    /* Use HASH_SIZE (from globals) so hash_output buffer matches generate_hash2 output */
+    enum { HASH_SIZE_SEARCH = HASH_SIZE };
     size_t records_read;
     MemoTable2Record *foundRecord = NULL;
 
-    // Define the offset you want to seek to
-    long offset = (long)(bucketIndex * num_records_in_bucket_search * sizeof(MemoTable2Record)); // For example, seek to byte 1024 from the beginning
+    // Compute file offset for the bucket using off_t and seek with fseeko
+    off_t off = (off_t)bucketIndex * (off_t)num_records_in_bucket_search * (off_t)sizeof(MemoTable2Record);
     if (DEBUG)
-        printf("SEARCH: seek to %ld offset\n", offset);
+        printf("SEARCH: seek to %lld offset\n", (long long)off);
 
-    // Seek to the specified offset
-    if (fseek(file, offset, SEEK_SET) != 0)
+    if (fseeko(file, off, SEEK_SET) != 0)
     {
         perror("Error seeking in file");
         return NULL;
@@ -168,7 +167,7 @@ void search_memo_records(const char *filename, const char *SEARCH_STRING)
     }
 
     unsigned long long num_buckets_search = 1ULL << (PREFIX_SIZE * 8);
-    unsigned long long num_records_in_bucket_search = filesize / num_buckets_search / sizeof(MemoRecord);
+    unsigned long long num_records_in_bucket_search = filesize / num_buckets_search / sizeof(MemoTable2Record);
     if (!BENCHMARK)
     {
         printf("SEARCH: filename=%s\n", filename);
@@ -294,9 +293,9 @@ void search_memo_records_batch(const char *filename, int num_lookups, int search
     for (int i = 0; i < num_lookups; i++)
     {
 
-        for (int i = 0; i < search_size; ++i)
+        for (int j = 0; j < search_size; ++j)
         {
-            SEARCH_UINT8[i] = rand() % 256;
+            SEARCH_UINT8[j] = rand() % 256;
         }
 
         fRecord = search_memo_record(file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8, SEARCH_LENGTH, num_records_in_bucket_search, buffer);
