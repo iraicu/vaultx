@@ -482,13 +482,18 @@ int main(int argc, char *argv[])
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
-            num_records_total = 1ULL << K; // Compute 2^K
+            num_records_total = 1ULL << K;
             MEMORY_SIZE_MB = num_records_total * NONCE_SIZE / (1024 * 1024); // Default memory size to fit all records
             break;
         case 'm': {
             double memory_input_gb = atof(optarg); // in GB
-            MEMORY_SIZE_MB = (unsigned long long)(memory_input_gb * 1024); // Convert to MB
-            MEMORY_SIZE_MB = largest_power_of_two_le((atoi(optarg) - 1300) / 3);
+            unsigned long long memory_input_mb = (unsigned long long)(memory_input_gb * 1024.0);
+            long adjusted_mb = (long)memory_input_mb - 1300L;
+            if (adjusted_mb < 0)
+                adjusted_mb = 0;
+
+            MEMORY_SIZE_MB = (unsigned long long)largest_power_of_two_le((int)(adjusted_mb / 3));
+
             if (MEMORY_SIZE_MB < 128)
             {
                 fprintf(stderr, "Memory size must be at least 0.125 GB (128 MB).\n");
