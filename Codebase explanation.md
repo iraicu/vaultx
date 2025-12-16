@@ -25,6 +25,7 @@
 - Lan Nguyen
 - Ioan Raicu
 - Arnav Sirigere
+- Zack Chaffee
 
 **Publication**: "Improving the Performance of Proof-of-Space in Blockchain Systems" (SC '24)
 

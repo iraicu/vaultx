@@ -33,6 +33,15 @@ To use an SSH connection, first add your public SSH key to GitHub.
   git clone git@github.com:iraicu/vaultx.git
 ```
 
+When the vaultx repository has been cloned to your system, run the following 
+commands to move into the cloned vaultx repository and to check out the git 
+submodules associated with it:
+
+```bash
+  cd vaultx/
+  git submodule update --init --recursive --progress
+```
+
 2. **Compile the program**
 
 ```bash
@@ -274,3 +283,4 @@ The work is part of research done at [Datasys Lab](https://datasys.cs.iit.edu/) 
 - Varvara Bondarenko
 - Lan Nguyen
 - Ioan Raicu
+- Zack Chaffee
