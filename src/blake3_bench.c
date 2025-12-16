@@ -1,4 +1,4 @@
-#include "../blake3/blake3.h"
+#include "../blake3/c/blake3.h"
 #include <fcntl.h>
 #include <omp.h>
 #include <stdbool.h>

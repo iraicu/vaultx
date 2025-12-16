@@ -27,7 +27,7 @@
 #include <sys/types.h>
 #endif
 
-#include "../blake3/blake3.h" // Include Blake3 header
+#include "../blake3/c/blake3.h"
 
 #ifndef NONCE_SIZE
 #define NONCE_SIZE 4 // Default nonce size
