@@ -357,7 +357,7 @@ buckets_per_write = (WRITE_BATCH_SIZE_MB * 1024 * 1024) /
 **Example:**
 ```bash
 ./vaultx -W 256    # Write 256 MB at a time
-./vaultx -W 2048   # Write 2 GB at a time (for large memory systems)
+./vaultx -W 2048   # Write 2048 MB (2 GB) at a time (for large memory systems)
 ```
 
 #### `-R, --read-batch-size NUM`

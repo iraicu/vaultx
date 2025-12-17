@@ -1,6 +1,8 @@
 #include "vaultx.h"
 #include <dirent.h>
 #include <limits.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 // Function to display usage information
 void print_usage(char *prog_name)
@@ -13,8 +15,8 @@ void print_usage(char *prog_name)
     printf("  -k, --exponent NUM                    Exponent k to compute 2^k number of records (default: 27)\n");
     printf("  -m, --memory NUM                      Memory size in GB (default: 0.125)\n");
     printf("  -x, --batch-size NUM                  Batch size for task-based parallelism (default: 1024)\n");
-    printf("  -W, --write-batch-size NUM            Write batch size in GB (default: 1)\n");
-    printf("  -R, --read-batch-size NUM             Read batch size in GB (default: 1)\n");
+    printf("  -W, --write-batch-size NUM            Write batch size in MB (default: 1024)\n");
+    printf("  -R, --read-batch-size NUM             Read batch size (buckets multiplier, default: 1)\n");
     printf("  -M, --matching-factor NUM             Matching factor for table2 generation (0.0 < factor <= 1.0, default: 1.0)\n");
     printf("  -g, --dir_tmp PATH                    Directory for temporary table1 file (required for generation)\n");
     printf("  -j, --dir_tmp_table2 PATH             Directory for temporary table2 file (required for out-of-memory mode)\n");
@@ -536,19 +538,19 @@ int main(int argc, char *argv[])
             }
             break;
         case 'W': {
-            double write_batch_input_gb = atof(optarg); // in GB
-            WRITE_BATCH_SIZE_MB = (size_t)(write_batch_input_gb * 1024); // Convert to MB
+            /* WRITE_BATCH_SIZE_MB is specified in megabytes (MB) on the CLI */
+            WRITE_BATCH_SIZE_MB = (size_t)strtoull(optarg, NULL, 10);
             if (WRITE_BATCH_SIZE_MB < 1)
             {
-                fprintf(stderr, "WRITE_BATCH_SIZE must be 1 or greater.\n");
+                fprintf(stderr, "WRITE_BATCH_SIZE must be 1 or greater (MB).\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
             break;
         }
         case 'R': {
-            double read_batch_input_gb = atof(optarg); // in GB
-            READ_BATCH_SIZE = (size_t)(read_batch_input_gb * 1024); // Convert to MB
+            /* READ_BATCH_SIZE remains a bucket-multiplier (unitless). Parse as integer. */
+            READ_BATCH_SIZE = (size_t)strtoull(optarg, NULL, 10);
             if (READ_BATCH_SIZE < 1)
             {
                 fprintf(stderr, "READ_BATCH_SIZE must be 1 or greater.\n");
@@ -797,14 +799,14 @@ int main(int argc, char *argv[])
     if (!BENCHMARK && rounds == 1 && WRITE_BATCH_SIZE_MB > file_size_bytes / (1024 * 1024))
     {
         printf("WRITE_BATCH_SIZE is greater than the total file size.\n");
-        printf("Setting WRITE_BATCH_SIZE to %.3f GB.\n", file_size_bytes / (1024.0 * 1024 * 1024));
-        WRITE_BATCH_SIZE_MB = file_size_bytes / (1024 * 1024);
+        printf("Setting WRITE_BATCH_SIZE to %llu MB.\n", (unsigned long long)(file_size_bytes / (1024 * 1024)));
+        WRITE_BATCH_SIZE_MB = (size_t)(file_size_bytes / (1024 * 1024));
     }
     else if (!BENCHMARK && rounds > 1 && WRITE_BATCH_SIZE_MB > MEMORY_SIZE_MB)
     {
         printf("WRITE_BATCH_SIZE is greater than the memory size.\n");
-        printf("Setting WRITE_BATCH_SIZE to %.3f GB.\n", MEMORY_SIZE_MB / 1024.0);
-        WRITE_BATCH_SIZE_MB = MEMORY_SIZE_MB;
+        printf("Setting WRITE_BATCH_SIZE to %llu MB.\n", (unsigned long long)MEMORY_SIZE_MB);
+        WRITE_BATCH_SIZE_MB = (size_t)MEMORY_SIZE_MB;
     }
     // READ_BATCH_SIZE is checked later in the code. it should be smaller than num_diff_pref_buckets_to_read
 
@@ -862,7 +864,7 @@ int main(int argc, char *argv[])
             printf("Number of Records in Bucket : %llu\n", num_records_in_bucket);
 
             printf("BATCH_SIZE                  : %zu\n", BATCH_SIZE);
-            printf("WRITE_BATCH_SIZE (GB)       : %.3f\n", WRITE_BATCH_SIZE_MB / 1024.0);
+            printf("WRITE_BATCH_SIZE (MB)       : %zu\n", WRITE_BATCH_SIZE_MB);
             printf("READ_BATCH_SIZE             : %zu\n", READ_BATCH_SIZE);
 
             if (HASHGEN)
