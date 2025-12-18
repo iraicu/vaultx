@@ -142,7 +142,7 @@ SearchResult search_memo_records(const char *filename,
   }
   strncpy(result.filename, basename, sizeof(result.filename) - 1);
   result.num_lookups = 1;
-  uint8_t SEARCH_UINT8[HASH_SIZE];
+  uint8_t SEARCH_UINT8[HASH_SIZE] = {0};
   size_t SEARCH_LENGTH = strlen(SEARCH_STRING) / 2;
 
   if (hex_string_to_byte_array(SEARCH_STRING, SEARCH_UINT8, SEARCH_LENGTH) !=
@@ -222,7 +222,7 @@ SearchResult search_memo_records(const char *filename,
 
   unsigned long long num_buckets_search = 1ULL << (PREFIX_SIZE * 8);
   unsigned long long num_records_in_bucket_search =
-      filesize / num_buckets_search / sizeof(MemoRecord);
+      filesize / num_buckets_search / sizeof(MemoTable2Record);
   if (!BENCHMARK) {
     printf("SEARCH: filename=%s\n", filename);
     printf("SEARCH: filesize=%zu\n", filesize);
@@ -415,7 +415,7 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
 
   double start_time = omp_get_wtime();
 
-  uint8_t SEARCH_UINT8[SEARCH_LENGTH];
+  uint8_t SEARCH_UINT8[PREFIX_SIZE] = {0};
 
   for (int i = 0; i < num_lookups; i++) {
     for (int j = 0; j < SEARCH_LENGTH; ++j) {

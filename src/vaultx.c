@@ -545,6 +545,7 @@ int main(int argc, char *argv[]) {
 
       uint8_t plot_id[32];
       generate_plot_id(plot_id);
+      derive_key(K, plot_id, key);
       char hex_plot_id[65];
       bytes_to_hex(plot_id, 32, hex_plot_id);
 
