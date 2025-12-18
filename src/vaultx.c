@@ -980,8 +980,8 @@ int main(int argc, char *argv[]) {
 // Generate Table2
 #pragma omp parallel for schedule(static) reduction(+ : total_matches)
           for (unsigned long long i = 0; i < total_buckets; i++) {
-            //           sort_bucket_records_inplace(buckets[i].records,
-            //                                       num_records_in_bucket);
+            sort_bucket_records_inplace(buckets[i].records,
+                                        num_records_in_bucket);
             total_matches +=
                 generate_table2(buckets[i].records, num_records_in_bucket);
           }
@@ -1517,8 +1517,8 @@ int main(int argc, char *argv[]) {
           for (unsigned long long b = 0; b < num_diff_pref_buckets_to_read;
                b++) {
             // Sort by hash
-            //           sort_bucket_records_inplace(buckets[b].records,
-            //                                       num_records_in_shuffled_bucket);
+            sort_bucket_records_inplace(buckets[b].records,
+                                        num_records_in_shuffled_bucket);
             total_matches += generate_table2(buckets[b].records,
                                              num_records_in_shuffled_bucket);
           }

@@ -12,7 +12,7 @@ void findMatches() {
 
   // FIXME: How to use a good bucket distance
   // Ideas: Average distance, multiply expected distance by a constant
-  uint64_t expected_distance = 1ULL << (64 - K);
+  uint64_t expected_distance = (1ULL << (64 - K)) * (1 / matching_factor);
 
 #pragma omp parallel for schedule(static)
   for (unsigned long long b = 0; b < total_buckets; b += BATCH_SIZE) {

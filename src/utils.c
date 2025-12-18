@@ -8,8 +8,8 @@ void print_usage(char *prog_name) {
   printf("\nCore Options:\n");
   printf("  -k, --exponent NUM                    Exponent K to compute 2^K "
          "records (default: 27, optional for search)\n");
-  printf("  -m, --memory NUM                      Memory size in MB (default: "
-         "128)\n");
+  printf("  -m, --memory NUM                      Memory size in GB (default: "
+         "2)\n");
   printf("  -t, --threads NUM                     Number of threads for "
          "generation/search (default: available cores)\n");
   printf("                                        For multi-file search: "
@@ -82,10 +82,10 @@ void print_usage(char *prog_name) {
   printf("\n  Generate Single Plot (Out-of-Memory Mode):\n");
   printf("    Generate K=27 plot with auto memory:\n");
   printf("      %s -k 27 -g /tmp -j /tmp -f /data\n", prog_name);
-  printf("    Generate K=27 with 256MB memory limit:\n");
-  printf("      %s -k 27 -m 256 -g /tmp -j /tmp -f /data\n", prog_name);
-  printf("    Generate K=28 in-memory (requires ~2GB RAM):\n");
-  printf("      %s -k 28 -m 2048 -f /data -t 16\n", prog_name);
+  printf("    Generate K=27 with 16GB of RAM:\n");
+  printf("      %s -k 27 -m 16 -g /tmp -j /tmp -f /data\n", prog_name);
+  printf("    Generate K=28 in-memory with 32GB of RAM:\n");
+  printf("      %s -k 28 -m 32 -f /data -t 16\n", prog_name);
 
   printf("\n  Merge Workflow:\n");
   printf("    Generate 5 plots AND merge them into one (full workflow):\n");
@@ -93,7 +93,7 @@ void print_usage(char *prog_name) {
   printf("    Generate 5 individual plots only (no merge):\n");
   printf("      %s -P gen -k 27 -n 5 -F /data -t 16\n", prog_name);
   printf("    Merge 5 existing plots (no generation):\n");
-  printf("      %s -P merge -k 27 -n 5 -F /data -T /output -m 8192 -t 32\n",
+  printf("      %s -P merge -k 27 -n 5 -F /data -T /output -m 32 -t 32\n",
          prog_name);
   printf("    Creates: k27-{hash}.plot files in /data, merge_27_5.plot in "
          "/output\n");
