@@ -4,8 +4,8 @@ MemoTable2Record *
 search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8,
                    size_t SEARCH_LENGTH,
                    unsigned long long num_records_in_bucket_search,
-                   MemoTable2Record *buffer, int num_threads_bucket) {
-  const int HASH_SIZE_SEARCH = 8;
+                   MemoTable2Record *buffer, int num_threads_bucket,
+                   PlotData *plotData, int total_files, int records_per_file) {
   size_t records_read;
   MemoTable2Record *foundRecord = NULL;
 
@@ -48,9 +48,19 @@ search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8,
 #pragma omp cancellation point for
         if (!found && is_nonce_nonzero(buffer[i].nonce1, NONCE_SIZE) &&
             is_nonce_nonzero(buffer[i].nonce2, NONCE_SIZE)) {
-          uint8_t hash_output[HASH_SIZE_SEARCH];
+          uint8_t hash_output[HASH_SIZE];
 
-          generateBlake3Pair(buffer[i].nonce1, buffer[i].nonce2, key,
+          // Determine which key to use based on record position
+          uint8_t *record_key =
+              key; // Default to global key for non-merged files
+          if (plotData != NULL && total_files > 0 && records_per_file > 0) {
+            int file_index = (int)(i / records_per_file);
+            if (file_index < total_files) {
+              record_key = plotData[file_index].key;
+            }
+          }
+
+          generateBlake3Pair(buffer[i].nonce1, buffer[i].nonce2, record_key,
                              hash_output);
 
 #pragma omp atomic
@@ -144,6 +154,9 @@ SearchResult search_memo_records(const char *filename,
   result.num_lookups = 1;
   uint8_t SEARCH_UINT8[HASH_SIZE] = {0};
   size_t SEARCH_LENGTH = strlen(SEARCH_STRING) / 2;
+  if (SEARCH_LENGTH > HASH_SIZE) {
+    SEARCH_LENGTH = HASH_SIZE;
+  }
 
   if (hex_string_to_byte_array(SEARCH_STRING, SEARCH_UINT8, SEARCH_LENGTH) !=
       0) {
@@ -254,13 +267,45 @@ SearchResult search_memo_records(const char *filename,
   double start_time = omp_get_wtime();
   // double end_time = omp_get_wtime();
 
+  PlotData *plotData_array = NULL;
+  int num_files = 0;
+  if (strncmp(basename, "merge_", 6) == 0) {
+    int num_files_from_name;
+    if (sscanf(basename, "merge_%*d_%d.plot", &num_files_from_name) == 1) {
+      num_files = num_files_from_name;
+      plotData_array = (PlotData *)malloc(num_files * sizeof(PlotData));
+      if (plotData_array != NULL) {
+        // Seek to footer (at end of file)
+        if (fseek(file, -(num_files * sizeof(PlotData)), SEEK_END) == 0) {
+          size_t read_count =
+              fread(plotData_array, sizeof(PlotData), num_files, file);
+          if (read_count != num_files) {
+            fprintf(stderr, "Warning: Failed to read metadata footer\n");
+            free(plotData_array);
+            plotData_array = NULL;
+            num_files = 0;
+          }
+        }
+      }
+    }
+  }
+
+  int records_per_file = (num_files > 0)
+                             ? (num_records_in_bucket_search / num_files)
+                             : num_records_in_bucket_search;
   fRecord = search_memo_record(file, bucketIndex, SEARCH_UINT8, SEARCH_LENGTH,
                                num_records_in_bucket_search, buffer,
-                               num_threads_bucket);
+                               num_threads_bucket, plotData_array, num_files,
+                               records_per_file);
   if (fRecord != NULL)
     foundRecord = true;
   else
     foundRecord = false;
+
+  // Clean up
+  if (plotData_array != NULL) {
+    free(plotData_array);
+  }
 
   double elapsed_time = (omp_get_wtime() - start_time) * 1000.0;
 
@@ -315,6 +360,9 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
   srand((unsigned int)time(NULL));
 
   size_t SEARCH_LENGTH = (difficulty == 0) ? HASH_SIZE : difficulty;
+  if (SEARCH_LENGTH > HASH_SIZE) {
+    SEARCH_LENGTH = HASH_SIZE;
+  }
   MemoTable2Record *buffer = NULL;
 
   FILE *file = NULL;
@@ -413,9 +461,32 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
     return result;
   }
 
+  PlotData *plotData_array = NULL;
+  int num_files = 0;
+  if (strncmp(basename, "merge_", 6) == 0) {
+    int num_files_from_name;
+    if (sscanf(basename, "merge_%*d_%d.plot", &num_files_from_name) == 1) {
+      num_files = num_files_from_name;
+      plotData_array = (PlotData *)malloc(num_files * sizeof(PlotData));
+      if (plotData_array != NULL) {
+        // Seek to footer (at end of file)
+        if (fseek(file, -(num_files * sizeof(PlotData)), SEEK_END) == 0) {
+          size_t read_count =
+              fread(plotData_array, sizeof(PlotData), num_files, file);
+          if (read_count != num_files) {
+            fprintf(stderr, "Warning: Failed to read metadata footer\n");
+            free(plotData_array);
+            plotData_array = NULL;
+            num_files = 0;
+          }
+        }
+      }
+    }
+  }
+
   double start_time = omp_get_wtime();
 
-  uint8_t SEARCH_UINT8[PREFIX_SIZE] = {0};
+  uint8_t SEARCH_UINT8[HASH_SIZE] = {0};
 
   for (int i = 0; i < num_lookups; i++) {
     for (int j = 0; j < SEARCH_LENGTH; ++j) {
@@ -440,9 +511,13 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
     // }
     // else
     // {
+    int records_per_file = (num_files > 0)
+                               ? (num_records_in_bucket_search / num_files)
+                               : num_records_in_bucket_search;
     fRecord = search_memo_record(
         file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8, SEARCH_LENGTH,
-        num_records_in_bucket_search, buffer, num_threads_bucket);
+        num_records_in_bucket_search, buffer, num_threads_bucket,
+        plotData_array, num_files, records_per_file);
     // }
 
     if (fRecord != NULL)
@@ -464,6 +539,9 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
   // Clean up
   fclose(file);
   free(buffer);
+  if (plotData_array != NULL) {
+    free(plotData_array);
+  }
 
   result.found_count = foundRecords;
   result.not_found_count = notFoundRecords;
