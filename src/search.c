@@ -1,12 +1,10 @@
 #include "search.h"
 
-MemoTable2Record *
-search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8,
-                   size_t SEARCH_LENGTH,
-                   unsigned long long num_records_in_bucket_search,
-                   MemoTable2Record *buffer, int num_threads_bucket,
-                   PlotData *plotData, int total_files, int records_per_file,
-                   uint8_t *default_key) {
+MemoTable2Record *search_memo_record(
+    FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH,
+    unsigned long long num_records_in_bucket_search, MemoTable2Record *buffer,
+    int num_threads_bucket, PlotData *plotData, int total_files,
+    int records_per_file, uint8_t *default_key) {
   size_t records_read;
   MemoTable2Record *foundRecord = NULL;
 
@@ -39,16 +37,35 @@ search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8,
       printf("\nScanning bucket...\n");
     }
 
-    int found = 0; // Shared flag to indicate termination
+    int found = 0;
     size_t records_checked = 0;
+
+    size_t effective_records_read = records_read;
+    if (plotData == NULL || total_files == 0 || records_per_file == 0) {
+      for (size_t i = 0; i < records_read; ++i) {
+        if (is_record_empty(&buffer[i])) {
+          effective_records_read = i;
+          break;
+        }
+      }
+    }
 
 #pragma omp parallel shared(found) num_threads(num_threads_bucket)
     {
 #pragma omp for
-      for (size_t i = 0; i < records_read; ++i) {
+      for (size_t i = 0; i < effective_records_read; ++i) {
 #pragma omp cancellation point for
-        if (!found && is_nonce_nonzero(buffer[i].nonce1, NONCE_SIZE) &&
-            is_nonce_nonzero(buffer[i].nonce2, NONCE_SIZE)) {
+        if (found) {
+          continue;
+        }
+
+        if (plotData != NULL && total_files > 0 && records_per_file > 0) {
+          if (is_record_empty(&buffer[i])) {
+            continue;
+          }
+        }
+
+        if (!found) {
           uint8_t hash_output[HASH_SIZE];
 
           // Determine which key to use based on record position
@@ -571,4 +588,274 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
            elapsed_time / num_lookups);
 
   return result;
+}
+
+void print_buckets(const char *filename, int num_buckets_to_print) {
+  const char *basename = strrchr(filename, '/');
+  if (basename == NULL) {
+    basename = filename;
+  } else {
+    basename++;
+  }
+
+  printf("DEBUG: print_buckets called with filename='%s', num_buckets=%d\n",
+         filename, num_buckets_to_print);
+  printf("DEBUG: sizeof(MemoTable2Record)=%zu, NONCE_SIZE=%d\n",
+         sizeof(MemoTable2Record), NONCE_SIZE);
+
+  uint8_t local_key[32];
+  uint8_t local_plot_id[32];
+  FILE *file = NULL;
+
+  long filesize = get_file_size(filename);
+  if (filesize <= 0) {
+    fprintf(stderr, "Error: Invalid file size %ld for file '%s'\n", filesize,
+            filename);
+    return;
+  }
+
+  long data_filesize = filesize;
+
+  int k_value;
+  char plot_id_string[65];
+  int num_files_in_merge = 0;
+
+  if (strncmp(basename, "merge_", 6) == 0) {
+    int num_files;
+    if (sscanf(basename, "merge_%d_%d.plot", &k_value, &num_files) != 2) {
+      printf("Error: Invalid merge filename format '%s'. Expected "
+             "merge_{K}_{N}.plot\n",
+             basename);
+      return;
+    }
+    num_files_in_merge = num_files;
+    data_filesize = filesize - (num_files * sizeof(PlotData));
+    memset(local_key, 0, 32);
+    memset(local_plot_id, 0, 32);
+  } else {
+    char *dash = strchr(basename, '-');
+    if (dash == NULL || dash - basename < 2) {
+      printf(
+          "Error: Invalid filename format '%s'. Expected k{K}-{hex_id}.plot\n",
+          basename);
+      return;
+    }
+
+    if (sscanf(basename, "k%d", &k_value) != 1) {
+      printf("Error: Could not parse K value from filename '%s'\n", basename);
+      return;
+    }
+
+    const char *hex_start = dash + 1;
+    strncpy(plot_id_string, hex_start, sizeof(plot_id_string) - 1);
+    plot_id_string[64] = '\0';
+
+    char *dot = strchr(plot_id_string, '.');
+    if (dot != NULL) {
+      *dot = '\0';
+    }
+
+    if (hex_string_to_byte_array(plot_id_string, local_plot_id, 32) != 0) {
+      printf(
+          "Error: Invalid plot ID in filename '%s'. Expected 32 bytes hex (64 "
+          "chars). Got '%s'\n",
+          basename, plot_id_string);
+      return;
+    }
+  }
+
+  derive_key(k_value, local_plot_id, local_key);
+
+  if (sizeof(MemoTable2Record) == 0) {
+    fprintf(stderr, "Error: sizeof(MemoTable2Record) is 0\n");
+    return;
+  }
+
+  unsigned long long num_buckets_search = 1ULL << (PREFIX_SIZE * 8);
+  unsigned long long num_records_in_bucket_search =
+      data_filesize / num_buckets_search / sizeof(MemoTable2Record);
+
+  if (num_records_in_bucket_search == 0) {
+    fprintf(stderr, "Error: File too small or incorrect format. Calculated 0 "
+                    "records per bucket.\n");
+    fprintf(stderr, "  File size: %ld, Data size: %ld\n", filesize,
+            data_filesize);
+    fprintf(stderr, "  sizeof(MemoTable2Record): %zu\n",
+            sizeof(MemoTable2Record));
+    return;
+  }
+
+  if (num_buckets_to_print > num_buckets_search) {
+    num_buckets_to_print = num_buckets_search;
+  }
+
+  file = fopen(filename, "rb");
+  if (file == NULL) {
+    printf("Error opening file %s\n", filename);
+    perror("Error opening file");
+    return;
+  }
+
+  PlotData *plotData_array = NULL;
+  int num_files = 0;
+  if (strncmp(basename, "merge_", 6) == 0) {
+    int num_files_from_name;
+    if (sscanf(basename, "merge_%*d_%d.plot", &num_files_from_name) == 1) {
+      num_files = num_files_from_name;
+      plotData_array = (PlotData *)malloc(num_files * sizeof(PlotData));
+      if (plotData_array != NULL) {
+        if (fseek(file, -(num_files * sizeof(PlotData)), SEEK_END) == 0) {
+          size_t read_count =
+              fread(plotData_array, sizeof(PlotData), num_files, file);
+          if (read_count != num_files) {
+            fprintf(stderr, "Warning: Failed to read metadata footer\n");
+            free(plotData_array);
+            plotData_array = NULL;
+            num_files = 0;
+          }
+        }
+      }
+    }
+  }
+
+  int records_per_file = (num_files > 0)
+                             ? (num_records_in_bucket_search / num_files)
+                             : num_records_in_bucket_search;
+
+  if (num_files > 0 && records_per_file == 0) {
+    fprintf(
+        stderr,
+        "Error: Too many files merged or records per bucket is too small.\n");
+    fprintf(stderr, "  Merged files: %d, Records per bucket: %llu\n", num_files,
+            num_records_in_bucket_search);
+    fclose(file);
+    if (plotData_array != NULL) {
+      free(plotData_array);
+    }
+    return;
+  }
+
+  MemoTable2Record *buffer = (MemoTable2Record *)malloc(
+      num_records_in_bucket_search * sizeof(MemoTable2Record));
+  if (buffer == NULL) {
+    fprintf(stderr, "Error: Unable to allocate memory.\n");
+    fclose(file);
+    if (plotData_array != NULL) {
+      free(plotData_array);
+    }
+    return;
+  }
+
+  printf("\n=== Printing first %d buckets from %s ===\n", num_buckets_to_print,
+         basename);
+  printf("File size: %ld bytes\n", filesize);
+  printf("Data size: %ld bytes\n", data_filesize);
+  printf("K value: %d\n", k_value);
+  printf("Records per bucket: %llu\n", num_records_in_bucket_search);
+  if (num_files > 0) {
+    printf("Merged files: %d\n", num_files);
+    printf("Records per file per bucket: %d\n", records_per_file);
+  }
+  printf("\n");
+
+  for (int bucket_idx = 0; bucket_idx < num_buckets_to_print; bucket_idx++) {
+    off_t offset = bucket_idx * (off_t)num_records_in_bucket_search *
+                   (off_t)sizeof(MemoTable2Record);
+
+    if (fseek(file, offset, SEEK_SET) != 0) {
+      perror("Error seeking in file");
+      break;
+    }
+
+    size_t records_read = fread(buffer, sizeof(MemoTable2Record),
+                                num_records_in_bucket_search, file);
+
+    uint8_t expected_prefix[PREFIX_SIZE];
+    for (int i = 0; i < PREFIX_SIZE; i++) {
+      expected_prefix[i] = (bucket_idx >> ((PREFIX_SIZE - 1 - i) * 8)) & 0xFF;
+    }
+
+    printf("Bucket %d (Expected prefix: ", bucket_idx);
+    for (int i = 0; i < PREFIX_SIZE; i++) {
+      printf("%02X ", expected_prefix[i]);
+    }
+    printf(") - %zu allocated slots:\n", records_read);
+
+    int non_zero_count = 0;
+    int records_shown = 0;
+    const int MAX_RECORDS_TO_SHOW = 10;
+
+    for (size_t i = 0; i < records_read; ++i) {
+      if (is_record_empty(&buffer[i])) {
+        if (plotData_array == NULL || num_files == 0 || records_per_file == 0) {
+          break;
+        }
+        int current_file_index = (int)(i / records_per_file);
+        int next_file_start = (current_file_index + 1) * records_per_file;
+        if (next_file_start >= records_read) {
+          break;
+        }
+        i = next_file_start - 1;
+        continue;
+      }
+
+      non_zero_count++;
+      if (records_shown < MAX_RECORDS_TO_SHOW) {
+        uint8_t hash_output[HASH_SIZE];
+
+        uint8_t *record_key = local_key;
+        if (plotData_array != NULL && num_files > 0 && records_per_file > 0) {
+          int file_index = (int)(i / records_per_file);
+          if (file_index < num_files) {
+            record_key = plotData_array[file_index].key;
+          }
+        }
+
+        generateBlake3Pair(buffer[i].nonce1, buffer[i].nonce2, record_key,
+                           hash_output);
+
+        printf("  [%2zu] Hash: ", i);
+        for (size_t n = 0; n < HASH_SIZE; ++n) {
+          printf("%02X ", hash_output[n]);
+        }
+        printf("| Nonce1: ");
+        for (size_t n = 0; n < NONCE_SIZE; ++n) {
+          printf("%02X", buffer[i].nonce1[n]);
+        }
+        printf(" | Nonce2: ");
+        for (size_t n = 0; n < NONCE_SIZE; ++n) {
+          printf("%02X", buffer[i].nonce2[n]);
+        }
+
+        bool prefix_matches = true;
+        for (int p = 0; p < PREFIX_SIZE; p++) {
+          if (hash_output[p] != expected_prefix[p]) {
+            prefix_matches = false;
+            break;
+          }
+        }
+        printf(" %s\n", prefix_matches ? "[OK]" : "[MISMATCH]");
+
+        records_shown++;
+      }
+    }
+
+    if (non_zero_count > MAX_RECORDS_TO_SHOW) {
+      printf("  ... (%d more non-zero records not shown)\n",
+             non_zero_count - MAX_RECORDS_TO_SHOW);
+    }
+    printf("  Total: %d non-zero records out of %zu allocated slots (%.1f%% "
+           "full)\n",
+           non_zero_count, records_read,
+           (records_read > 0) ? (100.0 * non_zero_count / records_read) : 0.0);
+    printf("\n");
+  }
+
+  free(buffer);
+  if (plotData_array != NULL) {
+    free(plotData_array);
+  }
+  fclose(file);
+
+  printf("=== End of bucket print ===\n\n");
 }

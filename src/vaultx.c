@@ -157,9 +157,9 @@ int main(int argc, char *argv[]) {
 
   // Parse command-line arguments
   while (
-      (opt = getopt_long(argc, argv,
-                         "a:t:i:k:m:f:g:j:b:W:R:M:w:c:v:s:S:x:o:y:d:n:PT:F:D:h",
-                         long_options, &option_index)) != -1) {
+      (opt = getopt_long(
+           argc, argv, "a:t:i:k:m:f:g:j:b:W:R:M:w:c:v:s:S:x:o:y:d:n:p:PT:F:D:h",
+           long_options, &option_index)) != -1) {
     switch (opt) {
     case 'a':
       if (strcmp(optarg, "xtask") == 0 || strcmp(optarg, "task") == 0 ||
@@ -346,6 +346,15 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
       }
       break;
+    case 'p':
+      PRINT_BUCKETS_COUNT = atoi(optarg);
+      if (PRINT_BUCKETS_COUNT < 1) {
+        fprintf(stderr, "Number of buckets to print must be positive.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+      PRINT_BUCKETS = true;
+      break;
     case 'P':
       MERGE = true;
       if (optarg == NULL) {
@@ -432,6 +441,17 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  if (PRINT_BUCKETS) {
+    if (!writeDataTable2) {
+      fprintf(
+          stderr,
+          "Error: Final file name (-f) is required for printing buckets.\n");
+      print_usage(argv[0]);
+      exit(EXIT_FAILURE);
+    }
+    HASHGEN = false;
+  }
+
   double program_start_time = omp_get_wtime();
 
   if (MONITOR) {
@@ -465,7 +485,7 @@ int main(int argc, char *argv[]) {
   double file_size_gb = 0.0;
 
   // Only do generation-specific calculations if not searching
-  if (!SEARCH && !SEARCH_BATCH) {
+  if (!SEARCH && !SEARCH_BATCH && !PRINT_BUCKETS) {
     file_size_bytes = total_nonces * NONCE_SIZE;
     file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
 
@@ -571,7 +591,7 @@ int main(int argc, char *argv[]) {
       snprintf(filename_table2, sizeof(filename_table2), "k%d-%s.plot", K,
                hex_plot_id);
       path_join(FILENAME_TABLE2, 4096, plot_dir, filename_table2);
-    } else if (SEARCH || SEARCH_BATCH) {
+    } else if (SEARCH || SEARCH_BATCH || PRINT_BUCKETS) {
       fprintf(stderr, "DEBUG: File discovery starting for path: '%s'\n",
               DIR_TABLE2);
       struct stat path_stat;
@@ -640,6 +660,9 @@ int main(int argc, char *argv[]) {
                 DIR_TABLE2);
         exit(EXIT_FAILURE);
       }
+      fprintf(stderr,
+              "DEBUG: File discovery complete. SEARCH_FILES_COUNT = %d\n",
+              SEARCH_FILES_COUNT);
     }
 
     // Print out configuration
@@ -2114,6 +2137,23 @@ int main(int argc, char *argv[]) {
     }
 
     free(results);
+  }
+
+  if (PRINT_BUCKETS) {
+    fprintf(stderr, "DEBUG: PRINT_BUCKETS is true, SEARCH_FILES_COUNT = %d\n",
+            SEARCH_FILES_COUNT);
+    if (SEARCH_FILES_COUNT == 0) {
+      fprintf(stderr, "Error: No files specified for bucket printing. Use -f "
+                      "to specify files.\n");
+    } else {
+      fprintf(stderr, "DEBUG: About to call print_buckets for %d files\n",
+              SEARCH_FILES_COUNT);
+      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+        fprintf(stderr, "DEBUG: Calling print_buckets for file %d: %s\n", i,
+                SEARCH_FILES[i]);
+        print_buckets(SEARCH_FILES[i], PRINT_BUCKETS_COUNT);
+      }
+    }
   }
 
   // Check if data within the file is sorted and what is the storage efficiency

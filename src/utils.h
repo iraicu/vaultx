@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "globals.h"
 #include <dirent.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -24,6 +25,8 @@ unsigned long long byteArrayToLongLong(const uint8_t *byteArray, size_t length);
 
 // Check if nonce is non-zero
 bool is_nonce_nonzero(const uint8_t *nonce, size_t nonce_size);
+
+bool is_record_empty(const MemoTable2Record *record);
 
 // Convert hex string to byte array (caller must free returned pointer)
 uint8_t *hexStringToByteArray(const char *hexString);

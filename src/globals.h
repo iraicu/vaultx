@@ -48,6 +48,7 @@ extern int BATCH_MEMORY_MB;
 extern int MEMORY_LIMIT_MB;
 extern int num_threads;
 extern int DIFFICULTY;
+extern int PRINT_BUCKETS_COUNT;
 
 extern unsigned long long num_records_in_bucket;
 extern unsigned long long num_records_in_shuffled_bucket;
@@ -71,6 +72,7 @@ extern bool CIRCULAR_ARRAY;
 extern bool MEMORY_WRITE;
 extern bool VERIFY;
 extern bool FULL_BUCKETS;
+extern bool PRINT_BUCKETS;
 // extern bool ENABLE_DETAILED_METRICS;
 // extern bool METRICS_OUTPUT_JSON;
 // extern bool METRICS_OUTPUT_CSV;

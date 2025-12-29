@@ -180,6 +180,14 @@ bool is_nonce_nonzero(const uint8_t *nonce, size_t nonce_size) {
   return false;
 }
 
+bool is_record_empty(const MemoTable2Record *record) {
+  if (record == NULL) {
+    return true;
+  }
+  return !is_nonce_nonzero(record->nonce1, NONCE_SIZE) &&
+         !is_nonce_nonzero(record->nonce2, NONCE_SIZE);
+}
+
 uint8_t *hexStringToByteArray(const char *hexString) {
   size_t hexLen = strlen(hexString);
   uint8_t *byteArray = (uint8_t *)malloc(hexLen * sizeof(uint8_t));
