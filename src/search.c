@@ -5,7 +5,8 @@ search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8,
                    size_t SEARCH_LENGTH,
                    unsigned long long num_records_in_bucket_search,
                    MemoTable2Record *buffer, int num_threads_bucket,
-                   PlotData *plotData, int total_files, int records_per_file) {
+                   PlotData *plotData, int total_files, int records_per_file,
+                   uint8_t *default_key) {
   size_t records_read;
   MemoTable2Record *foundRecord = NULL;
 
@@ -52,7 +53,7 @@ search_memo_record(FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8,
 
           // Determine which key to use based on record position
           uint8_t *record_key =
-              key; // Default to global key for non-merged files
+              default_key; // Default to passed-in key for non-merged files
           if (plotData != NULL && total_files > 0 && records_per_file > 0) {
             int file_index = (int)(i / records_per_file);
             if (file_index < total_files) {
@@ -152,6 +153,8 @@ SearchResult search_memo_records(const char *filename,
   }
   strncpy(result.filename, basename, sizeof(result.filename) - 1);
   result.num_lookups = 1;
+  uint8_t local_key[32];
+  uint8_t local_plot_id[32];
   uint8_t SEARCH_UINT8[HASH_SIZE] = {0};
   size_t SEARCH_LENGTH = strlen(SEARCH_STRING) / 2;
   if (SEARCH_LENGTH > HASH_SIZE) {
@@ -172,11 +175,13 @@ SearchResult search_memo_records(const char *filename,
   MemoTable2Record *fRecord = NULL;
 
   long filesize = get_file_size(filename);
+  long data_filesize = filesize;
 
   // Extract K value and hex plot ID from filename
   // Supports both formats: k{K}-{hex}.plot and merge_{K}_{N}.plot
   int k_value;
   char plot_id_string[65];
+  int num_files_in_merge = 0;
 
   if (strncmp(basename, "merge_", 6) == 0) {
     // Handle merge file format: merge_{K}_{N}.plot
@@ -187,9 +192,10 @@ SearchResult search_memo_records(const char *filename,
              basename);
       return result;
     }
-    // For merged files, use the filename as the plot ID seed
-    memset(plot_id, 0, 32);
-    strncpy((char *)plot_id, basename, 31);
+    num_files_in_merge = num_files;
+    data_filesize = filesize - (num_files * sizeof(PlotData));
+    memset(local_key, 0, 32);
+    memset(local_plot_id, 0, 32);
   } else {
     // Handle regular file format: k{K}-{hex_id}.plot
     char *dash = strchr(basename, '-');
@@ -216,7 +222,7 @@ SearchResult search_memo_records(const char *filename,
       *dot = '\0';
     }
 
-    if (hex_string_to_byte_array(plot_id_string, plot_id, 32) != 0) {
+    if (hex_string_to_byte_array(plot_id_string, local_plot_id, 32) != 0) {
       printf(
           "Error: Invalid plot ID in filename '%s'. Expected 32 bytes hex (64 "
           "chars). Got '%s'\n",
@@ -225,7 +231,7 @@ SearchResult search_memo_records(const char *filename,
     }
   }
 
-  derive_key(k_value, plot_id, key);
+  derive_key(k_value, local_plot_id, local_key);
 
   if (filesize != -1) {
     result.filesize = filesize;
@@ -235,7 +241,7 @@ SearchResult search_memo_records(const char *filename,
 
   unsigned long long num_buckets_search = 1ULL << (PREFIX_SIZE * 8);
   unsigned long long num_records_in_bucket_search =
-      filesize / num_buckets_search / sizeof(MemoTable2Record);
+      data_filesize / num_buckets_search / sizeof(MemoTable2Record);
   if (!BENCHMARK) {
     printf("SEARCH: filename=%s\n", filename);
     printf("SEARCH: filesize=%zu\n", filesize);
@@ -296,7 +302,7 @@ SearchResult search_memo_records(const char *filename,
   fRecord = search_memo_record(file, bucketIndex, SEARCH_UINT8, SEARCH_LENGTH,
                                num_records_in_bucket_search, buffer,
                                num_threads_bucket, plotData_array, num_files,
-                               records_per_file);
+                               records_per_file, local_key);
   if (fRecord != NULL)
     foundRecord = true;
   else
@@ -356,6 +362,8 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
   }
   strncpy(result.filename, basename, sizeof(result.filename) - 1);
   result.num_lookups = num_lookups;
+  uint8_t local_key[32];
+  uint8_t local_plot_id[32];
 
   srand((unsigned int)time(NULL));
 
@@ -372,11 +380,13 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
 
   long filesize = get_file_size(filename);
   result.filesize = filesize;
+  long data_filesize = filesize;
 
   // Extract K value and derive key from filename
   // Supports both formats: k{K}-{hex}.plot and merge_{K}_{N}.plot
   int k_value;
   char plot_id_string[65];
+  int num_files_in_merge = 0;
 
   if (strncmp(basename, "merge_", 6) == 0) {
     // Handle merge file format: merge_{K}_{N}.plot
@@ -387,9 +397,10 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
              basename);
       return result;
     }
-    // For merged files, use the filename as the plot ID seed
-    memset(plot_id, 0, 32);
-    strncpy((char *)plot_id, basename, 31);
+    num_files_in_merge = num_files;
+    data_filesize = filesize - (num_files * sizeof(PlotData));
+    memset(local_key, 0, 32);
+    memset(local_plot_id, 0, 32);
   } else {
     // Handle regular file format: k{K}-{hex_id}.plot
     char *dash = strchr(basename, '-');
@@ -416,7 +427,7 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
       *dot = '\0';
     }
 
-    if (hex_string_to_byte_array(plot_id_string, plot_id, 32) != 0) {
+    if (hex_string_to_byte_array(plot_id_string, local_plot_id, 32) != 0) {
       printf(
           "Error: Invalid plot ID in filename '%s'. Expected 32 bytes hex (64 "
           "chars). Got '%s'\n",
@@ -425,7 +436,7 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
     }
   }
 
-  derive_key(k_value, plot_id, key);
+  derive_key(k_value, local_plot_id, local_key);
 
   if (filesize != -1) {
     if (!BENCHMARK)
@@ -434,7 +445,7 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
 
   unsigned long long num_buckets_search = 1ULL << (PREFIX_SIZE * 8);
   unsigned long long num_records_in_bucket_search =
-      filesize / num_buckets_search / sizeof(MemoTable2Record);
+      data_filesize / num_buckets_search / sizeof(MemoTable2Record);
   if (!BENCHMARK) {
     printf("SEARCH: filename=%s\n", filename);
     printf("SEARCH: filesize=%zu\n", filesize);
@@ -517,7 +528,7 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
     fRecord = search_memo_record(
         file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8, SEARCH_LENGTH,
         num_records_in_bucket_search, buffer, num_threads_bucket,
-        plotData_array, num_files, records_per_file);
+        plotData_array, num_files, records_per_file, local_key);
     // }
 
     if (fRecord != NULL)
