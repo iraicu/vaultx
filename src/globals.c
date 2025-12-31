@@ -33,6 +33,7 @@ bool writeDataTable2 = false;
 bool SEARCH = false;
 bool SEARCH_BATCH = false;
 bool VERIFY = false;
+bool VERIFY_ONLY = false;
 bool FULL_BUCKETS = false;
 bool PRINT_BUCKETS = false;
 // bool ENABLE_DETAILED_METRICS = false;

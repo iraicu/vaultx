@@ -112,6 +112,7 @@ int main(int argc, char *argv[]) {
 
   char **SEARCH_FILES = NULL;
   int SEARCH_FILES_COUNT = 0;
+  bool source_provided = false;
 
   // Define long options
   static struct option long_options[] = {
@@ -130,6 +131,7 @@ int main(int argc, char *argv[]) {
       {"memory_write", required_argument, 0, 'w'},
       {"circular_array", required_argument, 0, 'c'},
       {"verify", required_argument, 0, 'v'},
+      {"verify-only", required_argument, 0, 'V'},
       {"search", required_argument, 0, 's'},
       {"prefix_search_size", required_argument, 0, 'S'},
       {"benchmark", required_argument, 0, 'b'},
@@ -157,9 +159,9 @@ int main(int argc, char *argv[]) {
 
   // Parse command-line arguments
   while (
-      (opt = getopt_long(
-           argc, argv, "a:t:i:k:m:f:g:j:b:W:R:M:w:c:v:s:S:x:o:y:d:n:p:PT:F:D:h",
-           long_options, &option_index)) != -1) {
+       (opt = getopt_long(
+         argc, argv, "a:t:i:k:m:f:g:j:b:W:R:M:w:c:v:V:s:S:x:o:y:d:n:p:PT:F:D:h",
+         long_options, &option_index)) != -1) {
     switch (opt) {
     case 'a':
       if (strcmp(optarg, "xtask") == 0 || strcmp(optarg, "task") == 0 ||
@@ -299,6 +301,13 @@ int main(int argc, char *argv[]) {
         VERIFY = false;
       }
       break;
+    case 'V':
+      if (strcmp(optarg, "true") == 0) {
+        VERIFY_ONLY = true;
+      } else {
+        VERIFY_ONLY = false;
+      }
+      break;
     case 'S':
       SEARCH_BATCH = true;
       SEARCH = true;
@@ -357,8 +366,12 @@ int main(int argc, char *argv[]) {
       break;
     case 'P':
       MERGE = true;
+      /* Accept space-separated form: -P gen */
+      if (optarg == NULL && optind < argc && argv[optind][0] != '-') {
+        optarg = argv[optind++];
+      }
       if (optarg == NULL) {
-        MERGE_MODE = 2;
+        MERGE_MODE = 2; /* both */
       } else if (strcmp(optarg, "gen") == 0) {
         MERGE_MODE = 1;
       } else if (strcmp(optarg, "merge") == 0) {
@@ -376,6 +389,7 @@ int main(int argc, char *argv[]) {
       break;
     case 'F':
       SOURCE = optarg;
+      source_provided = true;
       break;
     case 'D':
       DIFFICULTY = atoi(optarg);
@@ -426,6 +440,117 @@ int main(int argc, char *argv[]) {
   default:
     matching_factor = 1.0;
     break;
+  }
+
+  /* Dump option state to a temp file for debugging */
+  do {
+    FILE *dbg = fopen("/tmp/vaultx_opts.log", "w");
+    if (dbg) {
+      fprintf(dbg, "OPTIONS: source_provided=%d SOURCE=%s DIR_TABLE2=%s writeDataTable2=%d writeDataTmp=%d writeDataTmpTable2=%d MERGE=%d MERGE_MODE=%d VERIFY=%d VERIFY_ONLY=%d\n",
+              source_provided, SOURCE ? SOURCE : "(null)", DIR_TABLE2 ? DIR_TABLE2 : "(null)", writeDataTable2, writeDataTmp, writeDataTmpTable2, MERGE, MERGE_MODE, VERIFY, VERIFY_ONLY);
+      fclose(dbg);
+    }
+  } while (0);
+
+  // If both -v and -V used, prefer -v (generate+verify) semantics.
+  if (VERIFY) {
+    VERIFY_ONLY = false;
+  }
+
+  // Handle verify-only mode: if -V true and -f points to a file or directory,
+  // verify existing file(s) and exit. This does not perform generation.
+  if (VERIFY_ONLY) {
+    if (!writeDataTable2 || DIR_TABLE2 == NULL) {
+      fprintf(stderr, "Error: -f <path> is required for verify-only mode (-V)\n");
+      print_usage(argv[0]);
+      exit(EXIT_FAILURE);
+    }
+
+    struct stat path_stat;
+    if (stat(DIR_TABLE2, &path_stat) != 0) {
+      fprintf(stderr, "Error: Cannot access path '%s'\n", DIR_TABLE2);
+      perror("stat");
+      exit(EXIT_FAILURE);
+    }
+
+    if (S_ISREG(path_stat.st_mode)) {
+      // single file
+      strncpy(FILENAME_TABLE2, DIR_TABLE2, 4096);
+      FILENAME_TABLE2[4095] = '\0';
+
+      // derive key from filename if possible
+      const char *basename = strrchr(FILENAME_TABLE2, '/');
+      const char *fname = basename ? basename + 1 : FILENAME_TABLE2;
+      int kVal = 0;
+      char hex[129] = {0};
+      if (sscanf(fname, "k%d-%128[^.].plot", &kVal, hex) == 2) {
+        uint8_t *plot_id = hexStringToByteArray(hex);
+        if (plot_id != NULL) {
+          derive_key(kVal, plot_id, key);
+          K = kVal;
+          free(plot_id);
+        }
+      }
+
+      printf("Verifying file: %s\n", FILENAME_TABLE2);
+      process_memo_records_table2(FILENAME_TABLE2, BATCH_SIZE);
+      free(FILENAME_TMP);
+      free(FILENAME_TMP_TABLE2);
+      free(FILENAME_TABLE2_buf);
+      return 0;
+    } else if (S_ISDIR(path_stat.st_mode)) {
+      DIR *dir = opendir(DIR_TABLE2);
+      if (dir == NULL) {
+        fprintf(stderr, "Error: Cannot open directory '%s'\n", DIR_TABLE2);
+        exit(EXIT_FAILURE);
+      }
+
+      struct dirent *entry;
+      int found = 0;
+      while ((entry = readdir(dir)) != NULL) {
+        int is_merge = (strncmp(entry->d_name, "merge_", 6) == 0 &&
+                        strstr(entry->d_name, ".plot") != NULL);
+        int is_regular = (entry->d_name[0] == 'k' && isdigit(entry->d_name[1]) &&
+                          strstr(entry->d_name, ".plot") != NULL);
+        if (!(is_merge || is_regular))
+          continue;
+
+        char fullpath[4096];
+        path_join(fullpath, sizeof(fullpath), DIR_TABLE2, entry->d_name);
+
+        // derive key per-file if it's a k{K}-{hex}.plot
+        int kVal = 0;
+        char hex[129] = {0};
+        if (sscanf(entry->d_name, "k%d-%128[^.].plot", &kVal, hex) == 2) {
+          uint8_t *plot_id = hexStringToByteArray(hex);
+          if (plot_id != NULL) {
+            derive_key(kVal, plot_id, key);
+            K = kVal;
+            free(plot_id);
+          }
+        }
+
+        printf("Verifying file: %s\n", fullpath);
+        process_memo_records_table2(fullpath, BATCH_SIZE);
+        found++;
+      }
+      closedir(dir);
+      if (found == 0) {
+        fprintf(stderr, "Error: No plot files found in directory '%s'\n", DIR_TABLE2);
+        free(FILENAME_TMP);
+        free(FILENAME_TMP_TABLE2);
+        free(FILENAME_TABLE2_buf);
+        exit(EXIT_FAILURE);
+      }
+
+      free(FILENAME_TMP);
+      free(FILENAME_TMP_TABLE2);
+      free(FILENAME_TABLE2_buf);
+      return 0;
+    } else {
+      fprintf(stderr, "Error: '%s' is neither a file nor a directory\n", DIR_TABLE2);
+      exit(EXIT_FAILURE);
+    }
   }
 
   if (K >= 33 && NONCE_SIZE == 4) {
@@ -539,10 +664,17 @@ int main(int argc, char *argv[]) {
   int num_plots_to_generate = 1;
   if (MERGE && (MERGE_MODE == 1 || MERGE_MODE == 2)) {
     num_plots_to_generate = TOTAL_FILES;
-    if (SOURCE == NULL) {
-      fprintf(stderr, "Error: -F (source directory) required for plot "
-                      "generation in merge mode\n");
-      exit(EXIT_FAILURE);
+    fprintf(stderr, "DEBUG: MERGE_MODE=%d source_provided=%d SOURCE=%s DIR_TABLE2=%s\n", MERGE_MODE, source_provided, SOURCE ? SOURCE : "(null)", DIR_TABLE2 ? DIR_TABLE2 : "(null)");
+    /* If user didn't provide -F, fallback to -f (DIR_TABLE2) as target for
+       generated plots so `-P gen -f ./plots/` works intuitively. */
+    if (!source_provided) {
+      if (DIR_TABLE2 != NULL) {
+        SOURCE = DIR_TABLE2;
+      } else {
+        fprintf(stderr, "Error: -F (source directory) required for plot "
+                        "generation in merge mode (or provide -f to set target)\n");
+        exit(EXIT_FAILURE);
+      }
     }
     writeDataTmp = true;
     writeDataTmpTable2 = true;

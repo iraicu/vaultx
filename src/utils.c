@@ -64,8 +64,8 @@ void print_usage(char *prog_name) {
          "(default: true)\n");
   printf("  -c, --circular_array [true|false]     Use circular array (default: "
          "false)\n");
-  printf("  -v, --verify [true|false]             Verify plot after creation "
-         "(default: false)\n");
+    printf("  -v, --verify [true|false]             Generate (when k provided) and verify plots; when used during generation verifies the newly created file(s) (default: false)\n");
+    printf("  -V, --verify-only [true|false]        Verify existing plot file(s) only (no generation). Use with -f <file|dir>. If both -v and -V are given, -v takes precedence.\n");
   printf("  -y, --full_buckets [true|false]       Stop when buckets are full "
          "(default: false)\n");
   printf("  -b, --benchmark [true|false]          Enable benchmark output mode "

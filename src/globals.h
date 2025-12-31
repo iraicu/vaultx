@@ -71,6 +71,7 @@ extern bool BENCHMARK;
 extern bool CIRCULAR_ARRAY;
 extern bool MEMORY_WRITE;
 extern bool VERIFY;
+extern bool VERIFY_ONLY;
 extern bool FULL_BUCKETS;
 extern bool PRINT_BUCKETS;
 // extern bool ENABLE_DETAILED_METRICS;
