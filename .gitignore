@@ -42,6 +42,9 @@ memo2.t
 memo.x
 memo.xx
 vaultx*
+blake3
+blake3*
+blake3/*
 
 # Environment
 .env
