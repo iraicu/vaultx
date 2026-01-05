@@ -12,8 +12,8 @@ void print_usage(char *prog_name) {
          "2)\n");
   printf("  -t, --threads NUM                     Number of threads for "
          "generation/search (default: available cores)\n");
-  printf("                                        For multi-file search: "
-         "splits threads across files and buckets\n");
+  printf("  -r, --record_threads NUM              Number of per-bucket (record-level) threads for search (default: auto)\n");
+  printf("                                        Auto mode divides total threads across files/buckets when searching multiple files\n");
   printf("  -i, --threads_io NUM                  Number of I/O threads "
          "(default: 1)\n");
   printf("  -a, --approach [xtask|task|for|tbb]   Parallelization approach "

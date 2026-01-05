@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
   // Default values
   const char *approach = "for"; // Default approach
   int num_threads = 0; // 0 means OpenMP chooses the max num of cores available
+  int num_threads_record = 0; // 0 means auto-distribute per-record threads
   int num_threads_io = 1;
   unsigned long long num_records_total = 1ULL << K; // 2^K iterations
   unsigned long long num_records_per_round = num_records_total;
@@ -118,6 +119,7 @@ int main(int argc, char *argv[]) {
   static struct option long_options[] = {
       {"approach", required_argument, 0, 'a'},
       {"threads", required_argument, 0, 't'},
+      {"record_threads", required_argument, 0, 'r'},
       {"threads_io", required_argument, 0, 'i'},
       {"exponent", required_argument, 0, 'k'},
       {"memory", required_argument, 0, 'm'},
@@ -160,7 +162,7 @@ int main(int argc, char *argv[]) {
   // Parse command-line arguments
   while (
        (opt = getopt_long(
-         argc, argv, "a:t:i:k:m:f:g:j:b:W:R:M:w:c:v:V:s:S:x:o:y:d:n:p:PT:F:D:h",
+         argc, argv, "a:t:r:i:k:m:f:g:j:b:W:R:M:w:c:v:V:s:S:x:o:y:d:n:p:PT:F:D:h",
          long_options, &option_index)) != -1) {
     switch (opt) {
     case 'a':
@@ -177,6 +179,14 @@ int main(int argc, char *argv[]) {
       num_threads = atoi(optarg);
       if (num_threads <= 0) {
         fprintf(stderr, "Number of threads must be positive.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+      break;
+    case 'r':
+      num_threads_record = atoi(optarg);
+      if (num_threads_record < 0) {
+        fprintf(stderr, "Number of record-level threads must be 0 (auto) or positive.\n");
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
       }
@@ -2145,36 +2155,65 @@ int main(int argc, char *argv[]) {
 
   // Search for a single record
   if (SEARCH && !SEARCH_BATCH) {
-    int num_threads_bucket;
-    if (SEARCH_FILES_COUNT == 1) {
-      num_threads_bucket = num_threads;
+    int inner_threads_per_file = 1;
+    int outer_threads = 1;
+    int T = (num_threads > 0) ? num_threads : omp_get_max_threads();
+    int R = num_threads_record; // 0 means auto
+    int F = SEARCH_FILES_COUNT;
+
+    if (R > 0) {
+      if (R > T)
+        R = T;
+      int max_parallel_files = T / R;
+      if (max_parallel_files < 1)
+        max_parallel_files = 1;
+      outer_threads = (F < max_parallel_files) ? F : max_parallel_files;
+      if (outer_threads < 1)
+        outer_threads = 1;
+      inner_threads_per_file = T / outer_threads;
+      if (inner_threads_per_file < 1)
+        inner_threads_per_file = 1;
+      if (inner_threads_per_file > R)
+        inner_threads_per_file = R;
     } else {
-      printf("\n=== Searching %d files with %d threads ===\n\n",
-             SEARCH_FILES_COUNT, num_threads);
-      num_threads_bucket = num_threads / SEARCH_FILES_COUNT;
-      if (num_threads_bucket < 1)
-        num_threads_bucket = 1;
+      if (F > 1) {
+        outer_threads = (F < T) ? F : T;
+        inner_threads_per_file = T / outer_threads;
+        if (inner_threads_per_file < 1)
+          inner_threads_per_file = 1;
+      } else {
+        outer_threads = 1;
+        inner_threads_per_file = T;
+      }
+    }
+
+    if (outer_threads > 1 && inner_threads_per_file > 1) {
       omp_set_nested(1);
       omp_set_max_active_levels(2);
+    } else {
+      omp_set_nested(0);
     }
+
+    printf("\n=== Searching %d files with outer=%d inner=%d (budget=%d) ===\n\n",
+           SEARCH_FILES_COUNT, outer_threads, inner_threads_per_file, T);
 
     SearchResult *results = malloc(SEARCH_FILES_COUNT * sizeof(SearchResult));
 
     if (SEARCH_FILES_COUNT > 1) {
-      omp_set_num_threads(num_threads);
+      omp_set_num_threads(outer_threads);
 #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
 #pragma omp critical
         printf("--- File %d/%d: %s ---\n", i + 1, SEARCH_FILES_COUNT,
                SEARCH_FILES[i]);
         results[i] = search_memo_records(SEARCH_FILES[i], SEARCH_STRING,
-                                         num_threads_bucket);
+                                         inner_threads_per_file);
 #pragma omp critical
         printf("\n");
       }
     } else {
       results[0] = search_memo_records(SEARCH_FILES[0], SEARCH_STRING,
-                                       num_threads_bucket);
+                                       inner_threads_per_file);
     }
 
     if (SEARCH_FILES_COUNT > 1) {
@@ -2192,6 +2231,9 @@ int main(int argc, char *argv[]) {
     }
 
     free(results);
+        /* Print final thread configuration used for the search */
+        printf("Thread config: T=%d R=%d F=%d outer=%d inner=%d\n",
+          T, R, F, outer_threads, inner_threads_per_file);
   }
 
   if (SEARCH_BATCH) {
@@ -2207,18 +2249,47 @@ int main(int argc, char *argv[]) {
       exit(EXIT_FAILURE);
     }
 
-    int num_threads_bucket;
-    if (SEARCH_FILES_COUNT == 1) {
-      num_threads_bucket = num_threads;
+    int inner_threads_per_file = 1;
+    int outer_threads = 1;
+    int T = (num_threads > 0) ? num_threads : omp_get_max_threads();
+    int R = num_threads_record; // 0 means auto
+    int F = SEARCH_FILES_COUNT;
+
+    if (R > 0) {
+      if (R > T)
+        R = T;
+      int max_parallel_files = T / R;
+      if (max_parallel_files < 1)
+        max_parallel_files = 1;
+      outer_threads = (F < max_parallel_files) ? F : max_parallel_files;
+      if (outer_threads < 1)
+        outer_threads = 1;
+      inner_threads_per_file = T / outer_threads;
+      if (inner_threads_per_file < 1)
+        inner_threads_per_file = 1;
+      if (inner_threads_per_file > R)
+        inner_threads_per_file = R;
     } else {
-      printf("\n=== Searching %d files with %d threads ===\n\n",
-             SEARCH_FILES_COUNT, num_threads);
-      num_threads_bucket = num_threads / SEARCH_FILES_COUNT;
-      if (num_threads_bucket < 1)
-        num_threads_bucket = 1;
+      if (F > 1) {
+        outer_threads = (F < T) ? F : T;
+        inner_threads_per_file = T / outer_threads;
+        if (inner_threads_per_file < 1)
+          inner_threads_per_file = 1;
+      } else {
+        outer_threads = 1;
+        inner_threads_per_file = T;
+      }
+    }
+
+    if (outer_threads > 1 && inner_threads_per_file > 1) {
       omp_set_nested(1);
       omp_set_max_active_levels(2);
+    } else {
+      omp_set_nested(0);
     }
+
+    printf("\n=== Searching %d files with outer=%d inner=%d (budget=%d) ===\n\n",
+           SEARCH_FILES_COUNT, outer_threads, inner_threads_per_file, T);
 
     SearchResult *results = malloc(SEARCH_FILES_COUNT * sizeof(SearchResult));
     double total_time = 0.0;
@@ -2226,20 +2297,20 @@ int main(int argc, char *argv[]) {
     int total_not_found = 0;
 
     if (SEARCH_FILES_COUNT > 1) {
-      omp_set_num_threads(num_threads);
+      omp_set_num_threads(outer_threads);
 #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
 #pragma omp critical
         printf("--- File %d/%d: %s ---\n", i + 1, SEARCH_FILES_COUNT,
                SEARCH_FILES[i]);
         results[i] = search_memo_records_batch(SEARCH_FILES[i], LOOKUP_COUNT,
-                                               DIFFICULTY, num_threads_bucket);
+                                               DIFFICULTY, inner_threads_per_file);
 #pragma omp critical
         printf("\n");
       }
     } else {
       results[0] = search_memo_records_batch(SEARCH_FILES[0], LOOKUP_COUNT,
-                                             DIFFICULTY, num_threads_bucket);
+                                             DIFFICULTY, inner_threads_per_file);
     }
 
     for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
@@ -2269,6 +2340,9 @@ int main(int argc, char *argv[]) {
     }
 
     free(results);
+        /* Print final thread configuration used for the batch search */
+        printf("Thread config: T=%d R=%d F=%d outer=%d inner=%d\n",
+          T, R, F, outer_threads, inner_threads_per_file);
   }
 
   if (PRINT_BUCKETS) {
