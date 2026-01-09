@@ -2313,29 +2313,35 @@ int main(int argc, char *argv[]) {
                                              DIFFICULTY, inner_threads_per_file);
     }
 
+    double sum_avg_time_per_lookup = 0.0;
     for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
       total_time += results[i].search_time_ms;
+      sum_avg_time_per_lookup += results[i].avg_time_per_lookup_ms;
       total_found += results[i].found_count;
       total_not_found += results[i].not_found_count;
     }
 
     if (SEARCH_FILES_COUNT > 1) {
       printf("=== Search Summary ===\n");
-      printf("%-70s %15s %10s %10s %12s %15s\n", "Filename", "Size (bytes)",
-             "Lookups", "Found", "Not Found", "Avg Time (ms)");
-      printf("-----------------------------------------------------------------"
-             "-------------------------------------------------\n");
+      printf("%-70s %15s %10s %10s %12s %20s %18s\n", "Filename", "Size (bytes)",
+             "Lookups", "Found", "Not Found", "Avg Time/Lookup (ms)", "Total Time (ms)");
+      printf("---------------------------------------------------------------------------------"
+             "---------------------------------------------------------------\n");
       for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-        printf("%-70s %15ld %10d %10d %12d %15.4f\n", results[i].filename,
+        printf("%-70s %15ld %10d %10d %12d %20.4f %18.2f\n", results[i].filename,
                results[i].filesize, results[i].num_lookups,
                results[i].found_count, results[i].not_found_count,
-               results[i].avg_time_per_lookup_ms);
+               results[i].avg_time_per_lookup_ms, results[i].search_time_ms);
       }
-      printf("-----------------------------------------------------------------"
-             "-------------------------------------------------\n");
-      printf("%-70s %15s %10d %10d %12d %15.4f\n", "TOTAL", "",
+      printf("---------------------------------------------------------------------------------"
+             "---------------------------------------------------------------\n");
+      double avg_avg_time = sum_avg_time_per_lookup / SEARCH_FILES_COUNT;
+      double avg_total_time = total_time / SEARCH_FILES_COUNT;
+      printf("%-70s %15s %10s %10s %12s %20.4f %18.2f\n", "AVERAGE", "",
+             "", "", "", avg_avg_time, avg_total_time);
+      printf("%-70s %15s %10d %10d %12d %20.4f %18.2f\n", "SUM", "",
              LOOKUP_COUNT * SEARCH_FILES_COUNT, total_found, total_not_found,
-             total_time / (LOOKUP_COUNT * SEARCH_FILES_COUNT));
+             sum_avg_time_per_lookup, total_time);
       printf("\n");
     }
 
