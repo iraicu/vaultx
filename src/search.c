@@ -512,6 +512,105 @@ SearchResult search_memo_records(const char *filename,
   return result;
 }
 
+bool read_bucket_into_buffer(SearchFileCtx *ctx, const uint8_t *query,
+                             size_t search_length, size_t *records_read,
+                             size_t *effective_records_read) {
+  if (!ctx || !ctx->file || !ctx->buffer || !records_read ||
+      !effective_records_read) {
+    return false;
+  }
+
+  if (search_length > HASH_SIZE) {
+    search_length = HASH_SIZE;
+  }
+
+  off_t bucketIndex = getBucketIndex(query);
+  off_t offset = bucketIndex * (off_t)ctx->num_records_in_bucket_search *
+                 (off_t)sizeof(MemoTable2Record);
+
+  if (fseek(ctx->file, offset, SEEK_SET) != 0) {
+    perror("Error seeking in file");
+    return false;
+  }
+
+  size_t read_count = fread(ctx->buffer, sizeof(MemoTable2Record),
+                            ctx->num_records_in_bucket_search, ctx->file);
+  *records_read = read_count;
+  size_t effective = read_count;
+
+  if (ctx->plotData_array == NULL || ctx->num_files == 0 ||
+      ctx->records_per_file == 0) {
+    for (size_t i = 0; i < read_count; ++i) {
+      if (is_record_empty(&ctx->buffer[i])) {
+        effective = i;
+        break;
+      }
+    }
+  }
+
+  *effective_records_read = effective;
+  return true;
+}
+
+int hash_bucket_buffer(const SearchFileCtx *ctx, const uint8_t *query,
+                       size_t search_length, size_t effective_records,
+                       int num_threads_bucket, size_t *records_checked) {
+  if (!ctx || !ctx->buffer || !query) {
+    return 0;
+  }
+
+  if (search_length > HASH_SIZE) {
+    search_length = HASH_SIZE;
+  }
+
+  int found = 0;
+  size_t checked_total = 0;
+  int threads = (num_threads_bucket > 0) ? num_threads_bucket : 1;
+
+#pragma omp parallel if (threads > 1) num_threads(threads) shared(found)     \
+    reduction(+ : checked_total)
+  {
+    uint8_t hash_output[HASH_SIZE];
+
+#pragma omp for schedule(static)
+    for (size_t i = 0; i < effective_records; ++i) {
+      if (found)
+        continue;
+
+      if (ctx->plotData_array != NULL && ctx->num_files > 0 &&
+          ctx->records_per_file > 0 && is_record_empty(&ctx->buffer[i])) {
+        continue;
+      }
+
+      uint8_t *record_key = ctx->local_key;
+      if (ctx->plotData_array != NULL && ctx->num_files > 0 &&
+          ctx->records_per_file > 0) {
+        if (ctx->records_per_file > 0) {
+          int file_index = (int)(i / ctx->records_per_file);
+          if (file_index < ctx->num_files) {
+            record_key = ctx->plotData_array[file_index].key;
+          }
+        }
+      }
+
+      generateBlake3Pair(ctx->buffer[i].nonce1, ctx->buffer[i].nonce2,
+                         record_key, hash_output);
+      checked_total++;
+
+      if (memcmp(hash_output, query, search_length) == 0) {
+#pragma omp atomic write
+        found = 1;
+      }
+    }
+  }
+
+  if (records_checked) {
+    *records_checked = checked_total;
+  }
+
+  return found;
+}
+
 // not sure if the search of more than PREFIX_LENGTH works
 SearchResult search_memo_records_batch(const char *filename, int num_lookups,
                                        int difficulty, int num_threads_bucket) {
@@ -744,20 +843,24 @@ SearchResult search_query_with_ctx(SearchFileCtx *ctx, const uint8_t *query,
     search_length = HASH_SIZE;
   }
 
-  off_t bucketIndex = getBucketIndex(query);
-
+  size_t records_read = 0;
+  size_t effective_records = 0;
+  size_t records_checked = 0;
   double start_time = omp_get_wtime();
 
-  MemoTable2Record *fRecord = search_memo_record(
-      ctx->file, bucketIndex, (uint8_t *)query, search_length,
-      ctx->num_records_in_bucket_search, ctx->buffer, num_threads_bucket,
-      ctx->plotData_array, ctx->num_files, ctx->records_per_file,
-      ctx->local_key);
+  bool read_ok = read_bucket_into_buffer(ctx, query, search_length,
+                                         &records_read, &effective_records);
+
+  int found = 0;
+  if (read_ok && effective_records > 0) {
+    found = hash_bucket_buffer(ctx, query, search_length, effective_records,
+                               num_threads_bucket, &records_checked);
+  }
 
   double elapsed_time = (omp_get_wtime() - start_time) * 1000.0;
   result.search_time_ms = elapsed_time;
   result.avg_time_per_lookup_ms = elapsed_time;
-  if (fRecord != NULL) {
+  if (found) {
     result.found_count = 1;
     result.not_found_count = 0;
   } else {

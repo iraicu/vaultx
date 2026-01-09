@@ -46,6 +46,14 @@ SearchResult search_query_with_ctx(SearchFileCtx *ctx, const uint8_t *query,
                                    size_t search_length,
                                    int num_threads_bucket);
 
+// Stage helpers to decouple read (outer threads) from hash (inner threads)
+bool read_bucket_into_buffer(SearchFileCtx *ctx, const uint8_t *query,
+                             size_t search_length, size_t *records_read,
+                             size_t *effective_records_read);
+int hash_bucket_buffer(const SearchFileCtx *ctx, const uint8_t *query,
+                       size_t search_length, size_t effective_records,
+                       int num_threads_bucket, size_t *records_checked);
+
 void print_buckets(const char *filename, int num_buckets_to_print);
 
 #endif

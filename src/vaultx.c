@@ -2166,29 +2166,19 @@ int main(int argc, char *argv[]) {
     int R = num_threads_record; // 0 means auto
     int F = SEARCH_FILES_COUNT;
 
+    // Make -t (outer) and -r (inner) independent.
+    outer_threads = (F > 1) ? ((T > 0) ? ((F < T) ? F : T) : F) : 1;
+
     if (R > 0) {
-      if (R > T)
-        R = T;
-      int max_parallel_files = T / R;
-      if (max_parallel_files < 1)
-        max_parallel_files = 1;
-      outer_threads = (F < max_parallel_files) ? F : max_parallel_files;
-      if (outer_threads < 1)
-        outer_threads = 1;
-      inner_threads_per_file = T / outer_threads;
-      if (inner_threads_per_file < 1)
-        inner_threads_per_file = 1;
-      if (inner_threads_per_file > R)
-        inner_threads_per_file = R;
+      inner_threads_per_file = R; // use declared -r without binding to -t
     } else {
       if (F > 1) {
-        outer_threads = (F < T) ? F : T;
-        inner_threads_per_file = T / outer_threads;
+        inner_threads_per_file = (T > 0) ? (T / outer_threads) : 1;
         if (inner_threads_per_file < 1)
           inner_threads_per_file = 1;
       } else {
-        outer_threads = 1;
-        inner_threads_per_file = T;
+        // single file: fall back to outer budget
+        inner_threads_per_file = (T > 0) ? T : omp_get_max_threads();
       }
     }
 
@@ -2260,23 +2250,25 @@ int main(int argc, char *argv[]) {
     int R = num_threads_record; // per-bucket threads
     int F = SEARCH_FILES_COUNT;
 
+    // Keep outer (IO) and inner (per-bucket) threading independent.
+    outer_threads = (T > 0) ? ((F < T) ? F : T) : F;
+    if (outer_threads < 1)
+      outer_threads = 1;
+
     if (R > 0) {
-      if (R > T)
-        R = T;
-      outer_threads = T / R;
-      if (outer_threads < 1)
-        outer_threads = 1;
-      if (outer_threads > F)
-        outer_threads = F;
-      per_bucket_threads = R;
+      per_bucket_threads = R; // use declared -r without binding to -t
     } else {
-      outer_threads = (F < T) ? F : T;
-      per_bucket_threads = T / outer_threads;
+      per_bucket_threads = (T > 0) ? (T / outer_threads) : 1;
       if (per_bucket_threads < 1)
         per_bucket_threads = 1;
     }
 
-    omp_set_nested(0);
+    if (outer_threads > 1 && per_bucket_threads > 1) {
+      omp_set_nested(1);
+      omp_set_max_active_levels(2);
+    } else {
+      omp_set_nested(0);
+    }
 
     printf("\n=== Searching %d files with outer=%d (files) inner=%d (bucket) budget=%d ===\n\n",
            SEARCH_FILES_COUNT, outer_threads, per_bucket_threads, T);
@@ -2330,7 +2322,10 @@ int main(int argc, char *argv[]) {
 
     srand((unsigned int)time(NULL));
 
+    double total_wall_time_ms = 0.0; // wall-clock for each lookup across all files
+
     for (int lookup = 0; lookup < LOOKUP_COUNT; lookup++) {
+      double lookup_start = omp_get_wtime();
       uint8_t query[HASH_SIZE] = {0};
       for (size_t j = 0; j < search_length; ++j) {
         query[j] = rand() % 256;
@@ -2385,6 +2380,9 @@ int main(int argc, char *argv[]) {
         }
       }
 
+      double lookup_wall_ms = (omp_get_wtime() - lookup_start) * 1000.0;
+      total_wall_time_ms += lookup_wall_ms;
+
       // Accumulate step results
       for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
         if (results[i].filename[0] == '\0') {
@@ -2403,18 +2401,17 @@ int main(int argc, char *argv[]) {
       free(step_results);
     }
 
-    double total_time = 0.0;
-    double sum_avg_time_per_lookup = 0.0;
     int total_found = 0;
     int total_not_found = 0;
+
+    double avg_wall_time_ms =
+      (LOOKUP_COUNT > 0) ? (total_wall_time_ms / LOOKUP_COUNT) : 0.0;
 
     for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
       double avg_time = (results[i].num_lookups > 0)
                             ? (results[i].search_time_ms / results[i].num_lookups)
                             : 0.0;
       results[i].avg_time_per_lookup_ms = avg_time;
-      total_time += results[i].search_time_ms;
-      sum_avg_time_per_lookup += avg_time;
       total_found += results[i].found_count;
       total_not_found += results[i].not_found_count;
     }
@@ -2466,13 +2463,12 @@ int main(int argc, char *argv[]) {
       }
       printf("---------------------------------------------------------------------------------"
              "---------------------------------------------------------------\n");
-      double avg_avg_time = sum_avg_time_per_lookup / SEARCH_FILES_COUNT;
-      double avg_total_time = total_time / SEARCH_FILES_COUNT;
-      printf("%-70s %15s %10s %10s %12s %20.4f %18.2f\n", "AVERAGE", "",
-             "", "", "", avg_avg_time, avg_total_time);
-      printf("%-70s %15s %10d %10d %12d %20.4f %18.2f\n", "SUM", "",
-             LOOKUP_COUNT * SEARCH_FILES_COUNT, total_found, total_not_found,
-             sum_avg_time_per_lookup, total_time);
+            printf("%-70s %15s %10s %10s %12s %20.4f %18.2f\n", "AVERAGE",
+              "", "", "", "", avg_wall_time_ms,
+              avg_wall_time_ms * LOOKUP_COUNT);
+            printf("%-70s %15s %10d %10d %12d %20.4f %18.2f\n", "SUM", "",
+              LOOKUP_COUNT, total_found, total_not_found,
+              avg_wall_time_ms, avg_wall_time_ms * LOOKUP_COUNT);
       printf("\n");
     } else if (SEARCH_FILES_COUNT == 1) {
       SearchFileCtx *meta_ctx = keep_open ? ctx_list : NULL;
