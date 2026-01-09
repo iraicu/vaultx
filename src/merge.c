@@ -188,6 +188,7 @@ void pin_thread_to_cpu(int cpu_num) {
     }                                                                          \
                                                                                \
     double write_throughput_MBps = BATCH_MEMORY_MB / write_time;               \
+    (void)write_throughput_MBps;                                               \
     double progress = ((double)end_bucket / total_buckets);                    \
     double elapsed_time = omp_get_wtime() - start_time;                        \
     printf("[%6.2f%%] | Batch %-6d (%9.2fs) | Total: %9.2fs | Time Left: "     \
@@ -265,7 +266,7 @@ int merge() {
       BATCH_MEMORY_MB * 1024.0 * 1024.0 / global_bucket_size);
 
   // Allocate memory
-  MemoTable2Record *mergedBuckets;
+  MemoTable2Record *mergedBuckets = NULL;
   FileRecords file_records[TOTAL_FILES];
 
   if (MERGE_APPROACH != 2) {
@@ -312,8 +313,9 @@ int merge() {
       num_records * record_size * TOTAL_FILES + 36 * TOTAL_FILES;
   unsigned long long total_batches =
       ceil((double)total_buckets / total_global_buckets);
+    int total_batches_int = (int)total_batches;
 
-  printf("Memory Size per Batch: %lluMB\n", BATCH_MEMORY_MB);
+  printf("Memory Size per Batch: %dMB\n", BATCH_MEMORY_MB);
   printf("Buckets processed from each file per batch: %llu\n",
          total_global_buckets);
   printf("Bucket size: %llu bytes\n",
@@ -329,7 +331,7 @@ int merge() {
   printf("Destination: %s\n", DESTINATION);
   printf("Threads: %d\n", num_threads);
   printf("Files: %d, K%d\n", TOTAL_FILES, K);
-  printf("Memory Limit: %lluMB\n\n\n", MEMORY_LIMIT_MB);
+  printf("Memory Limit: %dMB\n\n\n", MEMORY_LIMIT_MB);
 
   double t_start = omp_get_wtime();
 #if defined(__APPLE__)
@@ -631,7 +633,7 @@ int merge() {
       exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < total_batches; i++) {
+    for (int i = 0; i < total_batches_int; i++) {
       mergeBatches[i].readDone = false;
       mergeBatches[i].mergeDone = false;
       mergeBatches[i].writeDone = false;
@@ -644,7 +646,7 @@ int merge() {
     int max_active_batches =
         floor((double)MEMORY_LIMIT_MB / BATCH_MEMORY_MB) - 1;
     max_active_batches =
-        max_active_batches < total_batches ? max_active_batches : total_batches;
+      max_active_batches < total_batches_int ? max_active_batches : total_batches_int;
 
 #pragma omp parallel
 
@@ -653,10 +655,10 @@ int merge() {
 #pragma omp single
 
       {
-        for (int batch_idx = 0; batch_idx < total_batches; batch_idx++) {
+        for (int batch_idx = 0; batch_idx < total_batches_int; batch_idx++) {
           unsigned long long start_bucket = total_global_buckets * batch_idx;
           unsigned long long end_bucket =
-              (batch_idx == total_batches - 1)
+              (batch_idx == total_batches_int - 1)
                   ? total_buckets
                   : start_bucket + total_global_buckets;
           unsigned long long buckets_in_batch = end_bucket - start_bucket;
@@ -714,14 +716,17 @@ int merge() {
 #pragma omp taskloop
             for (int merge_thread = 0; merge_thread < total_merge_threads;
                  merge_thread++) {
-              int batch_size =
-                  floor((double)buckets_in_batch / total_merge_threads);
-              int merge_start_bucket = merge_thread * batch_size;
-              int merge_end_bucket = merge_thread == total_merge_threads - 1
-                                         ? buckets_in_batch
-                                         : merge_start_bucket + batch_size;
+        unsigned long long batch_size =
+          (unsigned long long)floor((double)buckets_in_batch /
+                       total_merge_threads);
+        unsigned long long merge_start_bucket =
+          batch_size * (unsigned long long)merge_thread;
+        unsigned long long merge_end_bucket =
+          (merge_thread == total_merge_threads - 1)
+            ? buckets_in_batch
+            : merge_start_bucket + batch_size;
 
-              for (unsigned long long bucket_idx = merge_start_bucket;
+        for (unsigned long long bucket_idx = merge_start_bucket;
                    bucket_idx < merge_end_bucket; bucket_idx++) {
                 for (int f = 0; f < TOTAL_FILES; f++) {
                   memcpy(
@@ -880,7 +885,7 @@ int merge() {
       for (unsigned long long j = i; j < end; j++) {
         bool flag = true;
 
-        for (int k = 0; k < records_per_global_bucket; k++) {
+        for (size_t k = 0; k < records_per_global_bucket; k++) {
           record = &buffer[(j - i) * records_per_global_bucket + k];
 
           if (byteArrayToLongLong(record->nonce1, NONCE_SIZE) != 0 ||
@@ -906,8 +911,8 @@ int merge() {
       fclose(fd);
     }
 
-    printf("Total Buckets: %llu\nVerified Buckets: %llu\n", total_buckets,
-           verified_global_buckets);
+        printf("Total Buckets: %llu\nVerified Buckets: %zu\n", total_buckets,
+          verified_global_buckets);
   }
   return 0;
 }

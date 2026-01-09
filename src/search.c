@@ -1,5 +1,151 @@
 #include "search.h"
 
+bool search_ctx_open(const char *filename, SearchFileCtx *ctx) {
+  memset(ctx, 0, sizeof(*ctx));
+  strncpy(ctx->filename, filename, sizeof(ctx->filename) - 1);
+
+  const char *basename = strrchr(filename, '/');
+  basename = (basename == NULL) ? filename : basename + 1;
+
+  ctx->file = fopen(filename, "rb");
+  if (ctx->file == NULL) {
+    perror("Error opening file");
+    return false;
+  }
+
+  long filesize = get_file_size(filename);
+  if (filesize <= 0) {
+    fprintf(stderr, "Error: Invalid file size %ld for file '%s'\n", filesize,
+            filename);
+    fclose(ctx->file);
+    ctx->file = NULL;
+    return false;
+  }
+  ctx->filesize = filesize;
+  ctx->data_filesize = filesize;
+
+  // Extract K and plot id, handle merge suffix
+  int k_value;
+  char plot_id_string[65];
+  uint8_t local_plot_id[32] = {0};
+  if (strncmp(basename, "merge_", 6) == 0) {
+    int num_files;
+    if (sscanf(basename, "merge_%d_%d.plot", &k_value, &num_files) != 2) {
+      fprintf(stderr,
+              "Error: Invalid merge filename format '%s'. Expected merge_{K}_{N}.plot\n",
+              basename);
+      fclose(ctx->file);
+      ctx->file = NULL;
+      return false;
+    }
+    ctx->data_filesize = filesize - (num_files * sizeof(PlotData));
+    memset(ctx->local_key, 0, 32);
+    memset(plot_id_string, 0, sizeof(plot_id_string));
+    memset(local_plot_id, 0, sizeof(local_plot_id));
+  } else {
+    char *dash = strchr(basename, '-');
+    if (dash == NULL || dash - basename < 2) {
+      fprintf(stderr,
+              "Error: Invalid filename format '%s'. Expected k{K}-{hex_id}.plot\n",
+              basename);
+      fclose(ctx->file);
+      ctx->file = NULL;
+      return false;
+    }
+
+    if (sscanf(basename, "k%d", &k_value) != 1) {
+      fprintf(stderr, "Error: Could not parse K value from filename '%s'\n",
+              basename);
+      fclose(ctx->file);
+      ctx->file = NULL;
+      return false;
+    }
+
+    const char *hex_start = dash + 1;
+    strncpy(plot_id_string, hex_start, sizeof(plot_id_string) - 1);
+    plot_id_string[64] = '\0';
+
+    char *dot = strchr(plot_id_string, '.');
+    if (dot != NULL) {
+      *dot = '\0';
+    }
+
+    if (hex_string_to_byte_array(plot_id_string, local_plot_id, 32) != 0) {
+      fprintf(stderr,
+              "Error: Invalid plot ID in filename '%s'. Expected 32 bytes hex (64 chars). Got '%s'\n",
+              basename, plot_id_string);
+      fclose(ctx->file);
+      ctx->file = NULL;
+      return false;
+    }
+  }
+
+  derive_key(k_value, local_plot_id, ctx->local_key);
+
+  ctx->num_buckets_search = 1ULL << (PREFIX_SIZE * 8);
+  ctx->num_records_in_bucket_search =
+      ctx->data_filesize / ctx->num_buckets_search / sizeof(MemoTable2Record);
+
+  ctx->plotData_array = NULL;
+  ctx->num_files = 0;
+  if (strncmp(basename, "merge_", 6) == 0) {
+    int num_files_from_name;
+    if (sscanf(basename, "merge_%*d_%d.plot", &num_files_from_name) == 1) {
+      ctx->num_files = num_files_from_name;
+      ctx->plotData_array =
+          (PlotData *)malloc(ctx->num_files * sizeof(PlotData));
+      if (ctx->plotData_array != NULL) {
+        if (fseek(ctx->file, -(ctx->num_files * sizeof(PlotData)), SEEK_END) ==
+            0) {
+          size_t read_count = fread(ctx->plotData_array, sizeof(PlotData),
+                                    ctx->num_files, ctx->file);
+          if (read_count != (size_t)ctx->num_files) {
+            fprintf(stderr, "Warning: Failed to read metadata footer\n");
+            free(ctx->plotData_array);
+            ctx->plotData_array = NULL;
+            ctx->num_files = 0;
+          }
+        }
+      }
+    }
+  }
+
+  ctx->records_per_file = (ctx->num_files > 0)
+                               ? (ctx->num_records_in_bucket_search / ctx->num_files)
+                               : ctx->num_records_in_bucket_search;
+
+  ctx->buffer = (MemoTable2Record *)malloc(ctx->num_records_in_bucket_search *
+                                           sizeof(MemoTable2Record));
+  if (ctx->buffer == NULL) {
+    fprintf(stderr, "Error: Unable to allocate memory.\n");
+    if (ctx->plotData_array)
+      free(ctx->plotData_array);
+    fclose(ctx->file);
+    ctx->file = NULL;
+    return false;
+  }
+
+  // Rewind to start for subsequent bucket reads
+  fseek(ctx->file, 0, SEEK_SET);
+
+  return true;
+}
+
+void search_ctx_close(SearchFileCtx *ctx) {
+  if (ctx->file) {
+    fclose(ctx->file);
+    ctx->file = NULL;
+  }
+  if (ctx->plotData_array) {
+    free(ctx->plotData_array);
+    ctx->plotData_array = NULL;
+  }
+  if (ctx->buffer) {
+    free(ctx->buffer);
+    ctx->buffer = NULL;
+  }
+}
+
 MemoTable2Record *search_memo_record(
     FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH,
     unsigned long long num_records_in_bucket_search, MemoTable2Record *buffer,
@@ -17,7 +163,6 @@ MemoTable2Record *search_memo_record(
   // Seek to the specified offset
   if (fseek(file, offset, SEEK_SET) != 0) {
     perror("Error seeking in file");
-    fclose(file);
     return NULL;
   }
 
@@ -39,6 +184,7 @@ MemoTable2Record *search_memo_record(
 
     int found = 0;
     size_t records_checked = 0;
+    size_t first_match_index = (size_t)-1;
 
     size_t effective_records_read = records_read;
     if (plotData == NULL || total_files == 0 || records_per_file == 0) {
@@ -54,11 +200,6 @@ MemoTable2Record *search_memo_record(
     {
 #pragma omp for
       for (size_t i = 0; i < effective_records_read; ++i) {
-#pragma omp cancellation point for
-        if (found) {
-          continue;
-        }
-
         if (plotData != NULL && total_files > 0 && records_per_file > 0) {
           if (is_record_empty(&buffer[i])) {
             continue;
@@ -108,12 +249,15 @@ MemoTable2Record *search_memo_record(
           // Compare the first PREFIX_SIZE bytes of the current hash to the
           // previous hash prefix
           if (memcmp(hash_output, SEARCH_UINT8, SEARCH_LENGTH) == 0) {
-            foundRecord = &buffer[i];
+#pragma omp critical
+            {
+              if (first_match_index == (size_t)-1) {
+                first_match_index = i;
+              }
+            }
 
 #pragma omp atomic write
             found = 1;
-
-#pragma omp cancel for
           } else {
             //++count_condition_not_met;
 
@@ -144,6 +288,10 @@ MemoTable2Record *search_memo_record(
           }
         }
       }
+    }
+
+    if (first_match_index != (size_t)-1) {
+      foundRecord = &buffer[first_match_index];
     }
 
     if (DEBUG) {
@@ -198,8 +346,6 @@ SearchResult search_memo_records(const char *filename,
   // Supports both formats: k{K}-{hex}.plot and merge_{K}_{N}.plot
   int k_value;
   char plot_id_string[65];
-  int num_files_in_merge = 0;
-
   if (strncmp(basename, "merge_", 6) == 0) {
     // Handle merge file format: merge_{K}_{N}.plot
     int num_files;
@@ -209,7 +355,6 @@ SearchResult search_memo_records(const char *filename,
              basename);
       return result;
     }
-    num_files_in_merge = num_files;
     data_filesize = filesize - (num_files * sizeof(PlotData));
     memset(local_key, 0, 32);
     memset(local_plot_id, 0, 32);
@@ -302,7 +447,7 @@ SearchResult search_memo_records(const char *filename,
         if (fseek(file, -(num_files * sizeof(PlotData)), SEEK_END) == 0) {
           size_t read_count =
               fread(plotData_array, sizeof(PlotData), num_files, file);
-          if (read_count != num_files) {
+          if (read_count != (size_t)num_files) {
             fprintf(stderr, "Warning: Failed to read metadata footer\n");
             free(plotData_array);
             plotData_array = NULL;
@@ -403,8 +548,6 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
   // Supports both formats: k{K}-{hex}.plot and merge_{K}_{N}.plot
   int k_value;
   char plot_id_string[65];
-  int num_files_in_merge = 0;
-
   if (strncmp(basename, "merge_", 6) == 0) {
     // Handle merge file format: merge_{K}_{N}.plot
     int num_files;
@@ -414,7 +557,6 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
              basename);
       return result;
     }
-    num_files_in_merge = num_files;
     data_filesize = filesize - (num_files * sizeof(PlotData));
     memset(local_key, 0, 32);
     memset(local_plot_id, 0, 32);
@@ -501,7 +643,7 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
         if (fseek(file, -(num_files * sizeof(PlotData)), SEEK_END) == 0) {
           size_t read_count =
               fread(plotData_array, sizeof(PlotData), num_files, file);
-          if (read_count != num_files) {
+          if (read_count != (size_t)num_files) {
             fprintf(stderr, "Warning: Failed to read metadata footer\n");
             free(plotData_array);
             plotData_array = NULL;
@@ -517,7 +659,7 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
   uint8_t SEARCH_UINT8[HASH_SIZE] = {0};
 
   for (int i = 0; i < num_lookups; i++) {
-    for (int j = 0; j < SEARCH_LENGTH; ++j) {
+    for (size_t j = 0; j < SEARCH_LENGTH; ++j) {
       SEARCH_UINT8[j] = rand() % 256;
     }
 
@@ -590,6 +732,42 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
   return result;
 }
 
+SearchResult search_query_with_ctx(SearchFileCtx *ctx, const uint8_t *query,
+                                   size_t search_length,
+                                   int num_threads_bucket) {
+  SearchResult result = {0};
+  snprintf(result.filename, sizeof(result.filename), "%s", ctx->filename);
+  result.num_lookups = 1;
+  result.filesize = ctx->filesize;
+
+  if (search_length > HASH_SIZE) {
+    search_length = HASH_SIZE;
+  }
+
+  off_t bucketIndex = getBucketIndex(query);
+
+  double start_time = omp_get_wtime();
+
+  MemoTable2Record *fRecord = search_memo_record(
+      ctx->file, bucketIndex, (uint8_t *)query, search_length,
+      ctx->num_records_in_bucket_search, ctx->buffer, num_threads_bucket,
+      ctx->plotData_array, ctx->num_files, ctx->records_per_file,
+      ctx->local_key);
+
+  double elapsed_time = (omp_get_wtime() - start_time) * 1000.0;
+  result.search_time_ms = elapsed_time;
+  result.avg_time_per_lookup_ms = elapsed_time;
+  if (fRecord != NULL) {
+    result.found_count = 1;
+    result.not_found_count = 0;
+  } else {
+    result.found_count = 0;
+    result.not_found_count = 1;
+  }
+
+  return result;
+}
+
 void print_buckets(const char *filename, int num_buckets_to_print) {
   const char *basename = strrchr(filename, '/');
   if (basename == NULL) {
@@ -618,8 +796,6 @@ void print_buckets(const char *filename, int num_buckets_to_print) {
 
   int k_value;
   char plot_id_string[65];
-  int num_files_in_merge = 0;
-
   if (strncmp(basename, "merge_", 6) == 0) {
     int num_files;
     if (sscanf(basename, "merge_%d_%d.plot", &k_value, &num_files) != 2) {
@@ -628,7 +804,6 @@ void print_buckets(const char *filename, int num_buckets_to_print) {
              basename);
       return;
     }
-    num_files_in_merge = num_files;
     data_filesize = filesize - (num_files * sizeof(PlotData));
     memset(local_key, 0, 32);
     memset(local_plot_id, 0, 32);
@@ -685,8 +860,8 @@ void print_buckets(const char *filename, int num_buckets_to_print) {
     return;
   }
 
-  if (num_buckets_to_print > num_buckets_search) {
-    num_buckets_to_print = num_buckets_search;
+  if ((unsigned long long)num_buckets_to_print > num_buckets_search) {
+    num_buckets_to_print = (int)num_buckets_search;
   }
 
   file = fopen(filename, "rb");
@@ -707,7 +882,7 @@ void print_buckets(const char *filename, int num_buckets_to_print) {
         if (fseek(file, -(num_files * sizeof(PlotData)), SEEK_END) == 0) {
           size_t read_count =
               fread(plotData_array, sizeof(PlotData), num_files, file);
-          if (read_count != num_files) {
+          if (read_count != (size_t)num_files) {
             fprintf(stderr, "Warning: Failed to read metadata footer\n");
             free(plotData_array);
             plotData_array = NULL;
@@ -791,7 +966,8 @@ void print_buckets(const char *filename, int num_buckets_to_print) {
           break;
         }
         int current_file_index = (int)(i / records_per_file);
-        int next_file_start = (current_file_index + 1) * records_per_file;
+        size_t next_file_start =
+            (size_t)((current_file_index + 1) * records_per_file);
         if (next_file_start >= records_read) {
           break;
         }

@@ -51,6 +51,7 @@ void print_usage(char *prog_name) {
          "(batch search)\n");
   printf("  -D NUM                                Number of hash bytes to "
          "match (0=full hash, >0=prefix)\n");
+    printf("  -O, --keepopen                        Keep files open during batch search (default: close per query; only if file count <= 1024)\n");
   printf("  Note: Search discovers ALL plot files in directory and searches "
          "each one\n");
 
