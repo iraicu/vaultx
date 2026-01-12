@@ -101,6 +101,7 @@ int main(int argc, char *argv[]) {
   int MERGE_MODE = 2;
   int LOOKUP_COUNT = 1;
   bool KEEP_FILES_OPEN = false;
+  // Search state
 
   // I'm using larger buffer sizes - allocated on heap to avoid stack issues
   char *FILENAME_TMP = malloc(4096);
@@ -753,6 +754,7 @@ int main(int argc, char *argv[]) {
                hex_plot_id);
       path_join(FILENAME_TABLE2, 4096, plot_dir, filename_table2);
     } else if (SEARCH || SEARCH_BATCH || PRINT_BUCKETS) {
+      // Discover target plot files for search/inspection (file or directory).
       fprintf(stderr, "DEBUG: File discovery starting for path: '%s'\n",
               DIR_TABLE2);
       struct stat path_stat;
@@ -2172,8 +2174,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Search for a single record
+  // ---- Single-file lookup flow ----
+  // Execute a user-specified search string against discovered plot files.
   if (SEARCH && !SEARCH_BATCH) {
+    // Derive nested threading: outer distributes files, inner hashes buckets.
     int inner_threads_per_file = 1;
     int outer_threads = 1;
     int T = (num_threads > 0) ? num_threads : omp_get_max_threads();
@@ -2245,7 +2249,10 @@ int main(int argc, char *argv[]) {
           T, R, F, outer_threads, inner_threads_per_file);
   }
 
+  // ---- Batch lookup flow ----
+  // Run randomized prefix searches across one or many plot files.
   if (SEARCH_BATCH) {
+    // Derive nested threading: outer over files, inner within each bucket.
     fprintf(stderr, "DEBUG: Entering SEARCH_BATCH\n");
     fprintf(stderr, "DEBUG: SEARCH_FILES_COUNT = %d\n", SEARCH_FILES_COUNT);
     fprintf(stderr, "DEBUG: num_threads = %d\n", num_threads);
@@ -2528,6 +2535,8 @@ int main(int argc, char *argv[]) {
            T, R, F, outer_threads, per_bucket_threads, keep_open ? 1 : 0);
   }
 
+  // ---- Bucket inspection ----
+  // Optional debug path to print the first N buckets for each plot file.
   if (PRINT_BUCKETS) {
     fprintf(stderr, "DEBUG: PRINT_BUCKETS is true, SEARCH_FILES_COUNT = %d\n",
             SEARCH_FILES_COUNT);

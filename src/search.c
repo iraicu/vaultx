@@ -1,5 +1,5 @@
 #include "search.h"
-
+// Open a plot file and populate a reusable search context (supports merged plots).
 bool search_ctx_open(const char *filename, SearchFileCtx *ctx) {
   memset(ctx, 0, sizeof(*ctx));
   strncpy(ctx->filename, filename, sizeof(ctx->filename) - 1);
@@ -131,6 +131,7 @@ bool search_ctx_open(const char *filename, SearchFileCtx *ctx) {
   return true;
 }
 
+// Release file handles and buffers associated with a search context.
 void search_ctx_close(SearchFileCtx *ctx) {
   if (ctx->file) {
     fclose(ctx->file);
@@ -146,11 +147,14 @@ void search_ctx_close(SearchFileCtx *ctx) {
   }
 }
 
+// ---- Single lookup path ----
+
+// Scan a single bucket for a matching hash prefix (optionally across merged plots).
 MemoTable2Record *search_memo_record(
-    FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH,
-    unsigned long long num_records_in_bucket_search, MemoTable2Record *buffer,
-    int num_threads_bucket, PlotData *plotData, int total_files,
-    int records_per_file, uint8_t *default_key) {
+  FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH,
+  unsigned long long num_records_in_bucket_search, MemoTable2Record *buffer,
+  int num_threads_bucket, PlotData *plotData, int total_files,
+  int records_per_file, uint8_t *default_key) {
   size_t records_read;
   MemoTable2Record *foundRecord = NULL;
 
@@ -306,6 +310,7 @@ MemoTable2Record *search_memo_record(
 }
 
 // not sure if the search of more than PREFIX_LENGTH works
+// CLI entry: open a plot file and perform a single user-supplied lookup.
 SearchResult search_memo_records(const char *filename,
                                  const char *SEARCH_STRING,
                                  int num_threads_bucket) {
@@ -512,6 +517,9 @@ SearchResult search_memo_records(const char *filename,
   return result;
 }
 
+// ---- Bucket helpers ----
+
+// Load the bucket matching the query prefix into the context buffer.
 bool read_bucket_into_buffer(SearchFileCtx *ctx, const uint8_t *query,
                              size_t search_length, size_t *records_read,
                              size_t *effective_records_read) {
@@ -552,6 +560,7 @@ bool read_bucket_into_buffer(SearchFileCtx *ctx, const uint8_t *query,
   return true;
 }
 
+// Hash bucket contents and check for a match using optional per-bucket threading.
 int hash_bucket_buffer(const SearchFileCtx *ctx, const uint8_t *query,
                        size_t search_length, size_t effective_records,
                        int num_threads_bucket, size_t *records_checked) {
@@ -611,6 +620,50 @@ int hash_bucket_buffer(const SearchFileCtx *ctx, const uint8_t *query,
   return found;
 }
 
+// Execute a single lookup using an already-opened context and caller-provided query.
+SearchResult search_query_with_ctx(SearchFileCtx *ctx, const uint8_t *query,
+                                   size_t search_length,
+                                   int num_threads_bucket) {
+  SearchResult result = {0};
+  snprintf(result.filename, sizeof(result.filename), "%s", ctx->filename);
+  result.num_lookups = 1;
+  result.filesize = ctx->filesize;
+
+  if (search_length > HASH_SIZE) {
+    search_length = HASH_SIZE;
+  }
+
+  size_t records_read = 0;
+  size_t effective_records = 0;
+  size_t records_checked = 0;
+  double start_time = omp_get_wtime();
+
+  bool read_ok = read_bucket_into_buffer(ctx, query, search_length,
+                                         &records_read, &effective_records);
+
+  int found = 0;
+  if (read_ok && effective_records > 0) {
+    found = hash_bucket_buffer(ctx, query, search_length, effective_records,
+                               num_threads_bucket, &records_checked);
+  }
+
+  double elapsed_time = (omp_get_wtime() - start_time) * 1000.0;
+  result.search_time_ms = elapsed_time;
+  result.avg_time_per_lookup_ms = elapsed_time;
+  if (found) {
+    result.found_count = 1;
+    result.not_found_count = 0;
+  } else {
+    result.found_count = 0;
+    result.not_found_count = 1;
+  }
+
+  return result;
+}
+
+// ---- Batch lookup path ----
+
+// Generate random queries and benchmark batch lookups against a plot file.
 // not sure if the search of more than PREFIX_LENGTH works
 SearchResult search_memo_records_batch(const char *filename, int num_lookups,
                                        int difficulty, int num_threads_bucket) {
@@ -831,46 +884,9 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
   return result;
 }
 
-SearchResult search_query_with_ctx(SearchFileCtx *ctx, const uint8_t *query,
-                                   size_t search_length,
-                                   int num_threads_bucket) {
-  SearchResult result = {0};
-  snprintf(result.filename, sizeof(result.filename), "%s", ctx->filename);
-  result.num_lookups = 1;
-  result.filesize = ctx->filesize;
+// ---- Debug helpers ----
 
-  if (search_length > HASH_SIZE) {
-    search_length = HASH_SIZE;
-  }
-
-  size_t records_read = 0;
-  size_t effective_records = 0;
-  size_t records_checked = 0;
-  double start_time = omp_get_wtime();
-
-  bool read_ok = read_bucket_into_buffer(ctx, query, search_length,
-                                         &records_read, &effective_records);
-
-  int found = 0;
-  if (read_ok && effective_records > 0) {
-    found = hash_bucket_buffer(ctx, query, search_length, effective_records,
-                               num_threads_bucket, &records_checked);
-  }
-
-  double elapsed_time = (omp_get_wtime() - start_time) * 1000.0;
-  result.search_time_ms = elapsed_time;
-  result.avg_time_per_lookup_ms = elapsed_time;
-  if (found) {
-    result.found_count = 1;
-    result.not_found_count = 0;
-  } else {
-    result.found_count = 0;
-    result.not_found_count = 1;
-  }
-
-  return result;
-}
-
+// Debug helper: print the first N buckets and verify prefix alignment.
 void print_buckets(const char *filename, int num_buckets_to_print) {
   const char *basename = strrchr(filename, '/');
   if (basename == NULL) {
