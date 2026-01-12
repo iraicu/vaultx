@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
       {"destination", required_argument, 0, 'T'},
       {"source", required_argument, 0, 'F'},
       {"difficulty", required_argument, 0, 'D'},
-      {"keepopen", no_argument, 0, 'O'},
+      {"keepopen", required_argument, 0, 'O'},
       {"help", no_argument, 0, 'h'},
       {0, 0, 0, 0}};
 
@@ -412,7 +412,21 @@ int main(int argc, char *argv[]) {
       }
       break;
     case 'O':
-      KEEP_FILES_OPEN = true;
+      if (optarg == NULL) {
+        fprintf(stderr, "Error: -O/--keepopen requires 'true' or 'false'.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+      if (strcmp(optarg, "true") == 0) {
+        KEEP_FILES_OPEN = true;
+      } else if (strcmp(optarg, "false") == 0) {
+        KEEP_FILES_OPEN = false;
+      } else {
+        fprintf(stderr, "Error: Invalid value for -O/--keepopen: %s (use true|false)\n",
+                optarg);
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
       break;
     case 's':
       SEARCH_STRING = optarg;
@@ -624,8 +638,8 @@ int main(int argc, char *argv[]) {
   unsigned long long file_size_bytes = 0;
   double file_size_gb = 0.0;
 
-  // Only do generation-specific calculations if not searching
-  if (!SEARCH && !SEARCH_BATCH && !PRINT_BUCKETS) {
+  // Only do generation-specific calculations if not searching and not merge-only
+  if (!SEARCH && !SEARCH_BATCH && !PRINT_BUCKETS && !(MERGE && MERGE_MODE == 0)) {
     file_size_bytes = total_nonces * NONCE_SIZE;
     file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
 

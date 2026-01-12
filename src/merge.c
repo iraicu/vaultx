@@ -256,6 +256,26 @@ int merge() {
     free(plot_id);
   }
 
+  /* For merge-only, ensure bucket sizing matches the source plots rather than
+   * any -m value passed on the CLI. All merged files must share the same K. */
+  {
+    int first_k = plotData[0].K;
+    for (int i = 1; i < TOTAL_FILES; i++) {
+      if (plotData[i].K != first_k) {
+        fprintf(stderr, "Error: All source plots must have the same K (got %d and %d)\n",
+                first_k, plotData[i].K);
+        return 1;
+      }
+    }
+
+    K = first_k;
+    total_buckets = 1ULL << (PREFIX_SIZE * 8);
+    unsigned long long num_records_total_local = 1ULL << K;
+    num_records_in_bucket = num_records_total_local / total_buckets;
+    num_records_in_shuffled_bucket = num_records_in_bucket; // no shuffling in merge-only
+    rounds = 1; // merge-only reads full plots
+  }
+
   unsigned long long records_per_global_bucket =
       TOTAL_FILES * num_records_in_bucket;
   unsigned long long global_bucket_size =
