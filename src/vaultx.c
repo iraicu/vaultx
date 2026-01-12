@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
   char **SEARCH_FILES = NULL;
   int SEARCH_FILES_COUNT = 0;
   bool source_provided = false;
+  char *ps_alias = NULL; // holds rewritten -ps flag if provided
 
   // Define long options
   static struct option long_options[] = {
@@ -145,6 +146,8 @@ int main(int argc, char *argv[]) {
       {"total_files", required_argument, 0, 'n'},
       {"plot-merge", optional_argument, 0, 'P'},
       {"destination", required_argument, 0, 'T'},
+      {"previous_search", optional_argument, 0, 1000},
+      {"ps", optional_argument, 0, 1000},
       {"source", required_argument, 0, 'F'},
       {"difficulty", required_argument, 0, 'D'},
       {"keepopen", required_argument, 0, 'O'},
@@ -163,6 +166,19 @@ int main(int argc, char *argv[]) {
   approach = "for";
 
   // Parse command-line arguments
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "-ps") == 0) {
+      argv[i] = "--ps";
+    } else if (strncmp(argv[i], "-ps=", 4) == 0) {
+      size_t alias_len = strlen(argv[i] + 4) + strlen("--ps=") + 1;
+      ps_alias = (char *)malloc(alias_len);
+      if (ps_alias != NULL) {
+        snprintf(ps_alias, alias_len, "--ps=%s", argv[i] + 4);
+        argv[i] = ps_alias;
+      }
+    }
+  }
+
   while (
        (opt = getopt_long(
          argc, argv, "a:t:r:i:k:m:f:g:j:b:W:R:M:w:c:v:V:s:S:x:o:y:d:n:p:PT:F:D:O:h",
@@ -404,6 +420,14 @@ int main(int argc, char *argv[]) {
       SOURCE = optarg;
       source_provided = true;
       break;
+    case 1000:
+      if (optarg == NULL || strcmp(optarg, "true") == 0 ||
+          strcmp(optarg, "1") == 0) {
+        PREVIOUS_SEARCH = true;
+      } else {
+        PREVIOUS_SEARCH = false;
+      }
+      break;
     case 'D':
       DIFFICULTY = atoi(optarg);
       if (DIFFICULTY < 0) {
@@ -452,6 +476,14 @@ int main(int argc, char *argv[]) {
   case 27:
     matching_factor = 0.13639;
     break;
+    case 1000:
+      if (optarg == NULL || strcmp(optarg, "true") == 0 ||
+          strcmp(optarg, "1") == 0) {
+        PREVIOUS_SEARCH = true;
+      } else {
+        PREVIOUS_SEARCH = false;
+      }
+      break;
   case 28:
     matching_factor = 0.33318;
     break;
@@ -2177,143 +2209,516 @@ int main(int argc, char *argv[]) {
   // ---- Single-file lookup flow ----
   // Execute a user-specified search string against discovered plot files.
   if (SEARCH && !SEARCH_BATCH) {
-    // Derive nested threading: outer distributes files, inner hashes buckets.
-    int inner_threads_per_file = 1;
-    int outer_threads = 1;
-    int T = (num_threads > 0) ? num_threads : omp_get_max_threads();
-    int R = num_threads_record; // 0 means auto
-    int F = SEARCH_FILES_COUNT;
+    if (PREVIOUS_SEARCH) {
+      // Preserve the previous search path when -ps/--previous_search is used.
+      int inner_threads_per_file = 1;
+      int outer_threads = 1;
+      int T = (num_threads > 0) ? num_threads : omp_get_max_threads();
+      int R = num_threads_record; // 0 means auto
+      int F = SEARCH_FILES_COUNT;
 
-    // Make -t (outer) and -r (inner) independent.
-    outer_threads = (F > 1) ? ((T > 0) ? ((F < T) ? F : T) : F) : 1;
+      // Make -t (outer) and -r (inner) independent.
+      outer_threads = (F > 1) ? ((T > 0) ? ((F < T) ? F : T) : F) : 1;
 
-    if (R > 0) {
-      inner_threads_per_file = R; // use declared -r without binding to -t
-    } else {
-      if (F > 1) {
-        inner_threads_per_file = (T > 0) ? (T / outer_threads) : 1;
-        if (inner_threads_per_file < 1)
-          inner_threads_per_file = 1;
+      if (R > 0) {
+        inner_threads_per_file = R; // use declared -r without binding to -t
       } else {
-        // single file: fall back to outer budget
-        inner_threads_per_file = (T > 0) ? T : omp_get_max_threads();
+        if (F > 1) {
+          inner_threads_per_file = (T > 0) ? (T / outer_threads) : 1;
+          if (inner_threads_per_file < 1)
+            inner_threads_per_file = 1;
+        } else {
+          inner_threads_per_file = (T > 0) ? T : omp_get_max_threads();
+        }
       }
-    }
 
-    if (outer_threads > 1 && inner_threads_per_file > 1) {
-      omp_set_nested(1);
-      omp_set_max_active_levels(2);
-    } else {
-      omp_set_nested(0);
-    }
+      if (outer_threads > 1 && inner_threads_per_file > 1) {
+        omp_set_nested(1);
+        omp_set_max_active_levels(2);
+      } else {
+        omp_set_nested(0);
+      }
 
-    printf("\n=== Searching %d files with outer=%d inner=%d (budget=%d) ===\n\n",
-           SEARCH_FILES_COUNT, outer_threads, inner_threads_per_file, T);
+      printf("\n=== Searching %d files with outer=%d inner=%d (budget=%d) ===\n\n",
+             SEARCH_FILES_COUNT, outer_threads, inner_threads_per_file, T);
 
-    SearchResult *results = malloc(SEARCH_FILES_COUNT * sizeof(SearchResult));
+      SearchResult *results = malloc(SEARCH_FILES_COUNT * sizeof(SearchResult));
 
-    if (SEARCH_FILES_COUNT > 1) {
-      omp_set_num_threads(outer_threads);
+      if (SEARCH_FILES_COUNT > 1) {
+        omp_set_num_threads(outer_threads);
 #pragma omp parallel for schedule(dynamic)
-      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
 #pragma omp critical
-        printf("--- File %d/%d: %s ---\n", i + 1, SEARCH_FILES_COUNT,
-               SEARCH_FILES[i]);
-        results[i] = search_memo_records(SEARCH_FILES[i], SEARCH_STRING,
+          printf("--- File %d/%d: %s ---\n", i + 1, SEARCH_FILES_COUNT,
+                 SEARCH_FILES[i]);
+          results[i] = search_memo_records(SEARCH_FILES[i], SEARCH_STRING,
+                                           inner_threads_per_file);
+#pragma omp critical
+          printf("\n");
+        }
+      } else {
+        results[0] = search_memo_records(SEARCH_FILES[0], SEARCH_STRING,
                                          inner_threads_per_file);
-#pragma omp critical
+      }
+
+      if (SEARCH_FILES_COUNT > 1) {
+        printf("=== Search Summary ===\n");
+        printf("%-70s %15s %10s %15s\n", "Filename", "Size (bytes)",
+               "Found", "Time (ms)");
+        printf("-----------------------------------------------------------------"
+               "-------------------------------------------------\n");
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+          printf("%-70s %15ld %10d %15.2f\n", results[i].filename,
+                 results[i].filesize, results[i].found_count,
+                 results[i].search_time_ms);
+        }
         printf("\n");
       }
+
+      free(results);
+      printf("Thread config: T=%d R=%d F=%d outer=%d inner=%d\n", T, R, F,
+             outer_threads, inner_threads_per_file);
     } else {
-      results[0] = search_memo_records(SEARCH_FILES[0], SEARCH_STRING,
-                                       inner_threads_per_file);
-    }
-
-    if (SEARCH_FILES_COUNT > 1) {
-      printf("=== Search Summary ===\n");
-      printf("%-70s %15s %10s %15s\n", "Filename", "Size (bytes)", "Found",
-             "Time (ms)");
-      printf("-----------------------------------------------------------------"
-             "-------------------------------------------------\n");
-      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-        printf("%-70s %15ld %10d %15.2f\n", results[i].filename,
-               results[i].filesize, results[i].found_count,
-               results[i].search_time_ms);
+      if (SEARCH_FILES_COUNT <= 0) {
+        fprintf(stderr, "Error: No plot files available for search.\n");
+        exit(EXIT_FAILURE);
       }
-      printf("\n");
-    }
 
-    free(results);
-        /* Print final thread configuration used for the search */
-        printf("Thread config: T=%d R=%d F=%d outer=%d inner=%d\n",
-          T, R, F, outer_threads, inner_threads_per_file);
+      uint8_t query[HASH_SIZE] = {0};
+      size_t search_length = strlen(SEARCH_STRING) / 2;
+      if (search_length > HASH_SIZE)
+        search_length = HASH_SIZE;
+      if (hex_string_to_byte_array(SEARCH_STRING, query, search_length) != 0) {
+        fprintf(stderr,
+                "Error: Invalid search string '%s'. Expected %zu bytes.\n",
+                SEARCH_STRING, search_length);
+        exit(EXIT_FAILURE);
+      }
+
+      SearchFileCtx *ctx_list =
+          (SearchFileCtx *)calloc(SEARCH_FILES_COUNT, sizeof(SearchFileCtx));
+      size_t *matches_by_file =
+          (size_t *)calloc(SEARCH_FILES_COUNT, sizeof(size_t));
+      SearchResult *results =
+          (SearchResult *)calloc(SEARCH_FILES_COUNT, sizeof(SearchResult));
+      if (!ctx_list || !matches_by_file || !results) {
+        fprintf(stderr, "Error: Unable to allocate search context arrays.\n");
+        free(ctx_list);
+        free(matches_by_file);
+        free(results);
+        exit(EXIT_FAILURE);
+      }
+
+      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+        if (!search_ctx_open(SEARCH_FILES[i], &ctx_list[i])) {
+          fprintf(stderr, "Error: Failed to open %s for search.\n",
+                  SEARCH_FILES[i]);
+          exit(EXIT_FAILURE);
+        }
+        strncpy(results[i].filename, ctx_list[i].filename,
+                sizeof(results[i].filename) - 1);
+        results[i].filesize = ctx_list[i].filesize;
+        results[i].num_lookups = 1;
+      }
+
+      int io_threads = (num_threads > 0) ? num_threads : omp_get_max_threads();
+      int hash_threads = (num_threads_record > 0)
+                             ? num_threads_record
+                             : ((num_threads > 0) ? num_threads
+                                                  : omp_get_max_threads());
+
+      SearchMatch *matches = NULL;
+      size_t match_count = 0;
+      size_t records_hashed = 0;
+      double io_ms = 0.0, hash_ms = 0.0, total_ms = 0.0;
+
+      bool ok = search_rewrite_lookup(query, search_length, ctx_list,
+                                      SEARCH_FILES_COUNT, io_threads,
+                                      hash_threads, &matches, &match_count,
+                                      &records_hashed, matches_by_file, &io_ms,
+                                      &hash_ms, &total_ms);
+
+      if (!ok) {
+        fprintf(stderr, "Search failed while loading or hashing buckets.\n");
+      } else {
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+          results[i].found_count = (int)matches_by_file[i];
+          results[i].not_found_count = (matches_by_file[i] > 0) ? 0 : 1;
+          results[i].search_time_ms = total_ms;
+          results[i].avg_time_per_lookup_ms = total_ms;
+        }
+
+        printf("\n=== New search path ===\n");
+        printf("Files: %d | Matches: %zu | Records hashed: %zu\n",
+               SEARCH_FILES_COUNT, match_count, records_hashed);
+        printf("I/O time: %.2f ms | Hash time: %.2f ms | Total: %.2f ms\n",
+               io_ms, hash_ms, total_ms);
+        printf("Thread config: read(-t)=%d hash(-r)=%d\n", io_threads,
+               hash_threads);
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+          printf("  [%d] %s -> matches: %zu\n", i + 1, results[i].filename,
+                 matches_by_file[i]);
+        }
+
+        if (match_count > 0 && matches != NULL) {
+          printf("\nMatches (first per file):\n");
+          for (size_t m = 0; m < match_count; m++) {
+            int idx = matches[m].file_index;
+            const char *fname = (idx >= 0 && idx < SEARCH_FILES_COUNT)
+                                    ? results[idx].filename
+                                    : "unknown";
+            printf("  %s : nonce1=", fname);
+            for (size_t n = 0; n < NONCE_SIZE; ++n)
+              printf("%02X", matches[m].record.nonce1[n]);
+            printf(" nonce2=");
+            for (size_t n = 0; n < NONCE_SIZE; ++n)
+              printf("%02X", matches[m].record.nonce2[n]);
+            printf("\n");
+          }
+          printf("\n");
+        }
+      }
+
+      if (matches) {
+        free(matches);
+      }
+      free(matches_by_file);
+      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+        search_ctx_close(&ctx_list[i]);
+      }
+      free(results);
+      free(ctx_list);
+    }
   }
 
   // ---- Batch lookup flow ----
   // Run randomized prefix searches across one or many plot files.
   if (SEARCH_BATCH) {
-    // Derive nested threading: outer over files, inner within each bucket.
-    fprintf(stderr, "DEBUG: Entering SEARCH_BATCH\n");
-    fprintf(stderr, "DEBUG: SEARCH_FILES_COUNT = %d\n", SEARCH_FILES_COUNT);
-    fprintf(stderr, "DEBUG: num_threads = %d\n", num_threads);
-    fprintf(stderr, "DEBUG: LOOKUP_COUNT = %d\n", LOOKUP_COUNT);
-    fprintf(stderr, "DEBUG: DIFFICULTY = %d\n", DIFFICULTY);
+    if (PREVIOUS_SEARCH) {
+      // Retain legacy batch search when -ps is requested.
+      // Derive nested threading: outer over files, inner within each bucket.
+      fprintf(stderr, "DEBUG: Entering SEARCH_BATCH\n");
+      fprintf(stderr, "DEBUG: SEARCH_FILES_COUNT = %d\n", SEARCH_FILES_COUNT);
+      fprintf(stderr, "DEBUG: num_threads = %d\n", num_threads);
+      fprintf(stderr, "DEBUG: LOOKUP_COUNT = %d\n", LOOKUP_COUNT);
+      fprintf(stderr, "DEBUG: DIFFICULTY = %d\n", DIFFICULTY);
 
-    if (SEARCH_FILES_COUNT == 0) {
-      fprintf(stderr, "ERROR: SEARCH_FILES_COUNT is 0, which will cause "
-                      "division by zero\n");
-      exit(EXIT_FAILURE);
-    }
+      if (SEARCH_FILES_COUNT == 0) {
+        fprintf(stderr, "ERROR: SEARCH_FILES_COUNT is 0, which will cause "
+                        "division by zero\n");
+        exit(EXIT_FAILURE);
+      }
 
-    int outer_threads = 1;
-    int per_bucket_threads = 1;
-    int T = (num_threads > 0) ? num_threads : omp_get_max_threads();
-    int R = num_threads_record; // per-bucket threads
-    int F = SEARCH_FILES_COUNT;
+      int outer_threads = 1;
+      int per_bucket_threads = 1;
+      int T = (num_threads > 0) ? num_threads : omp_get_max_threads();
+      int R = num_threads_record; // per-bucket threads
+      int F = SEARCH_FILES_COUNT;
 
-    // Keep outer (IO) and inner (per-bucket) threading independent.
-    outer_threads = (T > 0) ? ((F < T) ? F : T) : F;
-    if (outer_threads < 1)
-      outer_threads = 1;
+      outer_threads = (T > 0) ? ((F < T) ? F : T) : F;
+      if (outer_threads < 1)
+        outer_threads = 1;
 
-    if (R > 0) {
-      per_bucket_threads = R; // use declared -r without binding to -t
-    } else {
-      per_bucket_threads = (T > 0) ? (T / outer_threads) : 1;
-      if (per_bucket_threads < 1)
-        per_bucket_threads = 1;
-    }
-
-    if (outer_threads > 1 && per_bucket_threads > 1) {
-      omp_set_nested(1);
-      omp_set_max_active_levels(2);
-    } else {
-      omp_set_nested(0);
-    }
-
-    printf("\n=== Searching %d files with outer=%d (files) inner=%d (bucket) budget=%d ===\n\n",
-           SEARCH_FILES_COUNT, outer_threads, per_bucket_threads, T);
-
-    bool keep_open = KEEP_FILES_OPEN;
-    if (keep_open && SEARCH_FILES_COUNT > 1024) {
-      fprintf(stderr,
-              "Warning: keep-open disabled because file count exceeds 1024.\n");
-      keep_open = false;
-    }
-
-    SearchResult *results = calloc(SEARCH_FILES_COUNT, sizeof(SearchResult));
-    if (!results) {
-      fprintf(stderr, "Error: Unable to allocate search results.\n");
-      exit(EXIT_FAILURE);
-    }
-
-    SearchFileCtx *ctx_list = NULL;
-    if (keep_open) {
-      ctx_list = calloc(SEARCH_FILES_COUNT, sizeof(SearchFileCtx));
-      if (!ctx_list) {
-        fprintf(stderr, "Error: Unable to allocate context array; disabling keep-open.\n");
-        keep_open = false;
+      if (R > 0) {
+        per_bucket_threads = R;
       } else {
+        per_bucket_threads = (T > 0) ? (T / outer_threads) : 1;
+        if (per_bucket_threads < 1)
+          per_bucket_threads = 1;
+      }
+
+      if (outer_threads > 1 && per_bucket_threads > 1) {
+        omp_set_nested(1);
+        omp_set_max_active_levels(2);
+      } else {
+        omp_set_nested(0);
+      }
+
+      printf("\n=== Searching %d files with outer=%d (files) inner=%d (bucket) budget=%d ===\n\n",
+             SEARCH_FILES_COUNT, outer_threads, per_bucket_threads, T);
+
+      bool keep_open = KEEP_FILES_OPEN;
+      if (keep_open && SEARCH_FILES_COUNT > 1024) {
+        fprintf(stderr,
+                "Warning: keep-open disabled because file count exceeds 1024.\n");
+        keep_open = false;
+      }
+
+      SearchResult *results = calloc(SEARCH_FILES_COUNT, sizeof(SearchResult));
+      if (!results) {
+        fprintf(stderr, "Error: Unable to allocate search results.\n");
+        exit(EXIT_FAILURE);
+      }
+
+      SearchFileCtx *ctx_list = NULL;
+      if (keep_open) {
+        ctx_list = calloc(SEARCH_FILES_COUNT, sizeof(SearchFileCtx));
+        if (!ctx_list) {
+          fprintf(stderr, "Error: Unable to allocate context array; disabling keep-open.\n");
+          keep_open = false;
+        } else {
+          for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+            if (!search_ctx_open(SEARCH_FILES[i], &ctx_list[i])) {
+              fprintf(stderr, "Error: Failed to open %s; disabling keep-open.\n",
+                      SEARCH_FILES[i]);
+              keep_open = false;
+              break;
+            }
+            strncpy(results[i].filename, ctx_list[i].filename,
+                    sizeof(results[i].filename) - 1);
+            results[i].filesize = ctx_list[i].filesize;
+          }
+        }
+      }
+
+      if (!keep_open && ctx_list) {
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+          search_ctx_close(&ctx_list[i]);
+        }
+        free(ctx_list);
+        ctx_list = NULL;
+      }
+
+      size_t search_length =
+          (DIFFICULTY == 0) ? HASH_SIZE : (size_t)DIFFICULTY;
+      if (search_length > HASH_SIZE)
+        search_length = HASH_SIZE;
+
+      srand((unsigned int)time(NULL));
+
+      double total_wall_time_ms = 0.0;
+
+      for (int lookup = 0; lookup < LOOKUP_COUNT; lookup++) {
+        double lookup_start = omp_get_wtime();
+        uint8_t query[HASH_SIZE] = {0};
+        for (size_t j = 0; j < search_length; ++j) {
+          query[j] = rand() % 256;
+        }
+
+        SearchResult *step_results =
+            calloc(SEARCH_FILES_COUNT, sizeof(SearchResult));
+        if (!step_results) {
+          fprintf(stderr, "Error: Unable to allocate step results.\n");
+          exit(EXIT_FAILURE);
+        }
+
+        if (SEARCH_FILES_COUNT > 1) {
+          omp_set_num_threads(outer_threads);
+#pragma omp parallel for schedule(dynamic)
+          for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+            if (keep_open) {
+              step_results[i] = search_query_with_ctx(&ctx_list[i], query,
+                                                      search_length,
+                                                      per_bucket_threads);
+            } else {
+              SearchFileCtx ctx_temp;
+              if (search_ctx_open(SEARCH_FILES[i], &ctx_temp)) {
+                step_results[i] = search_query_with_ctx(&ctx_temp, query,
+                                                        search_length,
+                                                        per_bucket_threads);
+                search_ctx_close(&ctx_temp);
+              } else {
+                strncpy(step_results[i].filename, SEARCH_FILES[i],
+                        sizeof(step_results[i].filename) - 1);
+                step_results[i].filesize = 0;
+                step_results[i].num_lookups = 1;
+                step_results[i].found_count = 0;
+                step_results[i].not_found_count = 1;
+                step_results[i].search_time_ms = 0.0;
+                step_results[i].avg_time_per_lookup_ms = 0.0;
+              }
+            }
+          }
+        } else {
+          if (keep_open) {
+            step_results[0] = search_query_with_ctx(&ctx_list[0], query,
+                                                    search_length,
+                                                    per_bucket_threads);
+          } else {
+            SearchFileCtx ctx_temp;
+            if (search_ctx_open(SEARCH_FILES[0], &ctx_temp)) {
+              step_results[0] = search_query_with_ctx(&ctx_temp, query,
+                                                      search_length,
+                                                      per_bucket_threads);
+              search_ctx_close(&ctx_temp);
+            }
+          }
+        }
+
+        double lookup_wall_ms = (omp_get_wtime() - lookup_start) * 1000.0;
+        total_wall_time_ms += lookup_wall_ms;
+
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+          if (results[i].filename[0] == '\0') {
+            strncpy(results[i].filename,
+                    (keep_open && ctx_list) ? ctx_list[i].filename
+                                            : SEARCH_FILES[i],
+                    sizeof(results[i].filename) - 1);
+          }
+          if (results[i].filesize == 0) {
+            results[i].filesize = step_results[i].filesize;
+          }
+          results[i].num_lookups += 1;
+          results[i].found_count += step_results[i].found_count;
+          results[i].not_found_count += step_results[i].not_found_count;
+          results[i].search_time_ms += step_results[i].search_time_ms;
+        }
+
+        free(step_results);
+      }
+
+      int total_found = 0;
+      int total_not_found = 0;
+
+      double avg_wall_time_ms =
+          (LOOKUP_COUNT > 0) ? (total_wall_time_ms / LOOKUP_COUNT) : 0.0;
+
+      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+        double avg_time = (results[i].num_lookups > 0)
+                              ? (results[i].search_time_ms /
+                                 results[i].num_lookups)
+                              : 0.0;
+        results[i].avg_time_per_lookup_ms = avg_time;
+        total_found += results[i].found_count;
+        total_not_found += results[i].not_found_count;
+      }
+
+      if (SEARCH_FILES_COUNT > 1) {
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+          SearchFileCtx *meta_ctx = keep_open ? &ctx_list[i] : NULL;
+          SearchFileCtx temp_ctx;
+
+          if (!meta_ctx || meta_ctx->filename[0] == '\0') {
+            if (search_ctx_open(SEARCH_FILES[i], &temp_ctx)) {
+              meta_ctx = &temp_ctx;
+            }
+          }
+
+          if (meta_ctx != NULL) {
+            printf("Size of '%s' is %ld bytes.\n", meta_ctx->filename,
+                   meta_ctx->filesize);
+            printf("SEARCH: filename=%s\n", meta_ctx->filename);
+            printf("SEARCH: filesize=%ld\n", meta_ctx->filesize);
+            printf("SEARCH: num_buckets=%llu\n",
+                   meta_ctx->num_buckets_search);
+            printf("SEARCH: num_records_in_bucket=%llu\n",
+                   meta_ctx->num_records_in_bucket_search);
+            printf("SEARCH: difficulty=%d (matching %zu bytes)\n", DIFFICULTY,
+                   search_length);
+          }
+
+          printf("searched for %d lookups of %zu bytes long, found %d, not found %d in %.2f seconds, %.4f ms per lookup\n\n",
+                 LOOKUP_COUNT, search_length, results[i].found_count,
+                 results[i].not_found_count,
+                 results[i].search_time_ms / 1000.0,
+                 results[i].avg_time_per_lookup_ms);
+
+          if (meta_ctx == &temp_ctx) {
+            search_ctx_close(meta_ctx);
+          }
+        }
+
+        printf("=== Search Summary ===\n");
+        printf("%-70s %15s %10s %10s %12s %20s %18s\n", "Filename",
+               "Size (bytes)", "Lookups", "Found", "Not Found",
+               "Avg Time/Lookup (ms)", "Total Time (ms)");
+        printf("---------------------------------------------------------------------------------"
+               "---------------------------------------------------------------\n");
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+          printf("%-70s %15ld %10d %10d %12d %20.4f %18.2f\n",
+                 results[i].filename, results[i].filesize,
+                 results[i].num_lookups, results[i].found_count,
+                 results[i].not_found_count, results[i].avg_time_per_lookup_ms,
+                 results[i].search_time_ms);
+        }
+        printf("---------------------------------------------------------------------------------"
+               "---------------------------------------------------------------\n");
+        printf("%-70s %15s %10s %10s %12s %20.4f %18.2f\n", "AVERAGE", "",
+               "", "", "", avg_wall_time_ms,
+               avg_wall_time_ms * LOOKUP_COUNT);
+        printf("%-70s %15s %10d %10d %12d %20.4f %18.2f\n", "SUM", "",
+               LOOKUP_COUNT, total_found, total_not_found, avg_wall_time_ms,
+               avg_wall_time_ms * LOOKUP_COUNT);
+        printf("\n");
+      } else if (SEARCH_FILES_COUNT == 1) {
+        SearchFileCtx *meta_ctx = keep_open ? ctx_list : NULL;
+        SearchFileCtx temp_ctx;
+
+        if (meta_ctx == NULL) {
+          if (search_ctx_open(SEARCH_FILES[0], &temp_ctx)) {
+            meta_ctx = &temp_ctx;
+          }
+        }
+
+        if (meta_ctx != NULL) {
+          printf("Size of '%s' is %ld bytes.\n", meta_ctx->filename,
+                 meta_ctx->filesize);
+          printf("SEARCH: filename=%s\n", meta_ctx->filename);
+          printf("SEARCH: filesize=%ld\n", meta_ctx->filesize);
+          printf("SEARCH: num_buckets=%llu\n", meta_ctx->num_buckets_search);
+          printf("SEARCH: num_records_in_bucket=%llu\n",
+                 meta_ctx->num_records_in_bucket_search);
+          printf("SEARCH: difficulty=%d (matching %zu bytes)\n", DIFFICULTY,
+                 search_length);
+        }
+
+        printf("searched for %d lookups of %zu bytes long, found %d, not found %d in %.2f seconds, %.4f ms per lookup\n",
+               LOOKUP_COUNT, search_length, results[0].found_count,
+               results[0].not_found_count,
+               results[0].search_time_ms / 1000.0,
+               results[0].avg_time_per_lookup_ms);
+
+        if (meta_ctx == &temp_ctx) {
+          search_ctx_close(meta_ctx);
+        }
+      }
+
+      free(results);
+      if (keep_open && ctx_list) {
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+          search_ctx_close(&ctx_list[i]);
+        }
+        free(ctx_list);
+      }
+      printf("Thread config: T=%d R=%d F=%d outer=%d inner=%d keep_open=%d\n",
+             T, R, F, outer_threads, per_bucket_threads,
+             keep_open ? 1 : 0);
+    } else {
+      if (SEARCH_FILES_COUNT == 0) {
+        fprintf(stderr, "ERROR: SEARCH_FILES_COUNT is 0, which will cause division by zero\n");
+        exit(EXIT_FAILURE);
+      }
+
+      size_t search_length =
+          (DIFFICULTY == 0) ? HASH_SIZE : (size_t)DIFFICULTY;
+      if (search_length > HASH_SIZE)
+        search_length = HASH_SIZE;
+
+      int io_threads = (num_threads > 0) ? num_threads : omp_get_max_threads();
+      int hash_threads = (num_threads_record > 0)
+                             ? num_threads_record
+                             : ((num_threads > 0) ? num_threads
+                                                  : omp_get_max_threads());
+
+      bool keep_open = KEEP_FILES_OPEN;
+      if (keep_open && SEARCH_FILES_COUNT > 1024) {
+        fprintf(stderr,
+                "Warning: keep-open disabled because file count exceeds 1024.\n");
+        keep_open = false;
+      }
+
+      SearchFileCtx *ctx_list =
+          (SearchFileCtx *)calloc(SEARCH_FILES_COUNT, sizeof(SearchFileCtx));
+      SearchResult *results =
+          (SearchResult *)calloc(SEARCH_FILES_COUNT, sizeof(SearchResult));
+      if (!ctx_list || !results) {
+        fprintf(stderr, "Error: Unable to allocate search context arrays.\n");
+        free(ctx_list);
+        free(results);
+        exit(EXIT_FAILURE);
+      }
+
+      if (keep_open) {
         for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
           if (!search_ctx_open(SEARCH_FILES[i], &ctx_list[i])) {
             fprintf(stderr, "Error: Failed to open %s; disabling keep-open.\n",
@@ -2326,213 +2731,133 @@ int main(int argc, char *argv[]) {
           results[i].filesize = ctx_list[i].filesize;
         }
       }
-    }
 
-    // If keep-open failed mid-way, close any opened and reset
-    if (!keep_open && ctx_list) {
-      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-        search_ctx_close(&ctx_list[i]);
-      }
-      free(ctx_list);
-      ctx_list = NULL;
-    }
+      srand((unsigned int)time(NULL));
+      double total_wall_time_ms = 0.0;
 
-    size_t search_length = (DIFFICULTY == 0) ? HASH_SIZE : (size_t)DIFFICULTY;
-    if (search_length > HASH_SIZE)
-      search_length = HASH_SIZE;
-
-    srand((unsigned int)time(NULL));
-
-    double total_wall_time_ms = 0.0; // wall-clock for each lookup across all files
-
-    for (int lookup = 0; lookup < LOOKUP_COUNT; lookup++) {
-      double lookup_start = omp_get_wtime();
-      uint8_t query[HASH_SIZE] = {0};
-      for (size_t j = 0; j < search_length; ++j) {
-        query[j] = rand() % 256;
-      }
-
-      SearchResult *step_results = calloc(SEARCH_FILES_COUNT, sizeof(SearchResult));
-      if (!step_results) {
-        fprintf(stderr, "Error: Unable to allocate step results.\n");
+      size_t *matches_by_file =
+          (size_t *)calloc(SEARCH_FILES_COUNT, sizeof(size_t));
+      if (!matches_by_file) {
+        fprintf(stderr, "Error: Unable to allocate match counters.\n");
         exit(EXIT_FAILURE);
       }
 
-      if (SEARCH_FILES_COUNT > 1) {
-        omp_set_num_threads(outer_threads);
-#pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-          if (keep_open) {
-            step_results[i] = search_query_with_ctx(&ctx_list[i], query,
-                                                    search_length,
-                                                    per_bucket_threads);
-          } else {
-            SearchFileCtx ctx_temp;
-            if (search_ctx_open(SEARCH_FILES[i], &ctx_temp)) {
-              step_results[i] = search_query_with_ctx(&ctx_temp, query,
-                                                      search_length,
-                                                      per_bucket_threads);
-              search_ctx_close(&ctx_temp);
-            } else {
-              strncpy(step_results[i].filename, SEARCH_FILES[i],
-                      sizeof(step_results[i].filename) - 1);
-              step_results[i].filesize = 0;
-              step_results[i].num_lookups = 1;
-              step_results[i].found_count = 0;
-              step_results[i].not_found_count = 1;
-              step_results[i].search_time_ms = 0.0;
-              step_results[i].avg_time_per_lookup_ms = 0.0;
+      for (int lookup = 0; lookup < LOOKUP_COUNT; lookup++) {
+        uint8_t query[HASH_SIZE] = {0};
+        for (size_t j = 0; j < search_length; ++j) {
+          query[j] = rand() % 256;
+        }
+
+        if (!keep_open) {
+          for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+            if (!search_ctx_open(SEARCH_FILES[i], &ctx_list[i])) {
+              fprintf(stderr, "Error: Failed to open %s for lookup %d.\n",
+                      SEARCH_FILES[i], lookup);
+              exit(EXIT_FAILURE);
             }
           }
         }
-      } else {
-        if (keep_open) {
-          step_results[0] = search_query_with_ctx(&ctx_list[0], query,
-                                                  search_length,
-                                                  per_bucket_threads);
-        } else {
-          SearchFileCtx ctx_temp;
-          if (search_ctx_open(SEARCH_FILES[0], &ctx_temp)) {
-            step_results[0] = search_query_with_ctx(&ctx_temp, query,
-                                                    search_length,
-                                                    per_bucket_threads);
-            search_ctx_close(&ctx_temp);
+
+        memset(matches_by_file, 0,
+               sizeof(size_t) * (size_t)SEARCH_FILES_COUNT);
+        SearchMatch *matches = NULL;
+        size_t match_count = 0;
+        size_t records_hashed = 0;
+        double io_ms = 0.0, hash_ms = 0.0, total_ms = 0.0;
+
+        bool ok = search_rewrite_lookup(query, search_length, ctx_list,
+                                        SEARCH_FILES_COUNT, io_threads,
+                                        hash_threads, &matches, &match_count,
+                                        &records_hashed, matches_by_file,
+                                        &io_ms, &hash_ms, &total_ms);
+
+        if (matches) {
+          free(matches);
+        }
+
+        if (!ok) {
+          fprintf(stderr, "Search failed during batch lookup %d.\n", lookup);
+        }
+
+        total_wall_time_ms += total_ms;
+
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+          if (results[i].filename[0] == '\0') {
+            strncpy(results[i].filename,
+                    keep_open ? ctx_list[i].filename : SEARCH_FILES[i],
+                    sizeof(results[i].filename) - 1);
+          }
+          if (results[i].filesize == 0) {
+            results[i].filesize = ctx_list[i].filesize;
+          }
+          results[i].num_lookups += 1;
+          results[i].found_count += (int)matches_by_file[i];
+          if (matches_by_file[i] == 0) {
+            results[i].not_found_count += 1;
+          }
+          results[i].search_time_ms += total_ms;
+        }
+
+        if (!keep_open) {
+          for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+            search_ctx_close(&ctx_list[i]);
           }
         }
       }
 
-      double lookup_wall_ms = (omp_get_wtime() - lookup_start) * 1000.0;
-      total_wall_time_ms += lookup_wall_ms;
+      double avg_wall_time_ms =
+          (LOOKUP_COUNT > 0) ? (total_wall_time_ms / LOOKUP_COUNT) : 0.0;
 
-      // Accumulate step results
       for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-        if (results[i].filename[0] == '\0') {
-          strncpy(results[i].filename, (keep_open && ctx_list) ? ctx_list[i].filename : SEARCH_FILES[i],
-                  sizeof(results[i].filename) - 1);
-        }
-        if (results[i].filesize == 0) {
-          results[i].filesize = step_results[i].filesize;
-        }
-        results[i].num_lookups += 1;
-        results[i].found_count += step_results[i].found_count;
-        results[i].not_found_count += step_results[i].not_found_count;
-        results[i].search_time_ms += step_results[i].search_time_ms;
-      }
-
-      free(step_results);
-    }
-
-    int total_found = 0;
-    int total_not_found = 0;
-
-    double avg_wall_time_ms =
-      (LOOKUP_COUNT > 0) ? (total_wall_time_ms / LOOKUP_COUNT) : 0.0;
-
-    for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-      double avg_time = (results[i].num_lookups > 0)
-                            ? (results[i].search_time_ms / results[i].num_lookups)
-                            : 0.0;
-      results[i].avg_time_per_lookup_ms = avg_time;
-      total_found += results[i].found_count;
-      total_not_found += results[i].not_found_count;
-    }
-
-    if (SEARCH_FILES_COUNT > 1) {
-      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-        SearchFileCtx *meta_ctx = keep_open ? &ctx_list[i] : NULL;
-        SearchFileCtx temp_ctx;
-
-        if (!meta_ctx || meta_ctx->filename[0] == '\0') {
-          if (search_ctx_open(SEARCH_FILES[i], &temp_ctx)) {
-            meta_ctx = &temp_ctx;
-          }
-        }
-
-        if (meta_ctx != NULL) {
-          printf("Size of '%s' is %ld bytes.\n", meta_ctx->filename,
-                 meta_ctx->filesize);
-          printf("SEARCH: filename=%s\n", meta_ctx->filename);
-          printf("SEARCH: filesize=%ld\n", meta_ctx->filesize);
-          printf("SEARCH: num_buckets=%llu\n",
-                 meta_ctx->num_buckets_search);
-          printf("SEARCH: num_records_in_bucket=%llu\n",
-                 meta_ctx->num_records_in_bucket_search);
-          printf("SEARCH: difficulty=%d (matching %zu bytes)\n", DIFFICULTY,
-                 search_length);
-        }
-
-        printf("searched for %d lookups of %zu bytes long, found %d, not found %d in %.2f seconds, %.4f ms per lookup\n\n",
-               LOOKUP_COUNT, search_length, results[i].found_count,
-               results[i].not_found_count, results[i].search_time_ms / 1000.0,
-               results[i].avg_time_per_lookup_ms);
-
-        if (meta_ctx == &temp_ctx) {
-          search_ctx_close(meta_ctx);
+        if (results[i].num_lookups > 0) {
+          results[i].avg_time_per_lookup_ms =
+              results[i].search_time_ms / results[i].num_lookups;
         }
       }
 
-      printf("=== Search Summary ===\n");
-      printf("%-70s %15s %10s %10s %12s %20s %18s\n", "Filename", "Size (bytes)",
-             "Lookups", "Found", "Not Found", "Avg Time/Lookup (ms)", "Total Time (ms)");
+      int total_found = 0;
+      int total_not_found = 0;
+      double total_time_ms = 0.0;
+      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+        total_found += results[i].found_count;
+        total_not_found += results[i].not_found_count;
+        total_time_ms += results[i].search_time_ms;
+      }
+
+      printf("\n=== New batch search path ===\n");
+      printf("Files: %d | Lookups: %d | Avg wall per lookup: %.4f ms\n",
+             SEARCH_FILES_COUNT, LOOKUP_COUNT, avg_wall_time_ms);
+      printf("Thread config: read(-t)=%d hash(-r)=%d keep_open=%d\n", io_threads,
+             hash_threads, keep_open ? 1 : 0);
+            printf("%-70s %15s %10s %10s %12s %20s %18s\n", "Filename",
+              "Size (bytes)", "Lookups", "Found", "Not Found",
+              "Avg Time/Lookup (ms)", "Total Time (ms)");
       printf("---------------------------------------------------------------------------------"
              "---------------------------------------------------------------\n");
       for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-        printf("%-70s %15ld %10d %10d %12d %20.4f %18.2f\n", results[i].filename,
-               results[i].filesize, results[i].num_lookups,
-               results[i].found_count, results[i].not_found_count,
-               results[i].avg_time_per_lookup_ms, results[i].search_time_ms);
+         printf("%-70s %15ld %10d %10d %12d %20.4f %18.2f\n",
+           results[i].filename, results[i].filesize,
+           results[i].num_lookups, results[i].found_count,
+           results[i].not_found_count, results[i].avg_time_per_lookup_ms,
+           results[i].search_time_ms);
       }
       printf("---------------------------------------------------------------------------------"
              "---------------------------------------------------------------\n");
-            printf("%-70s %15s %10s %10s %12s %20.4f %18.2f\n", "AVERAGE",
-              "", "", "", "", avg_wall_time_ms,
-              avg_wall_time_ms * LOOKUP_COUNT);
+            printf("%-70s %15s %10s %10s %12s %20.4f %18.2f\n", "AVERAGE", "",
+              "", "", "", avg_wall_time_ms, avg_wall_time_ms * LOOKUP_COUNT);
             printf("%-70s %15s %10d %10d %12d %20.4f %18.2f\n", "SUM", "",
-              LOOKUP_COUNT, total_found, total_not_found,
-              avg_wall_time_ms, avg_wall_time_ms * LOOKUP_COUNT);
-      printf("\n");
-    } else if (SEARCH_FILES_COUNT == 1) {
-      SearchFileCtx *meta_ctx = keep_open ? ctx_list : NULL;
-      SearchFileCtx temp_ctx;
+              LOOKUP_COUNT, total_found, total_not_found, avg_wall_time_ms,
+              total_time_ms);
 
-      if (meta_ctx == NULL) {
-        if (search_ctx_open(SEARCH_FILES[0], &temp_ctx)) {
-          meta_ctx = &temp_ctx;
+      free(matches_by_file);
+      if (keep_open) {
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+          search_ctx_close(&ctx_list[i]);
         }
-      }
-
-      if (meta_ctx != NULL) {
-        printf("Size of '%s' is %ld bytes.\n", meta_ctx->filename,
-               meta_ctx->filesize);
-        printf("SEARCH: filename=%s\n", meta_ctx->filename);
-        printf("SEARCH: filesize=%ld\n", meta_ctx->filesize);
-        printf("SEARCH: num_buckets=%llu\n", meta_ctx->num_buckets_search);
-        printf("SEARCH: num_records_in_bucket=%llu\n",
-               meta_ctx->num_records_in_bucket_search);
-        printf("SEARCH: difficulty=%d (matching %zu bytes)\n", DIFFICULTY,
-               search_length);
-      }
-
-      printf("searched for %d lookups of %zu bytes long, found %d, not found %d in %.2f seconds, %.4f ms per lookup\n",
-             LOOKUP_COUNT, search_length, results[0].found_count,
-             results[0].not_found_count, results[0].search_time_ms / 1000.0,
-             results[0].avg_time_per_lookup_ms);
-
-      if (meta_ctx == &temp_ctx) {
-        search_ctx_close(meta_ctx);
-      }
-    }
-
-    free(results);
-    if (keep_open && ctx_list) {
-      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-        search_ctx_close(&ctx_list[i]);
       }
       free(ctx_list);
+      free(results);
     }
-    /* Print final thread configuration used for the batch search */
-    printf("Thread config: T=%d R=%d F=%d outer=%d inner=%d keep_open=%d\n",
-           T, R, F, outer_threads, per_bucket_threads, keep_open ? 1 : 0);
   }
 
   // ---- Bucket inspection ----
@@ -2593,6 +2918,9 @@ int main(int argc, char *argv[]) {
   free(FILENAME_TMP);
   free(FILENAME_TMP_TABLE2);
   free(FILENAME_TABLE2_buf);
+  if (ps_alias) {
+    free(ps_alias);
+  }
 
   if (DEBUG)
     printf("SUCCESS!\n");

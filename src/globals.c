@@ -36,6 +36,7 @@ bool VERIFY = false;
 bool VERIFY_ONLY = false;
 bool FULL_BUCKETS = false;
 bool PRINT_BUCKETS = false;
+bool PREVIOUS_SEARCH = false;
 // bool ENABLE_DETAILED_METRICS = false;
 // bool METRICS_OUTPUT_JSON = false;
 // bool METRICS_OUTPUT_CSV = false;

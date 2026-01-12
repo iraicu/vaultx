@@ -74,6 +74,7 @@ extern bool VERIFY;
 extern bool VERIFY_ONLY;
 extern bool FULL_BUCKETS;
 extern bool PRINT_BUCKETS;
+extern bool PREVIOUS_SEARCH;
 // extern bool ENABLE_DETAILED_METRICS;
 // extern bool METRICS_OUTPUT_JSON;
 // extern bool METRICS_OUTPUT_CSV;

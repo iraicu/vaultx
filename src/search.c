@@ -218,8 +218,8 @@ MemoTable2Record *search_memo_record(
               default_key; // Default to passed-in key for non-merged files
           if (plotData != NULL && total_files > 0 && records_per_file > 0) {
             int file_index = (int)(i / records_per_file);
-            if (file_index < total_files) {
-              record_key = plotData[file_index].key;
+              if (file_index < total_files) {
+                record_key = (uint8_t *)plotData[file_index].key;
             }
           }
 
@@ -591,13 +591,13 @@ int hash_bucket_buffer(const SearchFileCtx *ctx, const uint8_t *query,
         continue;
       }
 
-      uint8_t *record_key = ctx->local_key;
+      uint8_t *record_key = (uint8_t *)ctx->local_key;
       if (ctx->plotData_array != NULL && ctx->num_files > 0 &&
           ctx->records_per_file > 0) {
         if (ctx->records_per_file > 0) {
           int file_index = (int)(i / ctx->records_per_file);
-          if (file_index < ctx->num_files) {
-            record_key = ctx->plotData_array[file_index].key;
+              if (file_index < ctx->num_files) {
+                record_key = (uint8_t *)ctx->plotData_array[file_index].key;
           }
         }
       }

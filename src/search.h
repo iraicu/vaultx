@@ -15,6 +15,11 @@ typedef struct {
 } SearchResult;
 
 typedef struct {
+  MemoTable2Record record;
+  int file_index;
+} SearchMatch;
+
+typedef struct {
   char filename[256];
   FILE *file;
   long filesize;
@@ -53,6 +58,17 @@ bool read_bucket_into_buffer(SearchFileCtx *ctx, const uint8_t *query,
 int hash_bucket_buffer(const SearchFileCtx *ctx, const uint8_t *query,
                        size_t search_length, size_t effective_records,
                        int num_threads_bucket, size_t *records_checked);
+
+// New parallel search path that separates I/O (-t) from hashing (-r)
+bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
+                           SearchFileCtx *ctx_list, int file_count,
+                           int io_threads, int hash_threads,
+                           SearchMatch **matches_out,
+                           size_t *match_count_out,
+                           size_t *records_hashed_out,
+                           size_t *matches_by_file,
+                           double *io_ms_out, double *hash_ms_out,
+                           double *total_ms_out);
 
 void print_buckets(const char *filename, int num_buckets_to_print);
 
