@@ -92,6 +92,8 @@ extern size_t READ_BATCH_SIZE;
 
 extern double matching_factor;
 
+void init_system_defaults(void);
+
 // Timing variables for performance measurement
 extern double start_time;
 extern double elapsed_time_io_total;

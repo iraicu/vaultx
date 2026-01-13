@@ -167,6 +167,8 @@ int main(int argc, char *argv[]) {
   bool source_provided = false;
   char *ps_alias = NULL; // holds rewritten -ps flag if provided
 
+  init_system_defaults();
+
   // Define long options
   static struct option long_options[] = {
       {"approach", required_argument, 0, 'a'},
