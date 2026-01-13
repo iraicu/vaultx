@@ -93,6 +93,8 @@ extern size_t READ_BATCH_SIZE;
 extern double matching_factor;
 
 void init_system_defaults(void);
+void set_global_num_threads(int threads);
+void set_global_memory_limit_mb(unsigned long long mb);
 
 // Timing variables for performance measurement
 extern double start_time;

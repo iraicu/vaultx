@@ -252,6 +252,7 @@ int main(int argc, char *argv[]) {
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
       }
+      set_global_num_threads(num_threads);
       break;
     case 'k':
       K = atoi(optarg);
@@ -271,6 +272,8 @@ int main(int argc, char *argv[]) {
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
       }
+      set_global_memory_limit_mb(
+          (unsigned long long)(memory_input_gb * 1024.0));
       MEMORY_SIZE_MB =
           (unsigned long long)(memory_input_gb * 1024); // Convert to MB
       MEMORY_SIZE_MB = largest_power_of_two_le((MEMORY_SIZE_MB - 1300) / 3);

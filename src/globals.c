@@ -62,6 +62,19 @@ void init_system_defaults(void) {
   }
 }
 
+void set_global_num_threads(int threads) {
+  if (threads > 0) {
+    num_threads = threads;
+  }
+}
+
+void set_global_memory_limit_mb(unsigned long long mb) {
+  if (mb > 0) {
+    MEMORY_LIMIT_MB =
+        (mb > (unsigned long long)INT_MAX) ? INT_MAX : (int)mb;
+  }
+}
+
 // Defaults
 int K = 27;
 int current_file = 1;
