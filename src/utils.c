@@ -1,5 +1,6 @@
 #include "utils.h"
 #include "vaultx.h"
+#include <errno.h>
 
 // Function to display usage information
 void print_usage(char *prog_name) {
@@ -336,6 +337,45 @@ void ensure_folder_exists(const char *path) {
   } else if (!S_ISDIR(st.st_mode)) {
     fprintf(stderr, "%s exists but is not a directory\n", path);
   }
+}
+
+int ensure_folder_exists_recursive(const char *path) {
+  if (path == NULL || strlen(path) == 0) {
+    return -1;
+  }
+
+  char tmp[4096];
+  strncpy(tmp, path, sizeof(tmp));
+  tmp[sizeof(tmp) - 1] = '\0';
+
+  size_t len = strlen(tmp);
+  // Remove trailing slash for easier iteration
+  if (len > 1 && tmp[len - 1] == '/') {
+    tmp[len - 1] = '\0';
+  }
+
+  for (char *p = tmp + 1; *p; p++) {
+    if (*p == '/') {
+      *p = '\0';
+      if (mkdir(tmp, 0777) != 0) {
+        if (errno != EEXIST) {
+          perror("mkdir failed");
+          return -1;
+        }
+      }
+      *p = '/';
+    }
+  }
+
+  // Create the final directory component
+  if (mkdir(tmp, 0777) != 0) {
+    if (errno != EEXIST) {
+      perror("mkdir failed");
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
 void path_join(char *dest, size_t dest_size, const char *dir,

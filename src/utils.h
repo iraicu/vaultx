@@ -52,6 +52,10 @@ void delete_contents(const char *folder_path);
 // Ensure folder exists, create if not
 void ensure_folder_exists(const char *path);
 
+// Ensure folder and any parents exist (mkdir -p semantics). Returns 0 on
+// success, -1 on failure.
+int ensure_folder_exists_recursive(const char *path);
+
 // Join two paths, handling trailing/leading slashes
 void path_join(char *dest, size_t dest_size, const char *dir, const char *file);
 

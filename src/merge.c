@@ -312,18 +312,54 @@ int merge() {
   }
 
   // Merge file
-  char merge_filename[256];
-  char merge_basename[100];
-  snprintf(merge_basename, sizeof(merge_basename), "merge_%d_%d.plot", K,
-           TOTAL_FILES);
-  path_join(merge_filename, sizeof(merge_filename), DESTINATION,
-            merge_basename);
-  remove(merge_filename);
+  char merge_filename[4096];
+  char merge_basename[256];
 
-  int merge_fd = open(merge_filename, O_WRONLY | O_CREAT, 0644);
+  // Ensure destination directory exists (mkdir -p semantics)
+  if (ensure_folder_exists_recursive(DESTINATION) != 0) {
+    fprintf(stderr, "Error: Could not create destination directory '%s'\n",
+            DESTINATION);
+    return EXIT_FAILURE;
+  }
+
+  // Attempt to create a unique merge filename. If merge_K_N.plot exists,
+  // append _1, _2, ... until a free name is found (up to a reasonable limit).
+  int attempt = 0;
+  const int MAX_ATTEMPTS = 10000;
+  int merge_fd = -1;
+  while (attempt < MAX_ATTEMPTS) {
+    if (attempt == 0) {
+      snprintf(merge_basename, sizeof(merge_basename), "merge_%d_%d.plot",
+               K, TOTAL_FILES);
+    } else {
+      snprintf(merge_basename, sizeof(merge_basename), "merge_%d_%d_%d.plot",
+               K, TOTAL_FILES, attempt);
+    }
+
+    path_join(merge_filename, sizeof(merge_filename), DESTINATION,
+              merge_basename);
+
+    // Try to create file atomically to avoid races
+    merge_fd = open(merge_filename, O_WRONLY | O_CREAT | O_EXCL, 0644);
+    if (merge_fd != -1) {
+      // created successfully
+      break;
+    } else {
+      if (errno == EEXIST) {
+        // file exists, try next suffix
+        attempt++;
+        continue;
+      } else {
+        // other error
+        perror("Error creating merge file");
+        return EXIT_FAILURE;
+      }
+    }
+  }
 
   if (merge_fd == -1) {
-    perror("Error opening file");
+    fprintf(stderr, "Error: Unable to create unique merge filename after %d attempts\n",
+            MAX_ATTEMPTS);
     return EXIT_FAILURE;
   }
 
