@@ -11,6 +11,7 @@ int MEMORY_LIMIT_MB = 307200;
 int num_threads = 8;
 int DIFFICULTY = 0;
 int PRINT_BUCKETS_COUNT = 0;
+int PRINT_RECORDS_COUNT = 0;
 
 unsigned long long total_nonces;
 unsigned long long num_records_in_bucket = 1;
@@ -36,6 +37,7 @@ bool VERIFY = false;
 bool VERIFY_ONLY = false;
 bool FULL_BUCKETS = false;
 bool PRINT_BUCKETS = false;
+bool PRINT_RECORDS = false;
 bool PREVIOUS_SEARCH = false;
 // bool ENABLE_DETAILED_METRICS = false;
 // bool METRICS_OUTPUT_JSON = false;

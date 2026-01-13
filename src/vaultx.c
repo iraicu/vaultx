@@ -385,13 +385,17 @@ int main(int argc, char *argv[]) {
       }
       break;
     case 'p':
-      PRINT_BUCKETS_COUNT = atoi(optarg);
-      if (PRINT_BUCKETS_COUNT < 1) {
-        fprintf(stderr, "Number of buckets to print must be positive.\n");
+      PRINT_RECORDS_COUNT = atoi(optarg);
+      if (PRINT_RECORDS_COUNT < 1) {
+        fprintf(stderr, "Number of records to print must be positive.\n");
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
       }
-      PRINT_BUCKETS = true;
+      /* Enable print mode; actual printing happens after file discovery when
+       * -f specifies the exact file to process. */
+      PRINT_RECORDS = true;
+      /* Disable hash generation when printing records */
+      HASHGEN = false;
       break;
     case 'P':
       MERGE = true;
@@ -672,7 +676,8 @@ int main(int argc, char *argv[]) {
   double file_size_gb = 0.0;
 
   // Only do generation-specific calculations if not searching and not merge-only
-  if (!SEARCH && !SEARCH_BATCH && !PRINT_BUCKETS && !(MERGE && MERGE_MODE == 0)) {
+  if (!SEARCH && !SEARCH_BATCH && !PRINT_BUCKETS && !PRINT_RECORDS && \
+      !(MERGE && MERGE_MODE == 0)) {
     file_size_bytes = total_nonces * NONCE_SIZE;
     file_size_gb = file_size_bytes / (1024 * 1024 * 1024.0);
 
@@ -785,7 +790,7 @@ int main(int argc, char *argv[]) {
       snprintf(filename_table2, sizeof(filename_table2), "k%d-%s.plot", K,
                hex_plot_id);
       path_join(FILENAME_TABLE2, 4096, plot_dir, filename_table2);
-    } else if (SEARCH || SEARCH_BATCH || PRINT_BUCKETS) {
+  } else if (SEARCH || SEARCH_BATCH || PRINT_BUCKETS || PRINT_RECORDS) {
       // Discover target plot files for search/inspection (file or directory).
       fprintf(stderr, "DEBUG: File discovery starting for path: '%s'\n",
               DIR_TABLE2);
@@ -858,6 +863,28 @@ int main(int argc, char *argv[]) {
       fprintf(stderr,
               "DEBUG: File discovery complete. SEARCH_FILES_COUNT = %d\n",
               SEARCH_FILES_COUNT);
+      /* If user requested printing records via -p, require -f to be a regular
+       * file (exact filename) and print records from that file. */
+      if (PRINT_RECORDS_COUNT > 0) {
+        struct stat fdstat;
+        if (stat(DIR_TABLE2, &fdstat) != 0) {
+          fprintf(stderr, "Error: Cannot access path '%s' for printing.\n",
+                  DIR_TABLE2);
+          perror("stat");
+          exit(EXIT_FAILURE);
+        }
+
+        if (S_ISREG(fdstat.st_mode)) {
+          print_records(DIR_TABLE2, PRINT_RECORDS_COUNT);
+          /* After printing, exit program as that's the requested action. */
+          exit(EXIT_SUCCESS);
+        } else {
+          fprintf(stderr,
+                  "Error: -f must specify an exact plot filename when used with -p. Directory provided: '%s'\n",
+                  DIR_TABLE2);
+          exit(EXIT_FAILURE);
+        }
+      }
     }
 
     // Print out configuration

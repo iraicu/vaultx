@@ -77,6 +77,7 @@ void print_usage(char *prog_name) {
          "(default: false)\n");
   printf("  -d, --debug [true|false]              Enable debug output "
          "(default: false)\n");
+  printf("  -p, --print NUM                       Print NUM non-empty records from the plot file specified with -f (requires -f <filename>)\n");
 
   printf("\nHelp:\n");
   printf("  -h, --help                            Display this help message\n");
@@ -112,6 +113,9 @@ void print_usage(char *prog_name) {
   printf("      %s -S 100 -D 3 -f /data -t 32\n", prog_name);
   printf("    Search single large file with maximum parallelism:\n");
   printf("      %s -S 500 -D 3 -f /output/merge_30_5.plot -t 64\n", prog_name);
+  printf("\n  Print Records from a Plot File:\n");
+  printf("    Print the first 5 non-empty records from a specific plot file:\n");
+  printf("      %s -p 5 -f /path/to/k27-<hexid>.plot\n", prog_name);
 }
 
 unsigned char *getRandomHash(size_t num_bytes) {

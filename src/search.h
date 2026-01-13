@@ -71,5 +71,6 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
                            double *total_ms_out);
 
 void print_buckets(const char *filename, int num_buckets_to_print);
+void print_records(const char *filename, int num_records_to_print);
 
 #endif

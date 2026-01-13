@@ -49,6 +49,7 @@ extern int MEMORY_LIMIT_MB;
 extern int num_threads;
 extern int DIFFICULTY;
 extern int PRINT_BUCKETS_COUNT;
+extern int PRINT_RECORDS_COUNT;
 
 extern unsigned long long num_records_in_bucket;
 extern unsigned long long num_records_in_shuffled_bucket;
@@ -74,6 +75,7 @@ extern bool VERIFY;
 extern bool VERIFY_ONLY;
 extern bool FULL_BUCKETS;
 extern bool PRINT_BUCKETS;
+extern bool PRINT_RECORDS;
 extern bool PREVIOUS_SEARCH;
 // extern bool ENABLE_DETAILED_METRICS;
 // extern bool METRICS_OUTPUT_JSON;

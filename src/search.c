@@ -958,7 +958,7 @@ void print_buckets(const char *filename, int num_buckets_to_print) {
     }
   }
 
-  derive_key(k_value, local_plot_id, local_key);
+  
 
   if (sizeof(MemoTable2Record) == 0) {
     fprintf(stderr, "Error: sizeof(MemoTable2Record) is 0\n");
@@ -1153,4 +1153,199 @@ void print_buckets(const char *filename, int num_buckets_to_print) {
   fclose(file);
 
   printf("=== End of bucket print ===\n\n");
+}
+
+// Print the first N non-empty records from a plot file. Each printed record
+// shows the two nonce values (HEX) and the first 12 bytes of the Blake3 hash
+// (HEX). Uses the file-unique 32-byte plot id as the Blake3 key when available
+// (non-merged plots). For merged plots the derived keys from the footer are
+// used as a fallback.
+void print_records(const char *filename, int num_records_to_print) {
+  const char *basename = strrchr(filename, '/');
+  if (basename == NULL) {
+    basename = filename;
+  } else {
+    basename++;
+  }
+
+  printf("PRINT_RECORDS: filename='%s' count=%d\n", filename,
+         num_records_to_print);
+
+  long filesize = get_file_size(filename);
+  if (filesize <= 0) {
+    fprintf(stderr, "Error: Invalid file size %ld for file '%s'\n", filesize,
+            filename);
+    return;
+  }
+
+  long data_filesize = filesize;
+  uint8_t local_plot_id[32];
+  uint8_t local_key[32];
+  memset(local_plot_id, 0, sizeof(local_plot_id));
+  memset(local_key, 0, sizeof(local_key));
+
+  int k_value = 0;
+  int num_files = 0;
+  PlotData *plotData_array = NULL;
+
+  if (strncmp(basename, "merge_", 6) == 0) {
+    if (sscanf(basename, "merge_%d_%d.plot", &k_value, &num_files) != 2) {
+      fprintf(stderr,
+              "Error: Invalid merge filename format '%s'. Expected merge_{K}_{N}.plot\n",
+              basename);
+      return;
+    }
+    data_filesize = filesize - (num_files * sizeof(PlotData));
+    // read footer keys (derived keys) for merged plots
+    plotData_array = (PlotData *)malloc(num_files * sizeof(PlotData));
+    if (plotData_array != NULL) {
+      FILE *f = fopen(filename, "rb");
+      if (f && fseek(f, -(num_files * sizeof(PlotData)), SEEK_END) == 0) {
+        size_t rc = fread(plotData_array, sizeof(PlotData), num_files, f);
+        if (rc != (size_t)num_files) {
+          fprintf(stderr, "Warning: Failed to read metadata footer for '%s'\n",
+                  filename);
+          free(plotData_array);
+          plotData_array = NULL;
+          num_files = 0;
+        }
+      } else {
+        if (f)
+          fclose(f);
+        free(plotData_array);
+        plotData_array = NULL;
+        num_files = 0;
+      }
+      if (f)
+        fclose(f);
+    }
+  } else {
+    char *dash = strchr(basename, '-');
+    if (dash == NULL || dash - basename < 2) {
+      fprintf(stderr,
+              "Error: Invalid filename format '%s'. Expected k{K}-{hex_id}.plot\n",
+              basename);
+      return;
+    }
+    if (sscanf(basename, "k%d", &k_value) != 1) {
+      fprintf(stderr, "Error: Could not parse K value from filename '%s'\n",
+              basename);
+      return;
+    }
+
+    const char *hex_start = dash + 1;
+    char plot_id_string[65];
+    strncpy(plot_id_string, hex_start, sizeof(plot_id_string) - 1);
+    plot_id_string[64] = '\0';
+    char *dot = strchr(plot_id_string, '.');
+    if (dot != NULL)
+      *dot = '\0';
+
+    if (hex_string_to_byte_array(plot_id_string, local_plot_id, 32) != 0) {
+      fprintf(stderr,
+              "Error: Invalid plot ID in filename '%s'. Expected 32 bytes hex (64 chars). Got '%s'\n",
+              basename, plot_id_string);
+      return;
+    }
+  }
+  // For non-merged plots derive the per-file key the same way table2 does
+  // (derive_key(k_value, plot_id, key_out)). For merged plots the footer
+  // already contains derived keys in plotData_array.
+  if (plotData_array == NULL || num_files == 0) {
+    derive_key(k_value, local_plot_id, local_key);
+  }
+
+  // open file and scan records sequentially from the start of data region
+  FILE *file = fopen(filename, "rb");
+  if (file == NULL) {
+    perror("Error opening file");
+    if (plotData_array)
+      free(plotData_array);
+    return;
+  }
+
+  long max_offset = data_filesize;
+  if (max_offset < 0) {
+    fclose(file);
+    if (plotData_array)
+      free(plotData_array);
+    return;
+  }
+
+  int printed = 0;
+  size_t record_index = 0;
+  MemoTable2Record rec;
+  while (printed < num_records_to_print) {
+    long cur_pos = ftell(file);
+    if (cur_pos < 0 || cur_pos + (long)sizeof(MemoTable2Record) > max_offset)
+      break; // reached end of data region
+
+    size_t rc = fread(&rec, sizeof(MemoTable2Record), 1, file);
+    if (rc != 1) {
+      break; // EOF or error
+    }
+
+    if (is_record_empty(&rec)) {
+      record_index++;
+      continue;
+    }
+
+    // choose key: prefer file-unique plot id when available (non-merged)
+    uint8_t *key_to_use = NULL;
+    uint8_t temp_key[32];
+    if (plotData_array == NULL || num_files == 0) {
+      // Use the derived key (SHA-256(plot_id || K)) to match table2
+      // generation behavior.
+      key_to_use = local_key;
+    } else {
+      // For merged plots the footer stores derived keys; select the
+      // appropriate derived key for this record based on records_per_file.
+      unsigned long long num_buckets_search = 1ULL << (PREFIX_SIZE * 8);
+      unsigned long long num_records_in_bucket_search =
+          data_filesize / num_buckets_search / sizeof(MemoTable2Record);
+      int records_per_file = (num_files > 0)
+                                 ? (int)(num_records_in_bucket_search /
+                                         (unsigned long long)num_files)
+                                 : (int)num_records_in_bucket_search;
+
+      int file_index = 0;
+      if (records_per_file > 0) {
+        file_index = (int)(record_index / (size_t)records_per_file);
+        if (file_index >= num_files)
+          file_index = num_files - 1;
+      }
+      if (plotData_array != NULL && file_index >= 0 && file_index < num_files) {
+        key_to_use = plotData_array[file_index].key;
+      } else {
+        // fallback to local plot id if something odd happened
+        memcpy(temp_key, local_plot_id, 32);
+        key_to_use = temp_key;
+      }
+    }
+
+    uint8_t hash_output[HASH_SIZE];
+    generateBlake3Pair(rec.nonce1, rec.nonce2, key_to_use, hash_output);
+
+    // print first 12 bytes of hash, then ' <= ', then NONCE1,NONCE2
+    for (int h = 0; h < 12 && h < HASH_SIZE; ++h)
+      printf("%02X", hash_output[h]);
+    printf(" <= ");
+    for (size_t n = 0; n < NONCE_SIZE; ++n)
+      printf("%02X", rec.nonce1[n]);
+    printf(",");
+    for (size_t n = 0; n < NONCE_SIZE; ++n)
+      printf("%02X", rec.nonce2[n]);
+    printf("\n");
+
+    printed++;
+    record_index++;
+  }
+
+  if (plotData_array)
+    free(plotData_array);
+  fclose(file);
+
+  if (printed == 0) {
+    printf("No non-empty records found in '%s'\n", filename);
+  }
 }
