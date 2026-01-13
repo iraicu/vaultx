@@ -1,6 +1,10 @@
 #define _GNU_SOURCE
 #include "vaultx.h"
 
+// Helper print macro that respects BENCHMARK flag (suppress non-CSV
+// diagnostics when BENCHMARK is true).
+#define BPRINTF(...) do { if (!BENCHMARK) printf(__VA_ARGS__); } while(0)
+
 int hex_string_to_byte_array(const char *hex_string, uint8_t *out,
                              size_t out_len) {
   size_t hexLen = strlen(hex_string);
@@ -660,7 +664,10 @@ int main(int argc, char *argv[]) {
   }
 
   // Display selected configurations
-  if (BENCHMARK) {
+  // When BENCHMARK mode is enabled we suppress intermediate, human
+  // readable diagnostics to produce machine-parseable output only.
+  // The benchmark summary line (CSV) is printed at the end of the run.
+  if (!BENCHMARK) {
     if (!SEARCH) {
       printf("Selected Approach           : %s\n", approach);
       printf("Number of Threads           : %d\n",
@@ -729,9 +736,10 @@ int main(int argc, char *argv[]) {
   }
 
   int num_plots_to_generate = 1;
+  double total_generation_time = 0.0;
   if (MERGE && (MERGE_MODE == 1 || MERGE_MODE == 2)) {
     num_plots_to_generate = TOTAL_FILES;
-    fprintf(stderr, "DEBUG: MERGE_MODE=%d source_provided=%d SOURCE=%s DIR_TABLE2=%s\n", MERGE_MODE, source_provided, SOURCE ? SOURCE : "(null)", DIR_TABLE2 ? DIR_TABLE2 : "(null)");
+    if (!BENCHMARK) fprintf(stderr, "DEBUG: MERGE_MODE=%d source_provided=%d SOURCE=%s DIR_TABLE2=%s\n", MERGE_MODE, source_provided, SOURCE ? SOURCE : "(null)", DIR_TABLE2 ? DIR_TABLE2 : "(null)");
     /* If user didn't provide -F, fallback to -f (DIR_TABLE2) as target for
        generated plots so `-P gen -f ./plots/` works intuitively. */
     if (!source_provided) {
@@ -751,7 +759,7 @@ int main(int argc, char *argv[]) {
   for (current_file = 1; current_file <= num_plots_to_generate;
        current_file++) {
     if (num_plots_to_generate > 1) {
-      printf("\n[%d/%d] Generating plot file...\n", current_file,
+      BPRINTF("\n[%d/%d] Generating plot file...\n", current_file,
              num_plots_to_generate);
     }
 
@@ -2167,6 +2175,10 @@ int main(int argc, char *argv[]) {
       double end_time = omp_get_wtime();
       double elapsed_time = end_time - start_time;
 
+    /* Accumulate per-file generation time so we can report total generation
+      time across multiple generated K-files when using -P. */
+    total_generation_time += elapsed_time;
+
       // Calculate throughput(MH/s)
       double total_throughput = (num_records_total / elapsed_time) / 1e6;
       double throughput_hash = (num_records_total / elapsed_time_hash) / 1e6;
@@ -2933,6 +2945,16 @@ int main(int argc, char *argv[]) {
 
   if (MERGE && (MERGE_MODE == 0 || MERGE_MODE == 2)) {
     merge();
+  }
+
+  /* If running in benchmark mode with a merge workflow, print a compact
+     comma-delimited summary: files_generated,k,threads,generation_time(s),read_time(s),write_time(s),merge_time(s),total_run_time(s) */
+  if (BENCHMARK && MERGE) {
+    double total_run_time = omp_get_wtime() - program_start_time;
+    printf("merge,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f\n",
+           TOTAL_FILES, K, num_threads, total_generation_time,
+           merge_read_time, merge_write_time, merge_compute_time,
+           total_run_time);
   }
 
   if (SEARCH_FILES != NULL) {

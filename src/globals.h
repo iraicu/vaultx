@@ -99,6 +99,12 @@ extern double elapsed_time_shuffle_total;
 extern double elapsed_time_hash_total;
 extern double elapsed_time_hash2_total;
 
+// Merge phase timing summaries (set by merge.c)
+extern double merge_read_time;
+extern double merge_write_time;
+extern double merge_compute_time;
+extern double merge_total_time;
+
 // I/O tracking variables
 extern unsigned long long total_bytes_written;
 extern unsigned long long total_bytes_read;

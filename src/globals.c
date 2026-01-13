@@ -83,6 +83,12 @@ double elapsed_time_shuffle_total = 0.0;
 double elapsed_time_hash_total = 0.0;
 double elapsed_time_hash2_total = 0.0;
 
+// Merge phase timing summaries (set by merge.c)
+double merge_read_time = 0.0;
+double merge_write_time = 0.0;
+double merge_compute_time = 0.0;
+double merge_total_time = 0.0;
+
 // I/O tracking variables
 unsigned long long total_bytes_written = 0;
 unsigned long long total_bytes_read = 0;

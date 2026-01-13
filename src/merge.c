@@ -4,6 +4,11 @@
 #include <stdio.h>
 #include <unistd.h>
 
+// Print only when not in BENCHMARK mode. Use runtime check so the
+// BENCHMARK global can be toggled via CLI.
+#define BPRINTF(...) \
+  do { if (!BENCHMARK) printf(__VA_ARGS__); } while (0)
+
 #if defined(__linux__)
 #include <sched.h>
 #include <sys/syscall.h>
@@ -20,7 +25,7 @@ void print_numa_node(void *ptr, const char *label) {
     perror("get_mempolicy");
     exit(EXIT_FAILURE);
   }
-  printf("%s is on NUMA node %d\n", label, status);
+  BPRINTF("%s is on NUMA node %d\n", label, status);
 }
 #endif
 
@@ -371,23 +376,23 @@ int merge() {
       ceil((double)total_buckets / total_global_buckets);
     int total_batches_int = (int)total_batches;
 
-  printf("Memory Size per Batch: %dMB\n", BATCH_MEMORY_MB);
-  printf("Buckets processed from each file per batch: %llu\n",
-         total_global_buckets);
-  printf("Bucket size: %llu bytes\n",
-         num_records_in_bucket * sizeof(MemoTable2Record));
-  printf("Data read from each file per batch: %.2fMB\n\n",
-         (double)total_global_buckets * num_records_in_bucket *
-             sizeof(MemoTable2Record) / (1024 * 1024));
-  printf("Total Batches: %llu\n", total_batches);
+  BPRINTF("Memory Size per Batch: %dMB\n", BATCH_MEMORY_MB);
+  BPRINTF("Buckets processed from each file per batch: %llu\n",
+    total_global_buckets);
+  BPRINTF("Bucket size: %llu bytes\n",
+    num_records_in_bucket * sizeof(MemoTable2Record));
+  BPRINTF("Data read from each file per batch: %.2fMB\n\n",
+    (double)total_global_buckets * num_records_in_bucket *
+        sizeof(MemoTable2Record) / (1024 * 1024));
+  BPRINTF("Total Batches: %llu\n", total_batches);
 
-  printf("Merge Approach [%d]: %s\n", MERGE_APPROACH,
-         MERGE_APPROACH == 1 ? "Serial" : "Pipelined");
-  printf("Source: %s\n", SOURCE);
-  printf("Destination: %s\n", DESTINATION);
-  printf("Threads: %d\n", num_threads);
-  printf("Files: %d, K%d\n", TOTAL_FILES, K);
-  printf("Memory Limit: %dMB\n\n\n", MEMORY_LIMIT_MB);
+  BPRINTF("Merge Approach [%d]: %s\n", MERGE_APPROACH,
+    MERGE_APPROACH == 1 ? "Serial" : "Pipelined");
+  BPRINTF("Source: %s\n", SOURCE);
+  BPRINTF("Destination: %s\n", DESTINATION);
+  BPRINTF("Threads: %d\n", num_threads);
+  BPRINTF("Files: %d, K%d\n", TOTAL_FILES, K);
+  BPRINTF("Memory Limit: %dMB\n\n\n", MEMORY_LIMIT_MB);
 
   double t_start = omp_get_wtime();
 #if defined(__APPLE__)
@@ -408,7 +413,7 @@ int merge() {
     return 1;
   }
 
-  printf("%s (%llu bytes) took %.3f seconds\n\n\n",
+  BPRINTF("%s (%llu bytes) took %.3f seconds\n\n\n",
 #if defined(__APPLE__)
          "ftruncate"
 #else
@@ -478,7 +483,7 @@ int merge() {
                     (end - i) * num_records_in_bucket, fd);
           if (read_bytes != num_records_in_bucket * (end - i)) {
             if (feof(fd)) {
-              printf("Reached end of file after reading %zu bytes\n",
+              BPRINTF("Reached end of file after reading %zu bytes\n",
                      read_bytes);
             } else {
               perror("fread failed");
@@ -496,8 +501,8 @@ int merge() {
           }
         }
 
-        if (tid == 0) {
-          printf("Read: %.4f\n", omp_get_wtime() - batch_start_time);
+          if (tid == 0) {
+          BPRINTF("Read: %.4f\n", omp_get_wtime() - batch_start_time);
           double fs = omp_get_wtime();
           size_t total_bytes =
               (end - i) * records_per_global_bucket * sizeof(MemoTable2Record);
@@ -513,12 +518,12 @@ int merge() {
             }
             bytes_written += res;
           }
-          printf("Write: %.4f\n", omp_get_wtime() - fs);
+          BPRINTF("Write: %.4f\n", omp_get_wtime() - fs);
 
-          printf("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n",
-                 ((double)end / total_buckets) * 100,
-                 omp_get_wtime() - batch_start_time,
-                 omp_get_wtime() - start_time);
+     BPRINTF("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n",
+       ((double)end / total_buckets) * 100,
+       omp_get_wtime() - batch_start_time,
+       omp_get_wtime() - start_time);
         }
       }
     }
@@ -600,7 +605,7 @@ int merge() {
                 // return 1;
                 break;
               } else if (n == 0) {
-                printf("Reached end of file after reading %zu bytes (expected "
+                BPRINTF("Reached end of file after reading %zu bytes (expected "
                        "%zu)\n",
                        bytes_read, total_bytes);
                 break;
@@ -616,13 +621,13 @@ int merge() {
             }
           }
 
-          double read_time = omp_get_wtime() - batch_start_time;
-          read_total_time += read_time;
+      double read_time = omp_get_wtime() - batch_start_time;
+      read_total_time += read_time;
 
-          double read_throughput_MBps =
-              BATCH_MEMORY_MB / read_time; // MB per second
-          printf("Read : %.4fs, Rate: %.2f MB/s\n", read_time,
-                 read_throughput_MBps);
+      double read_throughput_MBps =
+        BATCH_MEMORY_MB / read_time; // MB per second
+      BPRINTF("Read : %.4fs, Rate: %.2f MB/s\n", read_time,
+         read_throughput_MBps);
 
           merge_start_time = omp_get_wtime();
         }
@@ -642,7 +647,7 @@ int merge() {
         {
           double merge_time = omp_get_wtime() - merge_start_time;
 
-          printf("Merge: %.4fs\n", merge_time);
+          BPRINTF("Merge: %.4fs\n", merge_time);
 
           double write_start_time = omp_get_wtime();
 
@@ -661,18 +666,18 @@ int merge() {
             bytes_written += res;
           }
 
-          double write_time = omp_get_wtime() - write_start_time;
-          write_total_time += write_time;
+     double write_time = omp_get_wtime() - write_start_time;
+     write_total_time += write_time;
 
-          double write_throughput_MBps =
-              BATCH_MEMORY_MB / write_time; // MB per second
-          printf("Write: %.4fs, Rate: %.2f MB/s\n", write_time,
-                 write_throughput_MBps);
+     double write_throughput_MBps =
+    BATCH_MEMORY_MB / write_time; // MB per second
+     BPRINTF("Write: %.4fs, Rate: %.2f MB/s\n", write_time,
+       write_throughput_MBps);
 
-          printf("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n\n",
-                 ((double)end / total_buckets) * 100,
-                 omp_get_wtime() - batch_start_time,
-                 omp_get_wtime() - start_time);
+     BPRINTF("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n\n",
+       ((double)end / total_buckets) * 100,
+       omp_get_wtime() - batch_start_time,
+       omp_get_wtime() - start_time);
         }
       }
     }
@@ -746,7 +751,7 @@ int merge() {
     depend(out : mergeBatches[batch_idx].mergeDone)
           {
             if (DEBUG) {
-              printf("[%d] Merge Started\n", batch_idx);
+              BPRINTF("[%d] Merge Started\n", batch_idx);
             }
 
             double start_time = omp_get_wtime();
@@ -806,7 +811,7 @@ int merge() {
             mergeBatch->mergeDone = true;
 
             if (DEBUG) {
-              printf("[%d] Merge Complete: %.2f\n", batch_idx, elapsed);
+              BPRINTF("[%d] Merge Complete: %.2f\n", batch_idx, elapsed);
             }
           }
 
@@ -874,15 +879,22 @@ int merge() {
     merge_total_time = process_time - read_total_time - write_total_time;
   }
 
-  printf("\n\n");
-  printf("[%.2fs] Completed merging %d K%d-files of total size %.2fGB\n",
-         process_time, TOTAL_FILES, K, (double)size / (1024 * 1024 * 1024));
-  printf("Merge Approach: %s\n", MERGE_APPROACH == 1 ? "Serial" : "Pipelined");
-  printf("Source: %s\n", SOURCE);
-  printf("Destination: %s\n", DESTINATION);
-  printf("Read Time: %.2fs\n", read_total_time);
-  printf("Write Time: %.2fs\n", write_total_time);
-  printf("Merge Time: %.2fs\n\n\n", merge_total_time);
+  /* Set global merge timing variables so the caller can print an aggregate
+     benchmark line. */
+  merge_read_time = read_total_time;
+  merge_write_time = write_total_time;
+  merge_compute_time = merge_total_time;
+  merge_total_time = process_time;
+
+  BPRINTF("\n\n");
+  BPRINTF("[%.2fs] Completed merging %d K%d-files of total size %.2fGB\n",
+    process_time, TOTAL_FILES, K, (double)size / (1024 * 1024 * 1024));
+  BPRINTF("Merge Approach: %s\n", MERGE_APPROACH == 1 ? "Serial" : "Pipelined");
+  BPRINTF("Source: %s\n", SOURCE);
+  BPRINTF("Destination: %s\n", DESTINATION);
+  BPRINTF("Read Time: %.2fs\n", read_total_time);
+  BPRINTF("Write Time: %.2fs\n", write_total_time);
+  BPRINTF("Merge Time: %.2fs\n\n\n", merge_total_time);
 
   if (MERGE_APPROACH != 2) {
     free(mergedBuckets);
