@@ -1,6 +1,11 @@
 #define _GNU_SOURCE
 #include "vaultx.h"
 
+#if defined(__APPLE__)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
+
 // Helper print macro that respects BENCHMARK flag (suppress non-CSV
 // diagnostics when BENCHMARK is true).
 #define BPRINTF(...) do { if (!BENCHMARK) printf(__VA_ARGS__); } while(0)
@@ -70,15 +75,53 @@ int get_num_cores() {
 #endif
 }
 
-int largest_power_of_two_le(int m) {
+static double get_total_system_memory_gb(void) {
+#ifdef __APPLE__
+  uint64_t memsize = 0;
+  size_t len = sizeof(memsize);
+  int mib[2] = {CTL_HW, HW_MEMSIZE};
+
+  if (sysctl(mib, 2, &memsize, &len, NULL, 0) == -1) {
+    return -1.0;
+  }
+  return memsize / (1024.0 * 1024.0 * 1024.0);
+#elif defined(__linux__)
+  long pages = sysconf(_SC_PHYS_PAGES);
+  long page_size = sysconf(_SC_PAGE_SIZE);
+  if (pages < 0 || page_size < 0) {
+    return -1.0;
+  }
+  return (pages * (double)page_size) / (1024.0 * 1024.0 * 1024.0);
+#else
+  return -1.0;
+#endif
+}
+
+static unsigned long long largest_power_of_two_le(unsigned long long m) {
   if (m < 1)
     return 0;
 
-  int p = 1;
-  while ((p << 1) > 0 && (p << 1) <= m) {
-    p <<= 1;
+  m |= m >> 1;
+  m |= m >> 2;
+  m |= m >> 4;
+  m |= m >> 8;
+  m |= m >> 16;
+  m |= m >> 32;
+  return m - (m >> 1);
+}
+
+static unsigned long long next_power_of_two_ge(unsigned long long m) {
+  if (m <= 1) {
+    return 1;
   }
-  return p;
+  m--;
+  m |= m >> 1;
+  m |= m >> 2;
+  m |= m >> 4;
+  m |= m >> 8;
+  m |= m >> 16;
+  m |= m >> 32;
+  return m + 1;
 }
 
 int main(int argc, char *argv[]) {
@@ -91,6 +134,8 @@ int main(int argc, char *argv[]) {
   unsigned long long num_records_per_round = num_records_total;
   unsigned long long MEMORY_SIZE_MB = 1;
   double memory_input_gb = 0.0;
+  double expected_memory_gb = 0.0;
+  bool memory_specified = false;
   unsigned long long total_matches = 0;
   unsigned long long full_buckets = 0;
   unsigned long long record_counts = 0;
@@ -206,40 +251,17 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
       }
       break;
-    case 'r':
-      num_threads_record = atoi(optarg);
-      if (num_threads_record < 0) {
-        fprintf(stderr, "Number of record-level threads must be 0 (auto) or positive.\n");
-        print_usage(argv[0]);
-        exit(EXIT_FAILURE);
-      }
-      break;
-    case 'i':
-      num_threads_io = atoi(optarg);
-      if (num_threads_io <= 0) {
-        fprintf(stderr, "Number of I/O threads must be positive.\n");
-        print_usage(argv[0]);
-        exit(EXIT_FAILURE);
-      }
-      break;
     case 'k':
       K = atoi(optarg);
-      if ((NONCE_SIZE == 4 && (K < 27 || K > 32)) ||
-          (NONCE_SIZE == 5 &&
-           (K < 33 || K > 40))) { // Limiting K to avoid overflow
-        fprintf(
-            stderr,
-            "Exponent 27 <= k <= 32 for NONCE_SIZE=4 or 33 <= k <= 40 for "
-            "NONCE_SIZE=5; NONCE_SIZE can be configured at compile time.\n");
+      if (K <= 0) {
+        fprintf(stderr, "Exponent k must be positive.\n");
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
       }
-      num_records_total = 1ULL << K; // Compute 2^K
-      total_nonces = num_records_total;
-      MEMORY_SIZE_MB = num_records_total * NONCE_SIZE /
-                       (1024 * 1024); // Default memory size to fit all records
       break;
+      
     case 'm':
+      memory_specified = true;
       memory_input_gb = atof(optarg); // in GB
       if (memory_input_gb < 2.0) {
         fprintf(stderr, "Memory size must be at least 2 GB (2048 MB); increase "
@@ -467,11 +489,27 @@ int main(int argc, char *argv[]) {
       HASHGEN = false;
       break;
     case 'h':
-    default:
+      print_usage(argv[0]);
+      exit(EXIT_SUCCESS);
+    default: {
+      /* Unknown or malformed option: try to show the offending token to the
+         user. getopt_long consumes the token and advances optind; the token
+         that caused the error is usually at argv[optind-1] when optind>0. */
+      const char *token = (optind > 0 && argv[optind - 1]) ? argv[optind - 1]
+                                                          : "(unknown)";
+      set_cli_error("Unknown or invalid option: %s", token);
       print_usage(argv[0]);
       exit(EXIT_SUCCESS);
     }
+    }
   }
+
+  /* Ensure total_nonces reflects the parsed exponent K (2^K). Move this
+    here so parsers that set K take effect for downstream calculations. */
+  total_nonces = 1ULL << K;
+
+  /* Auto-detect logic was removed — defaults for -m/-t come from earlier
+     initialization or explicit command-line arguments. */
 
   // Hardcoding the match-factors based on k values used.
   switch (K) {
@@ -690,6 +728,43 @@ int main(int argc, char *argv[]) {
 
     total_buckets = 1ULL << (PREFIX_SIZE * 8);
 
+    if (!memory_specified) {
+      unsigned long long required_table1_mb =
+          (file_size_bytes + (1024ULL * 1024) - 1) / (1024ULL * 1024);
+      unsigned long long target_table1_mb =
+          next_power_of_two_ge(required_table1_mb);
+      unsigned long long target_memory_mb = target_table1_mb * 3 + 1300;
+      double system_memory_gb = get_total_system_memory_gb();
+      unsigned long long system_memory_mb =
+          (system_memory_gb > 0.0)
+              ? (unsigned long long)(system_memory_gb * 1024)
+              : 0;
+      unsigned long long memory_input_mb = target_memory_mb;
+
+      if (system_memory_mb > 0 && memory_input_mb > system_memory_mb) {
+        memory_input_mb = system_memory_mb;
+      }
+
+      memory_input_gb = memory_input_mb / 1024.0;
+      if (memory_input_gb < 2.0) {
+        fprintf(stderr, "Memory size must be at least 2 GB (2048 MB); increase "
+                        "-m size allocated.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+
+      MEMORY_SIZE_MB = largest_power_of_two_le((memory_input_mb - 1300) / 3);
+      if (MEMORY_SIZE_MB < 128) {
+        fprintf(
+            stderr,
+            "Table 1 memory size is set to %llu; memory size must be at least "
+            "0.125 GB (128 MB) for table 1; increase -m size allocated.\n",
+            MEMORY_SIZE_MB);
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+    }
+
     // Convert MEMORY_SIZE_MB to bytes before calculations
     MEMORY_SIZE_bytes = (unsigned long long)MEMORY_SIZE_MB * 1024 * 1024;
 
@@ -734,6 +809,8 @@ int main(int argc, char *argv[]) {
   if (MERGE && MERGE_MODE == 0) {
     HASHGEN = false;
   }
+
+  expected_memory_gb = (MEMORY_SIZE_MB * 3 + 1300) / 1024.0;
 
   int num_plots_to_generate = 1;
   double total_generation_time = 0.0;
@@ -909,8 +986,7 @@ int main(int argc, char *argv[]) {
         // printf("Table2 Size (bytes)         : %llu\n", file_size_bytes * 2);
 
         printf("Max Memory Size (GB)        : %.1f\n", memory_input_gb);
-        printf("Expected Memory Size (GB)   : %.1f\n",
-               (MEMORY_SIZE_MB * 3 + 1300) * 1.0 / 1024.0);
+        printf("Expected Memory Size (GB)   : %.1f\n", expected_memory_gb);
 
         printf("Number of Hashes (Disk)     : %llu\n", total_nonces);
         printf("File Size (GB)              : %.1f\n", file_size_gb * 2);
@@ -2209,9 +2285,10 @@ int main(int argc, char *argv[]) {
           // In-memory case
           printf(
               "%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%."
-              "2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%,%.2f\n",
+              "2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%,%.2f,%s\n",
               approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB,
-              file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput,
+              memory_input_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB,
+              total_throughput,
               total_throughput * sizeof(MemoRecord), throughput_hash,
               throughput_io, elapsed_time_hash_total, elapsed_time_hash2_total,
               elapsed_time_io_total, elapsed_time_shuffle_total,
@@ -2220,14 +2297,16 @@ int main(int argc, char *argv[]) {
               elapsed_time,
               total_matches * 100.0 / (num_records_in_bucket * total_buckets),
               record_counts * 100.0 / (total_buckets * num_records_in_bucket),
-              peak_memory_mb);
+              peak_memory_mb,
+              DIR_TABLE2 ? DIR_TABLE2 : (SOURCE ? SOURCE : ""));
         } else {
           // Out-of-memory case - use shuffled bucket size for match percentage
           printf(
               "%s,%d,%lu,%d,%llu,%.2f,%zu,%zu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%."
-              "2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%,%.2f\n",
+              "2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%,%.2f,%s\n",
               approach, K, sizeof(MemoRecord), num_threads, MEMORY_SIZE_MB,
-              file_size_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB, total_throughput,
+              memory_input_gb, BATCH_SIZE, WRITE_BATCH_SIZE_MB,
+              total_throughput,
               total_throughput * sizeof(MemoTable2Record), throughput_hash,
               throughput_io, elapsed_time_hash_total, elapsed_time_hash2_total,
               elapsed_time_io_total, elapsed_time_shuffle_total,
@@ -2238,7 +2317,8 @@ int main(int argc, char *argv[]) {
                   (num_records_in_shuffled_bucket * total_buckets),
               record_counts * 100.0 /
                   (total_buckets * num_records_in_shuffled_bucket),
-              peak_memory_mb);
+              peak_memory_mb,
+              DIR_TABLE2 ? DIR_TABLE2 : (SOURCE ? SOURCE : ""));
         }
         // return 0;
       }
@@ -2951,10 +3031,14 @@ int main(int argc, char *argv[]) {
      comma-delimited summary: files_generated,k,threads,generation_time(s),read_time(s),write_time(s),merge_time(s),total_run_time(s) */
   if (BENCHMARK && MERGE) {
     double total_run_time = omp_get_wtime() - program_start_time;
-    printf("merge,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f\n",
+    /* Append SOURCE (-F) and DESTINATION (-T) so callers can correlate the
+       per-file 'for,' lines (which use -F) and the merge output target (-T). */
+    printf("merge,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%s,%s\n",
            TOTAL_FILES, K, num_threads, total_generation_time,
            merge_read_time, merge_write_time, merge_compute_time,
-           total_run_time);
+           total_run_time,
+           SOURCE ? SOURCE : "",
+           DESTINATION ? DESTINATION : "");
   }
 
   if (SEARCH_FILES != NULL) {

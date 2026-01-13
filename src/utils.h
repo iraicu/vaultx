@@ -13,6 +13,8 @@
 
 // Usage info
 void print_usage(char *prog_name);
+// Record CLI parsing errors for print_usage to show.
+void set_cli_error(const char *fmt, ...);
 
 // Random bytes generator
 unsigned char *getRandomHash(size_t num_bytes);

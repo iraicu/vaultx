@@ -1,16 +1,25 @@
 #include "utils.h"
 #include "vaultx.h"
 #include <errno.h>
+#include <stdarg.h>
 
 // Function to display usage information
 void print_usage(char *prog_name) {
+  // If a CLI parsing error was recorded, print it first to help users
+  // identify which option/token caused the failure.
+  extern char __cli_error_buf[];
+  if (strlen(__cli_error_buf) > 0) {
+    fprintf(stderr, "Error: %s\n\n", __cli_error_buf);
+    // clear it so subsequent calls to print_usage don't repeat the message
+    __cli_error_buf[0] = '\0';
+  }
   printf("Usage: %s [OPTIONS]\n", prog_name);
 
   printf("\nCore Options:\n");
   printf("  -k, --exponent NUM                    Exponent K to compute 2^K "
          "records (default: 27, optional for search)\n");
   printf("  -m, --memory NUM                      Memory size in GB (default: "
-         "2)\n");
+         "auto, capped by system memory)\n");
   printf("  -t, --threads NUM                     Number of threads for "
          "generation/search (default: available cores)\n");
   printf("  -r, --record_threads NUM              Number of per-bucket (record-level) threads for search (default: auto)\n");
@@ -117,6 +126,19 @@ void print_usage(char *prog_name) {
   printf("\n  Print Records from a Plot File:\n");
   printf("    Print the first 5 non-empty records from a specific plot file:\n");
   printf("      %s -p 5 -f /path/to/k27-<hexid>.plot\n", prog_name);
+}
+
+// Buffer visible to other translation units that can set an explanatory
+// string when CLI parsing fails. Kept in this file so print_usage can show
+// it without changing every call-site.
+char __cli_error_buf[1024] = "";
+
+// Variadic setter for the CLI error buffer
+void set_cli_error(const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(__cli_error_buf, sizeof(__cli_error_buf), fmt, ap);
+  va_end(ap);
 }
 
 unsigned char *getRandomHash(size_t num_bytes) {
