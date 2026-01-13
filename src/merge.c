@@ -413,14 +413,13 @@ int merge() {
     return 1;
   }
 
-  BPRINTF("%s (%llu bytes) took %.3f seconds\n\n\n",
 #if defined(__APPLE__)
-         "ftruncate"
+  const char *alloc_call = "ftruncate";
 #else
-         "posix_fallocate"
+  const char *alloc_call = "posix_fallocate";
 #endif
-         ,
-         size, t_end - t_start);
+  BPRINTF("%s (%llu bytes) took %.3f seconds\n\n\n", alloc_call, size,
+          t_end - t_start);
 
   // Preload Files
   FILE *files[TOTAL_FILES];
