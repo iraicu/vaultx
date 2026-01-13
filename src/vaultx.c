@@ -5,6 +5,8 @@
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
+#include <limits.h>
+#include <sys/statvfs.h>
 
 // Helper print macro that respects BENCHMARK flag (suppress non-CSV
 // diagnostics when BENCHMARK is true).
@@ -124,6 +126,15 @@ static unsigned long long next_power_of_two_ge(unsigned long long m) {
   return m + 1;
 }
 
+static unsigned long long get_free_space_bytes(const char *path) {
+  struct statvfs vfs;
+  if (path == NULL || statvfs(path, &vfs) != 0) {
+    return 0;
+  }
+  return (unsigned long long)vfs.f_bavail *
+         (unsigned long long)vfs.f_frsize;
+}
+
 int main(int argc, char *argv[]) {
   // Default values
   const char *approach = "for"; // Default approach
@@ -165,6 +176,7 @@ int main(int argc, char *argv[]) {
   char **SEARCH_FILES = NULL;
   int SEARCH_FILES_COUNT = 0;
   bool source_provided = false;
+  bool total_files_specified = false;
   char *ps_alias = NULL; // holds rewritten -ps flag if provided
 
   init_system_defaults();
@@ -414,6 +426,7 @@ int main(int argc, char *argv[]) {
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
       }
+      total_files_specified = true;
       break;
     case 'p':
       PRINT_RECORDS_COUNT = atoi(optarg);
@@ -820,7 +833,6 @@ int main(int argc, char *argv[]) {
   int num_plots_to_generate = 1;
   double total_generation_time = 0.0;
   if (MERGE && (MERGE_MODE == 1 || MERGE_MODE == 2)) {
-    num_plots_to_generate = TOTAL_FILES;
     if (!BENCHMARK) fprintf(stderr, "DEBUG: MERGE_MODE=%d source_provided=%d SOURCE=%s DIR_TABLE2=%s\n", MERGE_MODE, source_provided, SOURCE ? SOURCE : "(null)", DIR_TABLE2 ? DIR_TABLE2 : "(null)");
     /* If user didn't provide -F, fallback to -f (DIR_TABLE2) as target for
        generated plots so `-P gen -f ./plots/` works intuitively. */
@@ -833,6 +845,49 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
       }
     }
+
+    if (file_size_bytes > 0) {
+      unsigned long long plot_size_bytes = file_size_bytes * 2ULL;
+      unsigned long long free_source_bytes = get_free_space_bytes(SOURCE);
+      if (free_source_bytes == 0) {
+        fprintf(stderr, "Error: Unable to determine free space for '%s'\n",
+                SOURCE ? SOURCE : "(null)");
+        exit(EXIT_FAILURE);
+      }
+      unsigned long long max_by_source = free_source_bytes / plot_size_bytes;
+      unsigned long long max_plots = max_by_source;
+      if (MERGE_MODE == 2) {
+        unsigned long long free_dest_bytes = get_free_space_bytes(DESTINATION);
+        if (free_dest_bytes == 0) {
+          fprintf(stderr, "Error: Unable to determine free space for '%s'\n",
+                  DESTINATION ? DESTINATION : "(null)");
+          exit(EXIT_FAILURE);
+        }
+        unsigned long long per_plot_merged_bytes = plot_size_bytes + 32ULL;
+        unsigned long long max_by_dest = free_dest_bytes / per_plot_merged_bytes;
+        if (max_by_dest < max_plots) {
+          max_plots = max_by_dest;
+        }
+      }
+
+      int max_plots_int = (max_plots > (unsigned long long)INT_MAX)
+                              ? INT_MAX
+                              : (int)max_plots;
+      if (max_plots_int < 1) {
+        fprintf(stderr, "Error: Not enough free space to generate any plots.\n");
+        exit(EXIT_FAILURE);
+      }
+      if (!total_files_specified) {
+        TOTAL_FILES = max_plots_int;
+      } else if (TOTAL_FILES > max_plots_int) {
+        fprintf(stderr,
+                "Warning: -n reduced from %d to %d due to available space.\n",
+                TOTAL_FILES, max_plots_int);
+        TOTAL_FILES = max_plots_int;
+      }
+    }
+
+    num_plots_to_generate = TOTAL_FILES;
     writeDataTmp = true;
     writeDataTmpTable2 = true;
     writeDataTable2 = true;
