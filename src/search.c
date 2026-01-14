@@ -1255,6 +1255,29 @@ void print_records(const char *filename, int num_records_to_print) {
     derive_key(k_value, local_plot_id, local_key);
   }
 
+  unsigned long long num_buckets_search = 1ULL << (PREFIX_SIZE * 8);
+  unsigned long long num_records_in_bucket_search =
+      data_filesize / num_buckets_search / sizeof(MemoTable2Record);
+  if (num_records_in_bucket_search == 0) {
+    fprintf(stderr,
+            "Error: File too small or incorrect format. Calculated 0 records per bucket.\n");
+    if (plotData_array)
+      free(plotData_array);
+    return;
+  }
+
+  int records_per_file = (num_files > 0)
+                             ? (int)(num_records_in_bucket_search /
+                                     (unsigned long long)num_files)
+                             : (int)num_records_in_bucket_search;
+  if (num_files > 0 && records_per_file == 0) {
+    fprintf(stderr,
+            "Error: Too many merged files or records per bucket too small.\n");
+    if (plotData_array)
+      free(plotData_array);
+    return;
+  }
+
   // open file and scan records sequentially from the start of data region
   FILE *file = fopen(filename, "rb");
   if (file == NULL) {
@@ -1273,7 +1296,6 @@ void print_records(const char *filename, int num_records_to_print) {
   }
 
   int printed = 0;
-  size_t record_index = 0;
   MemoTable2Record rec;
   while (printed < num_records_to_print) {
     long cur_pos = ftell(file);
@@ -1286,7 +1308,6 @@ void print_records(const char *filename, int num_records_to_print) {
     }
 
     if (is_record_empty(&rec)) {
-      record_index++;
       continue;
     }
 
@@ -1300,17 +1321,15 @@ void print_records(const char *filename, int num_records_to_print) {
     } else {
       // For merged plots the footer stores derived keys; select the
       // appropriate derived key for this record based on records_per_file.
-      unsigned long long num_buckets_search = 1ULL << (PREFIX_SIZE * 8);
-      unsigned long long num_records_in_bucket_search =
-          data_filesize / num_buckets_search / sizeof(MemoTable2Record);
-      int records_per_file = (num_files > 0)
-                                 ? (int)(num_records_in_bucket_search /
-                                         (unsigned long long)num_files)
-                                 : (int)num_records_in_bucket_search;
+      unsigned long long slot_index =
+          (unsigned long long)(cur_pos / (long)sizeof(MemoTable2Record));
+      unsigned long long bucket_slot =
+          slot_index % num_records_in_bucket_search; // reset per-bucket
 
       int file_index = 0;
       if (records_per_file > 0) {
-        file_index = (int)(record_index / (size_t)records_per_file);
+        file_index = (int)(bucket_slot /
+                           (unsigned long long)records_per_file);
         if (file_index >= num_files)
           file_index = num_files - 1;
       }
@@ -1338,7 +1357,6 @@ void print_records(const char *filename, int num_records_to_print) {
     printf("\n");
 
     printed++;
-    record_index++;
   }
 
   if (plotData_array)
