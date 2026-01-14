@@ -899,6 +899,14 @@ int main(int argc, char *argv[]) {
       BPRINTF("\n[%d/%d] Generating plot file...\n", current_file,
              num_plots_to_generate);
     }
+    if (HASHGEN) {
+      // Reset per-plot timing so benchmark output doesn't accumulate.
+      start_time = 0.0;
+      elapsed_time_io_total = 0.0;
+      elapsed_time_shuffle_total = 0.0;
+      elapsed_time_hash_total = 0.0;
+      elapsed_time_hash2_total = 0.0;
+    }
 
     // Generate vault ID
     if (HASHGEN) {
