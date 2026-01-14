@@ -2442,14 +2442,14 @@ int main(int argc, char *argv[]) {
 
       if (SEARCH_FILES_COUNT > 1) {
         printf("=== Search Summary ===\n");
-        printf("%-70s %15s %10s %15s\n", "Filename", "Size (bytes)",
-               "Found", "Time (ms)");
-        printf("-----------------------------------------------------------------"
-               "-------------------------------------------------\n");
+         printf("%-80s %15s %10s %15s %15s\n", "Filename", "Size (bytes)",
+           "Found", "All Matches", "Time (ms)");
+         printf("-----------------------------------------------------------------"
+           "--------------------------------------------------------------------------------\n");
         for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-          printf("%-70s %15ld %10d %15.2f\n", results[i].filename,
-                 results[i].filesize, results[i].found_count,
-                 results[i].search_time_ms);
+           printf("%-80s %15ld %10d %15lld %15.2f\n", results[i].filename,
+             results[i].filesize, results[i].found_count,
+             results[i].match_count, results[i].search_time_ms);
         }
         printf("\n");
       }
@@ -2521,7 +2521,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Search failed while loading or hashing buckets.\n");
       } else {
         for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-          results[i].found_count = (int)matches_by_file[i];
+          results[i].match_count = (long long)matches_by_file[i];
+          results[i].found_count = (matches_by_file[i] > 0) ? 1 : 0;
           results[i].not_found_count = (matches_by_file[i] > 0) ? 0 : 1;
           results[i].search_time_ms = total_ms;
           results[i].avg_time_per_lookup_ms = total_ms;
@@ -2540,7 +2541,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (match_count > 0 && matches != NULL) {
-          printf("\nMatches (first per file):\n");
+          printf("\nMatches (all):\n");
           for (size_t m = 0; m < match_count; m++) {
             int idx = matches[m].file_index;
             const char *fname = (idx >= 0 && idx < SEARCH_FILES_COUNT)
@@ -2703,6 +2704,7 @@ int main(int argc, char *argv[]) {
                 step_results[i].num_lookups = 1;
                 step_results[i].found_count = 0;
                 step_results[i].not_found_count = 1;
+                step_results[i].match_count = 0;
                 step_results[i].search_time_ms = 0.0;
                 step_results[i].avg_time_per_lookup_ms = 0.0;
               }
@@ -2740,6 +2742,7 @@ int main(int argc, char *argv[]) {
           results[i].num_lookups += 1;
           results[i].found_count += step_results[i].found_count;
           results[i].not_found_count += step_results[i].not_found_count;
+          results[i].match_count += step_results[i].match_count;
           results[i].search_time_ms += step_results[i].search_time_ms;
         }
 
@@ -2748,6 +2751,7 @@ int main(int argc, char *argv[]) {
 
       int total_found = 0;
       int total_not_found = 0;
+      long long total_matches = 0;
 
       double avg_wall_time_ms =
           (LOOKUP_COUNT > 0) ? (total_wall_time_ms / LOOKUP_COUNT) : 0.0;
@@ -2760,6 +2764,7 @@ int main(int argc, char *argv[]) {
         results[i].avg_time_per_lookup_ms = avg_time;
         total_found += results[i].found_count;
         total_not_found += results[i].not_found_count;
+        total_matches += results[i].match_count;
       }
 
       if (SEARCH_FILES_COUNT > 1) {
@@ -2798,26 +2803,27 @@ int main(int argc, char *argv[]) {
         }
 
         printf("=== Search Summary ===\n");
-        printf("%-70s %15s %10s %10s %12s %20s %18s\n", "Filename",
-               "Size (bytes)", "Lookups", "Found", "Not Found",
-               "Avg Time/Lookup (ms)", "Total Time (ms)");
+         printf("%-80s %15s %10s %10s %12s %15s %20s %18s\n", "Filename",
+           "Size (bytes)", "Lookups", "Found", "Not Found",
+           "All Matches", "Avg Time/Lookup (ms)", "Total Time (ms)");
         printf("---------------------------------------------------------------------------------"
-               "---------------------------------------------------------------\n");
+           "----------------------------------------------------------------------------------------------------\n");
         for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-          printf("%-70s %15ld %10d %10d %12d %20.4f %18.2f\n",
-                 results[i].filename, results[i].filesize,
-                 results[i].num_lookups, results[i].found_count,
-                 results[i].not_found_count, results[i].avg_time_per_lookup_ms,
-                 results[i].search_time_ms);
+           printf("%-70s %15ld %10d %10d %12d %15lld %20.4f %18.2f\n",
+             results[i].filename, results[i].filesize,
+             results[i].num_lookups, results[i].found_count,
+             results[i].not_found_count, results[i].match_count,
+             results[i].avg_time_per_lookup_ms,
+             results[i].search_time_ms);
         }
         printf("---------------------------------------------------------------------------------"
-               "---------------------------------------------------------------\n");
-        printf("%-70s %15s %10s %10s %12s %20.4f %18.2f\n", "AVERAGE", "",
-               "", "", "", avg_wall_time_ms,
-               avg_wall_time_ms * LOOKUP_COUNT);
-        printf("%-70s %15s %10d %10d %12d %20.4f %18.2f\n", "SUM", "",
-               LOOKUP_COUNT, total_found, total_not_found, avg_wall_time_ms,
-               avg_wall_time_ms * LOOKUP_COUNT);
+           "------------------------------------------------------------------------------------------------------\n");
+         printf("%-80s %15s %10s %10s %12s %15s %20.4f %18.2f\n", "AVERAGE",
+           "", "", "", "", "", avg_wall_time_ms,
+           avg_wall_time_ms * LOOKUP_COUNT);
+         printf("%-80s %15s %10d %10d %12d %15lld %20.4f %18.2f\n", "SUM",
+           "", LOOKUP_COUNT, total_found, total_not_found, total_matches,
+           avg_wall_time_ms, avg_wall_time_ms * LOOKUP_COUNT);
         printf("\n");
       } else if (SEARCH_FILES_COUNT == 1) {
         SearchFileCtx *meta_ctx = keep_open ? ctx_list : NULL;
@@ -2970,8 +2976,10 @@ int main(int argc, char *argv[]) {
             results[i].filesize = ctx_list[i].filesize;
           }
           results[i].num_lookups += 1;
-          results[i].found_count += (int)matches_by_file[i];
-          if (matches_by_file[i] == 0) {
+          results[i].match_count += (long long)matches_by_file[i];
+          if (matches_by_file[i] > 0) {
+            results[i].found_count += 1;
+          } else {
             results[i].not_found_count += 1;
           }
           results[i].search_time_ms += total_ms;
@@ -2996,10 +3004,12 @@ int main(int argc, char *argv[]) {
 
       int total_found = 0;
       int total_not_found = 0;
+      long long total_matches = 0;
       double total_time_ms = 0.0;
       for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
         total_found += results[i].found_count;
         total_not_found += results[i].not_found_count;
+        total_matches += results[i].match_count;
         total_time_ms += results[i].search_time_ms;
       }
 
@@ -3008,25 +3018,26 @@ int main(int argc, char *argv[]) {
              SEARCH_FILES_COUNT, LOOKUP_COUNT, avg_wall_time_ms);
       printf("Thread config: read(-t)=%d hash(-r)=%d keep_open=%d\n", io_threads,
              hash_threads, keep_open ? 1 : 0);
-            printf("%-70s %15s %10s %10s %12s %20s %18s\n", "Filename",
+            printf("%-80s %15s %10s %10s %12s %15s %20s %18s\n", "Filename",
               "Size (bytes)", "Lookups", "Found", "Not Found",
-              "Avg Time/Lookup (ms)", "Total Time (ms)");
+              "All Matches", "Avg Time/Lookup (ms)", "Total Time (ms)");
       printf("---------------------------------------------------------------------------------"
-             "---------------------------------------------------------------\n");
+             "----------------------------------------------------------------------------------------------\n");
       for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-         printf("%-70s %15ld %10d %10d %12d %20.4f %18.2f\n",
+         printf("%-70s %15ld %10d %10d %12d %15lld %20.4f %18.2f\n",
            results[i].filename, results[i].filesize,
            results[i].num_lookups, results[i].found_count,
-           results[i].not_found_count, results[i].avg_time_per_lookup_ms,
+           results[i].not_found_count, results[i].match_count,
+           results[i].avg_time_per_lookup_ms,
            results[i].search_time_ms);
       }
       printf("---------------------------------------------------------------------------------"
-             "---------------------------------------------------------------\n");
-            printf("%-70s %15s %10s %10s %12s %20.4f %18.2f\n", "AVERAGE", "",
-              "", "", "", avg_wall_time_ms, avg_wall_time_ms * LOOKUP_COUNT);
-            printf("%-70s %15s %10d %10d %12d %20.4f %18.2f\n", "SUM", "",
-              LOOKUP_COUNT, total_found, total_not_found, avg_wall_time_ms,
-              total_time_ms);
+             "----------------------------------------------------------------------------------------------\n");
+            printf("%-80s %15s %10s %10s %12s %15s %20.4f %18.2f\n", "AVERAGE", "",
+              "", "", "", "", avg_wall_time_ms, avg_wall_time_ms * LOOKUP_COUNT);
+            printf("%-80s %15s %10d %10d %12d %15lld %20.4f %18.2f\n", "SUM", "",
+              LOOKUP_COUNT, total_found, total_not_found, total_matches,
+              avg_wall_time_ms, total_time_ms);
 
       free(matches_by_file);
       if (keep_open) {

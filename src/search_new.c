@@ -43,13 +43,11 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
       (MemoTable2Record *)malloc(total_capacity * sizeof(MemoTable2Record));
   size_t *file_offsets = (size_t *)calloc(file_count, sizeof(size_t));
   size_t *effective_counts = (size_t *)calloc(file_count, sizeof(size_t));
-  int *found_flags = (int *)calloc(file_count, sizeof(int));
 
-  if (!combined_buffer || !file_offsets || !effective_counts || !found_flags) {
+  if (!combined_buffer || !file_offsets || !effective_counts) {
     free(combined_buffer);
     free(file_offsets);
     free(effective_counts);
-    free(found_flags);
     return false;
   }
 
@@ -96,15 +94,12 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
     total_effective += effective_counts[i];
   }
 
-  // Allocate match buffer sized per file (we only count the first match per file).
+  // Allocate match buffer with an initial capacity; grow as needed.
   SearchMatch *matches = NULL;
-  size_t matches_capacity = (size_t)file_count;
+  size_t matches_capacity = 128;
   if (matches_capacity > 0) {
     matches = (SearchMatch *)malloc(matches_capacity * sizeof(SearchMatch));
   }
-
-  if (matches_out)
-    *matches_out = matches;
 
   size_t total_matches = 0;
   size_t total_hashed = 0;
@@ -118,8 +113,8 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
 
 #pragma omp for schedule(static)
     for (size_t global_idx = 0; global_idx < total_effective; global_idx++) {
-      int file_index = find_file_for_index(global_idx, file_offsets,
-                                           effective_counts, file_count);
+        int file_index = find_file_for_index(global_idx, file_offsets,
+                                             effective_counts, file_count);
       if (file_index < 0)
         continue;
 
@@ -146,24 +141,37 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
       total_hashed++;
 
       if (memcmp(hash_output, query, search_length) == 0) {
-        int prev_flag = 0;
+        size_t slot = 0;
 #pragma omp atomic capture
-        { prev_flag = found_flags[file_index]; found_flags[file_index] = 1; }
+        slot = total_matches++;
 
-        if (prev_flag == 0) {
-          size_t slot = 0;
-#pragma omp atomic capture
-          slot = total_matches++;
-
-          if (matches && slot < matches_capacity) {
+        // Grow matches buffer if needed (single-threaded critical section)
+        if (matches) {
+          if (slot >= matches_capacity) {
+#pragma omp critical
+            {
+              if (slot >= matches_capacity) {
+                size_t new_cap = matches_capacity * 2;
+                if (new_cap < slot + 1)
+                  new_cap = slot + 1;
+                SearchMatch *resized = (SearchMatch *)realloc(
+                    matches, new_cap * sizeof(SearchMatch));
+                if (resized) {
+                  matches = resized;
+                  matches_capacity = new_cap;
+                }
+              }
+            }
+          }
+          if (slot < matches_capacity) {
             matches[slot].record = *rec;
             matches[slot].file_index = file_index;
           }
+        }
 
-          if (matches_by_file) {
+        if (matches_by_file) {
 #pragma omp atomic
-            matches_by_file[file_index]++;
-          }
+          matches_by_file[file_index]++;
         }
       }
     }
@@ -180,6 +188,9 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
   if (records_hashed_out)
     *records_hashed_out = total_hashed;
 
+  if (matches_out)
+    *matches_out = matches;
+
   // Caller owns matches array when returned.
   if (!matches_out && matches) {
     free(matches);
@@ -188,6 +199,5 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
   free(combined_buffer);
   free(file_offsets);
   free(effective_counts);
-  free(found_flags);
   return true;
 }
