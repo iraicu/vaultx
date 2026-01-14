@@ -10,6 +10,7 @@ typedef struct {
   int num_lookups;
   int found_count;
   int not_found_count;
+  long long match_count;
   double search_time_ms;
   double avg_time_per_lookup_ms;
 } SearchResult;
@@ -37,7 +38,7 @@ MemoTable2Record *search_memo_record(
     FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH,
     unsigned long long num_records_in_bucket_search, MemoTable2Record *buffer,
     int num_threads_bucket, PlotData *plotData, int total_files,
-    int records_per_file, uint8_t *default_key);
+  int records_per_file, uint8_t *default_key, size_t *matches_found);
 SearchResult search_memo_records(const char *filename,
                                  const char *SEARCH_STRING,
                                  int num_threads_bucket);
@@ -55,9 +56,10 @@ SearchResult search_query_with_ctx(SearchFileCtx *ctx, const uint8_t *query,
 bool read_bucket_into_buffer(SearchFileCtx *ctx, const uint8_t *query,
                              size_t search_length, size_t *records_read,
                              size_t *effective_records_read);
-int hash_bucket_buffer(const SearchFileCtx *ctx, const uint8_t *query,
-                       size_t search_length, size_t effective_records,
-                       int num_threads_bucket, size_t *records_checked);
+size_t hash_bucket_buffer(const SearchFileCtx *ctx, const uint8_t *query,
+                          size_t search_length, size_t effective_records,
+                          int num_threads_bucket, size_t *records_checked,
+                          size_t *matches_found);
 
 // New parallel search path that separates I/O (-t) from hashing (-r)
 bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
