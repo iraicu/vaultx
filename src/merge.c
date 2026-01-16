@@ -442,11 +442,13 @@ int merge() {
   }
 
   unsigned long long end;
-  double batch_start_time, merge_start_time;
+  double batch_start_time;
   double start_time = omp_get_wtime();
   double read_total_time = 0;
   double merge_total_time = 0.0;
   double write_total_time = 0;
+  double read_time = 0.0;
+  double write_time = 0.0;
 
   switch (MERGE_APPROACH) {
 
@@ -501,8 +503,7 @@ int merge() {
         }
 
           if (tid == 0) {
-          BPRINTF("Read: %.4f\n", omp_get_wtime() - batch_start_time);
-          double fs = omp_get_wtime();
+          double write_start_time = omp_get_wtime();
           size_t total_bytes =
               (end - i) * records_per_global_bucket * sizeof(MemoTable2Record);
           size_t bytes_written = 0;
@@ -517,12 +518,28 @@ int merge() {
             }
             bytes_written += res;
           }
-          BPRINTF("Write: %.4f\n", omp_get_wtime() - fs);
-
-     BPRINTF("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n",
+          double now = omp_get_wtime();
+          double read_time = write_start_time - batch_start_time;
+          double write_time = now - write_start_time;
+          double batch_time = now - batch_start_time;
+          double total_time = now - start_time;
+          double batch_throughput_MBps =
+              batch_time > 0
+                  ? ((double)total_bytes / (1024.0 * 1024.0)) / batch_time
+                  : 0.0;
+          double eta_seconds =
+              ((double)end / total_buckets) > 0
+                  ? total_time * (1 - ((double)end / total_buckets)) /
+                        ((double)end / total_buckets)
+                  : 0.0;
+     BPRINTF("[%.2f%%] | Read: %.4fs | Write: %.4fs | Batch Time: %.6fs | Total Time: %.2fs | ETA: %.2fs | Throughput: %.2f MB/s\n",
        ((double)end / total_buckets) * 100,
-       omp_get_wtime() - batch_start_time,
-       omp_get_wtime() - start_time);
+       read_time,
+       write_time,
+       batch_time,
+       total_time,
+       eta_seconds,
+       batch_throughput_MBps);
         }
       }
     }
@@ -620,15 +637,9 @@ int merge() {
             }
           }
 
-      double read_time = omp_get_wtime() - batch_start_time;
+      read_time = omp_get_wtime() - batch_start_time;
       read_total_time += read_time;
 
-      double read_throughput_MBps =
-        BATCH_MEMORY_MB / read_time; // MB per second
-      BPRINTF("Read : %.4fs, Rate: %.2f MB/s\n", read_time,
-         read_throughput_MBps);
-
-          merge_start_time = omp_get_wtime();
         }
 
 #pragma omp for
@@ -644,10 +655,6 @@ int merge() {
 
 #pragma omp single
         {
-          double merge_time = omp_get_wtime() - merge_start_time;
-
-          BPRINTF("Merge: %.4fs\n", merge_time);
-
           double write_start_time = omp_get_wtime();
 
           size_t total_bytes =
@@ -665,18 +672,29 @@ int merge() {
             bytes_written += res;
           }
 
-     double write_time = omp_get_wtime() - write_start_time;
+     write_time = omp_get_wtime() - write_start_time;
      write_total_time += write_time;
 
-     double write_throughput_MBps =
-    BATCH_MEMORY_MB / write_time; // MB per second
-     BPRINTF("Write: %.4fs, Rate: %.2f MB/s\n", write_time,
-       write_throughput_MBps);
-
-     BPRINTF("[%.2f%%] | Batch Time: %.6fs | Total Time: %.2fs\n\n",
+     double now = omp_get_wtime();
+     double batch_time = now - batch_start_time;
+     double total_time = now - start_time;
+     double batch_throughput_MBps =
+         batch_time > 0
+             ? ((double)total_bytes / (1024.0 * 1024.0)) / batch_time
+             : 0.0;
+     double eta_seconds =
+         ((double)end / total_buckets) > 0
+             ? total_time * (1 - ((double)end / total_buckets)) /
+                   ((double)end / total_buckets)
+             : 0.0;
+     BPRINTF("[%.2f%%] | Read: %.4fs | Write: %.4fs | Batch Time: %.6fs | Total Time: %.2fs | ETA: %.2fs | Throughput: %.2f MB/s\n",
        ((double)end / total_buckets) * 100,
-       omp_get_wtime() - batch_start_time,
-       omp_get_wtime() - start_time);
+       read_time,
+       write_time,
+       batch_time,
+       total_time,
+       eta_seconds,
+       batch_throughput_MBps);
         }
       }
     }

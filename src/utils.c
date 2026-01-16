@@ -45,6 +45,11 @@ void print_usage(char *prog_name) {
   printf("      -P merge                          Merge existing plots only\n");
   printf("      -P or -P both                     Generate N plots then merge "
          "them\n");
+  printf("  -A, --merge-approach [pipelined|serial|tasks|0|1|2]\n");
+  printf("                                       Merge approach for merge-only "
+         "(default: pipelined)\n");
+  printf("  -B, --batch-memory-mb NUM             Merge batch memory size in MB "
+         "(default: 256)\n");
   printf("  -n, --total_files NUM                 Number of plot files to "
          "generate/merge (required for -P)\n");
   printf("  -F, --source PATH                     Source directory for plot "

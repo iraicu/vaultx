@@ -208,6 +208,8 @@ int main(int argc, char *argv[]) {
       {"debug", required_argument, 0, 'd'},
       {"total_files", required_argument, 0, 'n'},
       {"plot-merge", optional_argument, 0, 'P'},
+      {"merge-approach", required_argument, 0, 'A'},
+      {"batch-memory-mb", required_argument, 0, 'B'},
       {"destination", required_argument, 0, 'T'},
       {"previous_search", optional_argument, 0, 1000},
       {"ps", optional_argument, 0, 1000},
@@ -244,7 +246,7 @@ int main(int argc, char *argv[]) {
 
   while (
        (opt = getopt_long(
-         argc, argv, "a:t:r:i:k:m:f:g:j:b:W:R:M:w:c:v:V:s:S:x:o:y:d:n:p:PT:F:D:O:h",
+         argc, argv, "a:t:r:i:k:m:f:g:j:b:W:R:M:w:c:v:V:s:S:x:o:y:d:n:p:PA:B:T:F:D:O:h",
          long_options, &option_index)) != -1) {
     switch (opt) {
     case 'a':
@@ -299,6 +301,40 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
       }
       break;
+    case 'A': {
+      if (strcmp(optarg, "serial") == 0) {
+        MERGE_APPROACH = 1;
+      } else if (strcmp(optarg, "pipelined") == 0) {
+        MERGE_APPROACH = 0;
+      } else if (strcmp(optarg, "task") == 0 ||
+                 strcmp(optarg, "tasks") == 0) {
+        MERGE_APPROACH = 2;
+      } else {
+        char *endptr = NULL;
+        long approach_val = strtol(optarg, &endptr, 10);
+        if (endptr == NULL || *endptr != '\0' || approach_val < 0 ||
+            approach_val > 2) {
+          fprintf(stderr,
+                  "Merge approach must be serial, pipelined, tasks, or 0/1/2.\n");
+          print_usage(argv[0]);
+          exit(EXIT_FAILURE);
+        }
+        MERGE_APPROACH = (int)approach_val;
+      }
+      break;
+    }
+    case 'B': {
+      char *endptr = NULL;
+      long batch_mb = strtol(optarg, &endptr, 10);
+      if (endptr == NULL || *endptr != '\0' || batch_mb <= 0 ||
+          batch_mb > INT_MAX) {
+        fprintf(stderr, "Batch memory must be a positive integer (MB).\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+      BATCH_MEMORY_MB = (int)batch_mb;
+      break;
+    }
     case 'g':
       DIR_TMP = optarg;
       writeDataTmp = true;
