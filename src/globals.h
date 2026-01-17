@@ -47,6 +47,7 @@ extern int TOTAL_FILES;
 extern int BATCH_MEMORY_MB;
 extern int MEMORY_LIMIT_MB;
 extern int num_threads;
+extern int MERGE_IO_THREADS;
 extern int DIFFICULTY;
 extern int PRINT_BUCKETS_COUNT;
 extern int PRINT_RECORDS_COUNT;

@@ -83,6 +83,7 @@ int TOTAL_FILES = 2;
 int BATCH_MEMORY_MB = 256;
 int MEMORY_LIMIT_MB = 1024;
 int num_threads = 1;
+int MERGE_IO_THREADS = 1;
 int DIFFICULTY = 0;
 int PRINT_BUCKETS_COUNT = 0;
 int PRINT_RECORDS_COUNT = 0;

@@ -178,6 +178,7 @@ int main(int argc, char *argv[]) {
   bool source_provided = false;
   bool total_files_specified = false;
   char *ps_alias = NULL; // holds rewritten -ps flag if provided
+  char *mt_alias = NULL; // holds rewritten -mt flag if provided
 
   init_system_defaults();
 
@@ -210,6 +211,7 @@ int main(int argc, char *argv[]) {
       {"plot-merge", optional_argument, 0, 'P'},
       {"merge-approach", required_argument, 0, 'A'},
       {"batch-memory-mb", required_argument, 0, 'B'},
+      {"merge-io-threads", required_argument, 0, 1001},
       {"destination", required_argument, 0, 'T'},
       {"previous_search", optional_argument, 0, 1000},
       {"ps", optional_argument, 0, 1000},
@@ -240,6 +242,15 @@ int main(int argc, char *argv[]) {
       if (ps_alias != NULL) {
         snprintf(ps_alias, alias_len, "--ps=%s", argv[i] + 4);
         argv[i] = ps_alias;
+      }
+    } else if (strcmp(argv[i], "-mt") == 0) {
+      argv[i] = "--merge-io-threads";
+    } else if (strncmp(argv[i], "-mt=", 4) == 0) {
+      size_t alias_len = strlen(argv[i] + 4) + strlen("--merge-io-threads=") + 1;
+      mt_alias = (char *)malloc(alias_len);
+      if (mt_alias != NULL) {
+        snprintf(mt_alias, alias_len, "--merge-io-threads=%s", argv[i] + 4);
+        argv[i] = mt_alias;
       }
     }
   }
@@ -333,6 +344,18 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
       }
       BATCH_MEMORY_MB = (int)batch_mb;
+      break;
+    }
+    case 1001: {
+      char *endptr = NULL;
+      long io_threads = strtol(optarg, &endptr, 10);
+      if (endptr == NULL || *endptr != '\0' || io_threads <= 0 ||
+          io_threads > INT_MAX) {
+        fprintf(stderr, "Merge I/O threads must be a positive integer.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+      MERGE_IO_THREADS = (int)io_threads;
       break;
     }
     case 'g':

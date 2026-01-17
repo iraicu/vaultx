@@ -50,6 +50,7 @@ void print_usage(char *prog_name) {
          "(default: pipelined)\n");
   printf("  -B, --batch-memory-mb NUM             Merge batch memory size in MB "
          "(default: 256)\n");
+    printf("  -mt, --merge-io-threads NUM           Merge I/O threads (default: 1)\n");
   printf("  -n, --total_files NUM                 Number of plot files to "
          "generate/merge (required for -P)\n");
   printf("  -F, --source PATH                     Source directory for plot "
