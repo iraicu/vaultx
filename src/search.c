@@ -322,8 +322,6 @@ SearchResult search_memo_records(const char *filename,
   MemoTable2Record *buffer = NULL;
 
   FILE *file = NULL;
-  bool foundRecord = false;
-  MemoTable2Record *fRecord = NULL;
 
   long filesize = get_file_size(filename);
   long data_filesize = filesize;
@@ -448,11 +446,10 @@ SearchResult search_memo_records(const char *filename,
                              ? (num_records_in_bucket_search / num_files)
                              : num_records_in_bucket_search;
   size_t matches_found = 0;
-  fRecord = search_memo_record(file, bucketIndex, SEARCH_UINT8, SEARCH_LENGTH,
-                               num_records_in_bucket_search, buffer,
-                               num_threads_bucket, plotData_array, num_files,
-                               records_per_file, local_key, &matches_found);
-  foundRecord = (fRecord != NULL);
+  (void)search_memo_record(file, bucketIndex, SEARCH_UINT8, SEARCH_LENGTH,
+                           num_records_in_bucket_search, buffer,
+                           num_threads_bucket, plotData_array, num_files,
+                           records_per_file, local_key, &matches_found);
 
   // Clean up
   if (plotData_array != NULL) {
@@ -710,7 +707,6 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
   int foundRecords = 0;
   int notFoundRecords = 0;
   long long all_matches = 0;
-  MemoTable2Record *fRecord = NULL;
 
   long filesize = get_file_size(filename);
   result.filesize = filesize;
@@ -857,11 +853,11 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
                                ? (num_records_in_bucket_search / num_files)
                                : num_records_in_bucket_search;
     size_t matches_found = 0;
-    fRecord = search_memo_record(
-        file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8, SEARCH_LENGTH,
-        num_records_in_bucket_search, buffer, num_threads_bucket,
-        plotData_array, num_files, records_per_file, local_key,
-        &matches_found);
+    (void)search_memo_record(file, getBucketIndex(SEARCH_UINT8), SEARCH_UINT8,
+                 SEARCH_LENGTH, num_records_in_bucket_search,
+                 buffer, num_threads_bucket, plotData_array,
+                 num_files, records_per_file, local_key,
+                 &matches_found);
     // }
     if (matches_found > 0) {
       foundRecords++;

@@ -1329,7 +1329,7 @@ int main(int argc, char *argv[]) {
         //         } // Implicit barrier ensures all tasks are completed before
         //         exiting
         if (strcmp(approach, "for") == 0) {
-          generateHashes();
+          generateHashes(start_idx, end_idx);
         }
 #ifndef __cplusplus
         // Your C-specific code here
@@ -2254,9 +2254,8 @@ int main(int argc, char *argv[]) {
           // Calculate the total number of records to read per batch
           size_t records_per_batch =
               num_records_in_bucket * num_buckets_to_read;
-          // Buffer size is now managed by shuffle function for memory
-          // efficiency
-          size_t buffer_size = records_per_batch;
+          // Buffer size needs to hold all rounds for the shuffle operation
+          size_t buffer_size = records_per_batch * rounds;
 
           if (num_threads_io > 0) {
             omp_set_num_threads(num_threads_io);

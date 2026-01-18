@@ -7,26 +7,26 @@ void generate_hash(uint8_t *nonce, uint8_t *hash) {
 }
 
 // Generate Table1
-void generateHashes() {
+void generateHashes(unsigned long long start_idx, unsigned long long end_idx) {
   volatile int buckets_full = 0; // Shared flag
   full_buckets_global = 0;
 
 #pragma omp parallel for schedule(static) shared(buckets_full)
 
-  for (unsigned long long n = 0; n < total_nonces; n += BATCH_SIZE) {
+  for (unsigned long long n = start_idx; n < end_idx; n += BATCH_SIZE) {
     if (buckets_full) {
       continue;
     }
 
     unsigned long long batch_end = n + BATCH_SIZE;
-    if (batch_end >= total_nonces) {
-      batch_end = total_nonces;
+    if (batch_end >= end_idx) {
+      batch_end = end_idx;
     }
 
     MemoRecord record;
     uint8_t hash[HASH_SIZE];
 
-    for (unsigned long long j = n; j <= batch_end; j++) {
+    for (unsigned long long j = n; j < batch_end; j++) {
       // Generate Blake3 hash
       memcpy(record.nonce, &j, NONCE_SIZE);
       generateBlake3(record.nonce, key, hash);

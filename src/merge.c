@@ -483,8 +483,6 @@ int merge() {
             fclose(fd);
           }
         }
-
-        FileRecords *file_record = &file_records[f];
       }
 
       read_time = omp_get_wtime() - batch_start_time;
