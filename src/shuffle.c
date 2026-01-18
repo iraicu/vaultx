@@ -180,40 +180,35 @@ void shuffle_table2(FILE *fd_src, FILE *fd_dest, size_t buffer_size,
 
       start_time_io = omp_get_wtime();
 
-      // Write each bucket chunk to its proper offset so rounds merge across
-      // chunks in the final file.
-      for (unsigned long long s = 0; s < num_buckets_to_read; s++) {
-        size_t src_index = (s * rounds_in_this_chunk) * num_records_in_bucket;
-        MemoTable2Record *src_ptr = &buffer_table2_shuffled[src_index];
+      // Calculate destination offset for this chunk
+      off_t dest_offset =
+          (i * num_records_in_shuffled_bucket +
+           round_chunk_start * num_buckets_to_read * num_records_in_bucket) *
+          sizeof(MemoTable2Record);
 
-        off_t dest_offset =
-            ((off_t)(i + s) * (off_t)num_records_in_shuffled_bucket +
-             (off_t)round_chunk_start * (off_t)num_records_in_bucket) *
-            (off_t)sizeof(MemoTable2Record);
-
-        if (fseeko(fd_dest, dest_offset, SEEK_SET) < 0) {
-          perror("Error seeking in destination file");
-          fclose(fd_dest);
-          exit(EXIT_FAILURE);
-        }
-
-        size_t elementsWritten = fwrite(src_ptr, sizeof(MemoTable2Record),
-                                        num_records_in_bucket *
-                                            rounds_in_this_chunk,
-                                        fd_dest);
-        if (elementsWritten !=
-            num_records_in_bucket * rounds_in_this_chunk) {
-          fprintf(stderr,
-                  "Error writing bucket to file; elements written %zu when "
-                  "expected %llu\n",
-                  elementsWritten,
-                  num_records_in_bucket * rounds_in_this_chunk);
-          fclose(fd_dest);
-          exit(EXIT_FAILURE);
-        }
-        total_bytes_written +=
-            elementsWritten * sizeof(MemoTable2Record);
+      if (fseeko(fd_dest, dest_offset, SEEK_SET) < 0) {
+        perror("Error seeking in destination file");
+        fclose(fd_dest);
+        exit(EXIT_FAILURE);
       }
+
+      // Write shuffled chunk to destination
+      size_t elementsWritten = fwrite(
+          buffer_table2_shuffled, sizeof(MemoTable2Record),
+          num_records_in_bucket * num_buckets_to_read * rounds_in_this_chunk,
+          fd_dest);
+      if (elementsWritten !=
+          num_records_in_bucket * num_buckets_to_read * rounds_in_this_chunk) {
+        fprintf(stderr,
+                "Error writing bucket to file; elements written %zu when "
+                "expected %llu\n",
+                elementsWritten,
+                num_records_in_bucket * num_buckets_to_read *
+                    rounds_in_this_chunk);
+        fclose(fd_dest);
+        exit(EXIT_FAILURE);
+      }
+      total_bytes_written += elementsWritten * sizeof(MemoTable2Record);
 
       end_time_io = omp_get_wtime();
       elapsed_time_io = end_time_io - start_time_io;
