@@ -279,6 +279,14 @@ int main(int argc, char *argv[]) {
       }
       set_global_num_threads(num_threads);
       break;
+    case 'r':
+      num_threads_record = atoi(optarg);
+      if (num_threads_record <= 0) {
+        fprintf(stderr, "Number of record threads must be positive.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+      break;
     case 'k':
       K = atoi(optarg);
       if (K <= 0) {
