@@ -22,7 +22,6 @@ void print_usage(char *prog_name) {
          "auto, capped by system memory)\n");
   printf("  -t, --threads NUM                     Number of threads for "
          "generation/search (default: available cores)\n");
-  printf("  -r, --record_threads NUM              Number of per-bucket (record-level) threads for search (default: auto)\n");
   printf("                                        Auto mode divides total threads across files/buckets when searching multiple files\n");
   printf("  -i, --threads_io NUM                  Number of I/O threads "
          "(default: 1)\n");
@@ -69,6 +68,7 @@ void print_usage(char *prog_name) {
          "match (0=full hash, >0=prefix)\n");
     printf("  -ps, --ps [true|false]                Use previous search path (default: false = new two-stage search)\n");
     printf("       New path: -t controls read threads, -r controls hashing threads; loops are independent.\n");
+  printf("  -r, --record_threads NUM              Number of per-bucket (record-level) threads for search (default: auto)\n");
     printf("  -O, --keepopen [true|false]            Keep files open during batch search (default: false; only if file count <= 1024)\n");
   printf("  Note: Search discovers ALL plot files in directory and searches "
          "each one\n");
