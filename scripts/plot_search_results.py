@@ -38,6 +38,12 @@ def parse_args() -> argparse.Namespace:
         default=None,
     )
     parser.add_argument(
+        "--units",
+        choices=["mss", "sm"],
+        default="mss",
+        help="Output units: mss = avg in milliseconds, total in seconds; sm = avg in seconds, total in minutes",
+    )
+    parser.add_argument(
         "--show",
         action="store_true",
         help="Display the plot window after saving",
@@ -58,7 +64,16 @@ def validate_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
         raise ValueError(f"CSV is missing required column(s): {', '.join(missing)}")
 
 
-def make_heatmaps(df: pd.DataFrame, keep_values: List[str]) -> plt.Figure:
+def make_heatmaps(
+    df: pd.DataFrame,
+    keep_values: List[str],
+    avg_col: str,
+    total_col: str,
+    avg_label: str,
+    total_label: str,
+    avg_fmt: str,
+    total_fmt: str,
+) -> plt.Figure:
     sns.set_theme(style="whitegrid", font_scale=1.0)
     cmap_avg = sns.color_palette("rocket_r", as_cmap=True)
     cmap_total = sns.color_palette("crest", as_cmap=True)
@@ -79,13 +94,13 @@ def make_heatmaps(df: pd.DataFrame, keep_values: List[str]) -> plt.Figure:
         avg_pivot = subset.pivot_table(
             index="r",
             columns="t",
-            values="avg_ms_per_lookup",
+            values=avg_col,
             aggfunc="mean",
         )
         total_pivot = subset.pivot_table(
             index="r",
             columns="t",
-            values="total_s",
+            values=total_col,
             aggfunc="mean",
         )
 
@@ -95,10 +110,10 @@ def make_heatmaps(df: pd.DataFrame, keep_values: List[str]) -> plt.Figure:
             ax=ax_avg,
             cmap=cmap_avg,
             annot=True,
-            fmt=".2f",
+            fmt=avg_fmt,
             cbar=(idx == len(keep_values) - 1),
         )
-        ax_avg.set_title(f"Avg ms/lookup (keep_open={keep_flag})")
+        ax_avg.set_title(f"{avg_label} (keep_open={keep_flag})")
         ax_avg.set_xlabel("I/O threads (-t)")
         ax_avg.set_ylabel("Record threads (-r)")
 
@@ -108,19 +123,19 @@ def make_heatmaps(df: pd.DataFrame, keep_values: List[str]) -> plt.Figure:
             ax=ax_total,
             cmap=cmap_total,
             annot=True,
-            fmt=".2f",
+            fmt=total_fmt,
             cbar=(idx == len(keep_values) - 1),
         )
-        ax_total.set_title(f"Total time s (keep_open={keep_flag})")
+        ax_total.set_title(f"{total_label} (keep_open={keep_flag})")
         ax_total.set_xlabel("I/O threads (-t)")
         ax_total.set_ylabel("Record threads (-r)")
 
     # Leaderboard (top 5 fastest avg lookups) placed in bottom-left cell; others hidden.
     leaderboard_ax = axes[2, 0]
     axes[2, 1:] = [ax.axis("off") for ax in axes[2, 1:]]
-    top = df.sort_values("avg_ms_per_lookup").head(5)
+    top = df.sort_values(avg_col).head(5)
     lines = [
-        f"{i+1}. -t {row.t} -r {row.r} -O {row.keep_open} | avg {row.avg_ms_per_lookup:.2f} ms | total {row.total_s:.2f} s"
+        f"{i+1}. -t {row.t} -r {row.r} -O {row.keep_open} | avg {row[avg_col]:.2f} {avg_label.split()[0]} | total {row[total_col]:.2f} {total_label.split()[0]}"
         for i, row in top.reset_index(drop=True).iterrows()
     ]
     leaderboard_ax.axis("off")
@@ -166,7 +181,33 @@ def main() -> None:
     df["keep_open"] = df["keep_open"].astype(str)
 
     keep_values = sorted(df["keep_open"].unique())
-    fig = make_heatmaps(df, keep_values)
+
+    # Unit handling
+    if args.units == "mss":
+        df["avg_disp"] = df["avg_ms_per_lookup"]
+        df["total_disp"] = df["total_s"]
+        avg_label = "Avg ms/lookup"
+        total_label = "Total time s"
+        avg_fmt = ".2f"
+        total_fmt = ".2f"
+    else:  # sm
+        df["avg_disp"] = df["avg_ms_per_lookup"] / 1000.0
+        df["total_disp"] = df["total_s"] / 60.0
+        avg_label = "Avg s/lookup"
+        total_label = "Total time min"
+        avg_fmt = ".3f"
+        total_fmt = ".3f"
+
+    fig = make_heatmaps(
+        df,
+        keep_values,
+        avg_col="avg_disp",
+        total_col="total_disp",
+        avg_label=avg_label,
+        total_label=total_label,
+        avg_fmt=avg_fmt,
+        total_fmt=total_fmt,
+    )
 
     title_text = args.title or f"VAULTX search benchmark ({csv_path.name})"
     fig.suptitle(title_text, fontsize=14, fontweight="bold")
