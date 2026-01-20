@@ -10,7 +10,7 @@ set -euo pipefail
 # Example # Run benchmarks (defaults: 1000 lookups, 3-byte difficulty, ./plots target)
 # ./scripts/run_search_benchmark.sh -l 1500 -d 4 -f ./plots/ -o ./data/my_run.csv -b ./vaultx
 # Plot results
-# ./scripts/plot_search_results.py ./data/my_run.csv --title "vaultx search benchmark"
+# ./scripts/plot_search_results.py ./data/my_run.csv --title "vaultx search benchmark" --units "sm"/"mss"       (report avg time in ms and total time in seconds/ or seconds/minutes)
 
 usage() {
   cat <<'EOF'
@@ -153,6 +153,10 @@ for t in "${thread_values[@]}"; do
 
       timestamp=$(date -Iseconds)
       total_s=$(awk -v ms="$total_ms" 'BEGIN { printf "%.6f", ms/1000.0 }')
+      avg_ms_csv=$(printf "%.2f" "$avg_ms")
+      total_ms_csv=$(printf "%.2f" "$total_ms")
+      total_s_csv=$(printf "%.2f" "$total_s")
+
       printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
         "$timestamp" "$BINARY_PATH" "$TARGET_PATH" "$t" "$r" "$keep" \
         "$lookups_field" "$DIFFICULTY_VAL" "$found_field" "$not_found_field" \
