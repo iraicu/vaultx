@@ -38,12 +38,6 @@ def parse_args() -> argparse.Namespace:
         default=None,
     )
     parser.add_argument(
-        "--units",
-        choices=["mss", "sm"],
-        default="mss",
-        help="Output units: mss = avg in milliseconds, total in seconds; sm = avg in seconds, total in minutes",
-    )
-    parser.add_argument(
         "--show",
         action="store_true",
         help="Display the plot window after saving",
@@ -183,20 +177,13 @@ def main() -> None:
     keep_values = sorted(df["keep_open"].unique())
 
     # Unit handling
-    if args.units == "mss":
-        df["avg_disp"] = df["avg_ms_per_lookup"]
-        df["total_disp"] = df["total_s"]
-        avg_label = "Avg ms/lookup"
-        total_label = "Total time s"
-        avg_fmt = ".2f"
-        total_fmt = ".2f"
-    else:  # sm
-        df["avg_disp"] = df["avg_ms_per_lookup"] / 1000.0
-        df["total_disp"] = df["total_s"] / 60.0
-        avg_label = "Avg s/lookup"
-        total_label = "Total time min"
-        avg_fmt = ".2f"
-        total_fmt = ".2f"
+    # Always display in seconds: convert avg from ms to seconds, keep total as seconds.
+    df["avg_disp"] = df["avg_ms_per_lookup"] / 1000.0
+    df["total_disp"] = df["total_s"]
+    avg_label = "Avg s/lookup"
+    total_label = "Total time s"
+    avg_fmt = ".2f"
+    total_fmt = ".2f"
 
     fig = make_heatmaps(
         df,
