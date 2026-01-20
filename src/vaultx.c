@@ -3056,7 +3056,12 @@ int main(int argc, char *argv[]) {
           } else {
             results[i].not_found_count += 1;
           }
-          results[i].search_time_ms += total_ms;
+           /* total_ms is wall-clock for all files; distribute evenly to avoid
+             multiplying by SEARCH_FILES_COUNT when aggregating per-file totals. */
+           double per_file_ms = (SEARCH_FILES_COUNT > 0)
+                            ? (total_ms / (double)SEARCH_FILES_COUNT)
+                            : total_ms;
+           results[i].search_time_ms += per_file_ms;
         }
 
         if (!keep_open) {
@@ -3111,7 +3116,7 @@ int main(int argc, char *argv[]) {
               "", "", "", "", avg_wall_time_ms, avg_wall_time_ms * LOOKUP_COUNT);
             printf("%-80s %15s %10d %10d %12d %15lld %20.4f %18.2f\n", "SUM", "",
               LOOKUP_COUNT, total_found, total_not_found, total_matches,
-              avg_wall_time_ms, total_time_ms);
+              avg_wall_time_ms, total_wall_time_ms);
 
       free(matches_by_file);
       if (keep_open) {
