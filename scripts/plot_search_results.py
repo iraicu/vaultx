@@ -195,8 +195,8 @@ def main() -> None:
         df["total_disp"] = df["total_s"] / 60.0
         avg_label = "Avg s/lookup"
         total_label = "Total time min"
-        avg_fmt = ".3f"
-        total_fmt = ".3f"
+        avg_fmt = ".2f"
+        total_fmt = ".2f"
 
     fig = make_heatmaps(
         df,
