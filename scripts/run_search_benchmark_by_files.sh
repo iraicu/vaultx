@@ -53,6 +53,28 @@ TARGET_PATH="$DEFAULT_TARGET"
 OUTPUT_PATH="$DEFAULT_OUTPUT"
 BINARY_PATH="$DEFAULT_BIN"
 
+drop_caches() {
+  if [[ -w /proc/sys/vm/drop_caches ]]; then
+    sync
+    echo 3 > /proc/sys/vm/drop_caches
+  elif command -v sudo >/dev/null 2>&1; then
+    if sudo -n true 2>/dev/null; then
+      sync
+      sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+    else
+      if [[ -z "${DROP_WARNED:-}" ]]; then
+        echo "WARN: cannot drop caches without sudo permissions" >&2
+        DROP_WARNED=1
+      fi
+    fi
+  else
+    if [[ -z "${DROP_WARNED:-}" ]]; then
+      echo "WARN: /proc/sys/vm/drop_caches not writable and sudo missing; skipping cache drop" >&2
+      DROP_WARNED=1
+    fi
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -l|--lookups)
@@ -153,7 +175,14 @@ keep_values=(false true)
 echo "Running benchmarks (mode: $sweep_mode) with t in: ${t_values[*]}, r in: ${r_values[*]} (files: $file_count, cores: ${core_count}), keep_open in: ${keep_values[*]}" >&2
 
 for t in "${t_values[@]}"; do
+  # Clear cache between thread count changes.
+  if [[ "$sweep_mode" == "t-sweep" ]]; then
+    drop_caches
+  fi
   for r in "${r_values[@]}"; do
+    if [[ "$sweep_mode" == "r-sweep" ]]; then
+      drop_caches
+    fi
     for keep in "${keep_values[@]}"; do
       cmd=("$BINARY_PATH" -S "$LOOKUPS_VAL" -D "$DIFFICULTY_VAL" -f "$TARGET_PATH" -t "$t" -r "$r" -O "$keep" -b true)
       echo "--> ${cmd[*]}" >&2
@@ -186,7 +215,7 @@ for t in "${t_values[@]}"; do
       timestamp=$(date -Iseconds)
       total_s=$(awk -v ms="$total_ms" 'BEGIN { printf "%.6f", ms/1000.0 }')
 
-      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
         "$timestamp" "$BINARY_PATH" "$TARGET_PATH" "$file_count" "$sweep_mode" "$t" "$r" "$keep" \
         "$lookups_field" "$DIFFICULTY_VAL" "$found_field" "$not_found_field" \
         "$matches_field" "$avg_ms" "$total_ms" "$total_s" >> "$OUTPUT_PATH"

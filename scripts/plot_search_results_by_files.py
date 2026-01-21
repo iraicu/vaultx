@@ -69,7 +69,7 @@ def detect_sweep_dim(df: pd.DataFrame) -> str:
 
 
 def plot_panels(df: pd.DataFrame, sweep_dim: str, keep_values: list[str]) -> plt.Figure:
-    sns.set_theme(style="whitegrid", font_scale=1.0)
+    sns.set_theme(style="white", font_scale=1.0)
     fig, axes = plt.subplots(1, len(keep_values), figsize=(7.0 * len(keep_values), 5.0), squeeze=False)
 
     x_label = "I/O threads (-t)" if sweep_dim == "t" else "Record threads (-r)"
@@ -90,19 +90,34 @@ def plot_panels(df: pd.DataFrame, sweep_dim: str, keep_values: list[str]) -> plt
             .reset_index()
             .sort_values(x_col)
         )
+        x_positions = range(len(grouped))
 
-        ax.plot(grouped[x_col], grouped["avg_ms_per_lookup"], marker="o", label="avg ms/lookup", color="#1f77b4")
+        # Primary axis: avg ms/lookup bars
+        bar_width = 0.4
+        ax.bar(x_positions, grouped["avg_ms_per_lookup"], width=bar_width, color="#1f77b4", label="avg ms/lookup")
         ax.set_xlabel(x_label)
         ax.set_ylabel("Avg ms/lookup", color="#1f77b4")
         ax.tick_params(axis="y", labelcolor="#1f77b4")
+        ax.set_xticks(list(x_positions), grouped[x_col])
 
+        # Secondary axis: total time bars (right y-axis)
         ax2 = ax.twinx()
-        ax2.plot(grouped[x_col], grouped["total_s"], marker="s", label="total s", color="#d62728")
+        ax2.bar(x_positions, grouped["total_s"], width=bar_width * 0.55, color="#d62728", alpha=0.7, label="total s")
         ax2.set_ylabel("Total time (s)", color="#d62728")
         ax2.tick_params(axis="y", labelcolor="#d62728")
+        max_total = grouped["total_s"].max()
+        upper = max_total * 1.1 if max_total and max_total > 0 else 1.0
+        ax2.set_ylim(bottom=0.0, top=upper)
+
+        # Legends: combine handles
+        handles, labels = [], []
+        for a in (ax, ax2):
+            h, l = a.get_legend_handles_labels()
+            handles.extend(h)
+            labels.extend(l)
+        ax.legend(handles, labels, loc="best")
 
         ax.set_title(f"keep_open={keep_flag}")
-        ax.grid(True, which="both", axis="both", linestyle="--", alpha=0.3)
 
     fig.tight_layout()
     return fig
@@ -115,7 +130,7 @@ def main() -> None:
         raise FileNotFoundError(f"CSV not found: {csv_path}")
 
     df = pd.read_csv(csv_path)
-    # Drop rows that are clearly malformed (e.g., single-value rows from stderr/stdout bleed).
+    # Drop rows that are clearly malformed (e.g., stray single-value lines).
     df = df.dropna(how="all")
     required = {
         "t",
@@ -130,11 +145,11 @@ def main() -> None:
     df["r"] = pd.to_numeric(df["r"], errors="coerce")
     df["avg_ms_per_lookup"] = pd.to_numeric(df["avg_ms_per_lookup"], errors="coerce")
     df["total_ms"] = pd.to_numeric(df["total_ms"], errors="coerce")
-    df = df.dropna(subset=["t", "r", "avg_ms_per_lookup", "total_ms", "keep_open"])
+    # Always recompute total_s from total_ms to avoid stale or missing values in CSV.
+    df["total_s"] = df["total_ms"] / 1000.0
+    df = df.dropna(subset=["t", "r", "avg_ms_per_lookup", "total_ms", "total_s", "keep_open"])
     df["t"] = df["t"].astype(int)
     df["r"] = df["r"].astype(int)
-    if "total_s" not in df.columns:
-        df["total_s"] = df["total_ms"] / 1000.0
     df["keep_open"] = df["keep_open"].astype(str)
 
     sweep_dim = detect_sweep_dim(df)
