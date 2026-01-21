@@ -129,14 +129,14 @@ def make_heatmaps(
     axes[2, 1:] = [ax.axis("off") for ax in axes[2, 1:]]
     top = df.sort_values(avg_col).head(5)
     lines = [
-        f"{i+1}. -t {row.t} -r {row.r} -O {row.keep_open} | avg {row[avg_col]:.2f} {avg_label.split()[0]} | total {row[total_col]:.2f} {total_label.split()[0]}"
+        f"{i+1}. -t {row.t} -r {row.r} -O {row.keep_open} | avg {row[avg_col]:.2f} s | total {row[total_col]:.2f} s"
         for i, row in top.reset_index(drop=True).iterrows()
     ]
     leaderboard_ax.axis("off")
     leaderboard_ax.text(
         0.01,
         0.95,
-        "Top 5 fastest (avg ms/lookup):\n" + "\n".join(lines),
+        "Top 5 fastest (avg s/lookup):\n" + "\n".join(lines),
         va="top",
         ha="left",
         fontsize=10,
