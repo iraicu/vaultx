@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
+# -t and -r are used depending on how many plot files are searched:
+#  * Multiple files: vary -t in powers of two up to n_cores; fix -r=1
+#  * Single file:    fix -t=1; vary -r in powers of two up to n_cores
+# Also sweeps -O (keep-open) and writes a CSV to ./data/ by default.
+
 # Sweeps thread counts for -t (I/O) and -r (hash/record) plus -O keep-open flag
 # and writes a CSV of summary metrics to ./data/ by default.
 
 # How to run
 # chmod +x <script name>
 # Example # Run benchmarks (defaults: 1000 lookups, 3-byte difficulty, ./plots target)
-# ./scripts/run_search_benchmark.sh -l 1500 -d 4 -f ./plots/ -o ./data/my_run.csv -b ./vaultx
+# ./scripts/run_search_benchmark_by_files.sh -l 1500 -d 4 -f ./plots/ -o ./data/my_run.csv -b ./vaultx
 # Plot results
-# ./scripts/plot_search_results.py ./data/my_run.csv --title "vaultx search benchmark"
+# ./scripts/plot_search_results_by_files.py ./data/my_run.csv --title "vaultx search benchmark"
+
+
 usage() {
   cat <<'EOF'
 Run randomized search benchmarks and save results to CSV.
@@ -18,18 +26,16 @@ Options:
   -l, --lookups NUM       Number of random lookups to perform (default: 1000)
   -d, --difficulty NUM    Prefix length in bytes for each lookup (default: 3)
   -f, --file PATH         Plot file or directory to search (default: ./plots/)
-  -o, --output FILE       CSV output path (default: ./data/search_benchmark_<timestamp>.csv)
+  -o, --output FILE       CSV output path (default: ./data/search_benchmark_by_files_<timestamp>.csv)
   -b, --binary PATH       vaultx binary to run (default: ./vaultx)
-  -T, --threads LIST      Space/comma separated thread counts to test (default: "1 2 4 8 16 <ncores>")
+  -T, --threads LIST      Space/comma separated thread counts to test (overrides default pow2 sweep)
   -h, --help              Show this message
 
 Environment overrides:
   LOOKUPS, DIFFICULTY, TARGET, OUTPUT, VAULTX_BIN, THREAD_VALUES
 
-The script parses the "SUM" line from the program's batch search summary:
   Avg Time/Lookup (ms)  -> avg_ms_per_lookup
   Total Time (ms)       -> total_ms
-It works whether -f points to a single file or a directory of plots.
 EOF
 }
 
@@ -38,7 +44,7 @@ DEFAULT_BIN="${VAULTX_BIN:-${ROOT_DIR}/vaultx}"
 DEFAULT_LOOKUPS="${LOOKUPS:-1000}"
 DEFAULT_DIFFICULTY="${DIFFICULTY:-3}"
 DEFAULT_TARGET="${TARGET:-${ROOT_DIR}/plots/}"
-DEFAULT_OUTPUT="${OUTPUT:-${ROOT_DIR}/data/search_benchmark_$(date +%Y%m%d_%H%M%S).csv}"
+DEFAULT_OUTPUT="${OUTPUT:-${ROOT_DIR}/data/search_benchmark_by_files_$(date +%Y%m%d_%H%M%S).csv}"
 THREAD_SPEC="${THREAD_VALUES:-}"  # optional env override
 
 LOOKUPS_VAL="$DEFAULT_LOOKUPS"
@@ -75,23 +81,41 @@ if [[ ! -x "$BINARY_PATH" ]]; then
   exit 1
 fi
 
-if [[ ! -d "$TARGET_PATH" && ! -f "$TARGET_PATH" ]]; then
+if [[ -f "$TARGET_PATH" ]]; then
+  file_count=1
+elif [[ -d "$TARGET_PATH" ]]; then
+  file_count=$(find "$TARGET_PATH" -type f | wc -l | tr -d ' ')
+else
   echo "Error: target '$TARGET_PATH' is not a file or directory" >&2
   exit 1
 fi
 
-# Discover core count and build thread list (deduplicated, >=1).
+if (( file_count < 1 )); then
+  echo "Error: target '$TARGET_PATH' contains no files" >&2
+  exit 1
+fi
+
 core_count=$(nproc --all 2>/dev/null || printf '1')
-default_threads="1 2 4 8 16 ${core_count}"
+
+
+raw_values=()
 if [[ -n "$THREAD_SPEC" ]]; then
   THREAD_SPEC=${THREAD_SPEC//,/ }  # allow comma separated
+  for val in $THREAD_SPEC; do
+    raw_values+=("$val")
+  done
 else
-  THREAD_SPEC="$default_threads"
+  val=1
+  while (( val < core_count )); do
+    raw_values+=("$val")
+    val=$(( val * 2 ))
+  done
+  raw_values+=("$core_count")
 fi
 
 declare -A seen
 thread_values=()
-for val in $THREAD_SPEC; do
+for val in "${raw_values[@]}"; do
   if [[ "$val" =~ ^[0-9]+$ ]] && (( val > 0 )); then
     if [[ -z "${seen[$val]:-}" ]]; then
       thread_values+=("$val")
@@ -101,13 +125,23 @@ for val in $THREAD_SPEC; do
 done
 
 if [[ ${#thread_values[@]} -eq 0 ]]; then
-  echo "Error: no valid thread counts resolved from '$THREAD_SPEC'" >&2
+  echo "Error: no valid thread counts resolved" >&2
   exit 1
+fi
+
+if (( file_count > 1 )); then
+  sweep_mode="t-sweep"
+  t_values=("${thread_values[@]}")
+  r_values=(1)
+else
+  sweep_mode="r-sweep"
+  t_values=(1)
+  r_values=("${thread_values[@]}")
 fi
 
 mkdir -p "$(dirname "$OUTPUT_PATH")"
 
-printf "timestamp,binary,file,t,r,keep_open,lookups,difficulty,found,not_found,matches,avg_ms_per_lookup,total_ms,total_s\n" > "$OUTPUT_PATH"
+printf "timestamp,binary,file,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,avg_ms_per_lookup,total_ms,total_s\n" > "$OUTPUT_PATH"
 
 best_avg_ms=999999
 best_avg_cmd=""
@@ -116,16 +150,16 @@ best_total_cmd=""
 
 keep_values=(false true)
 
-echo "Running benchmarks with t/r in: ${thread_values[*]} (cores detected: ${core_count}), keep_open in: ${keep_values[*]}" >&2
+echo "Running benchmarks (mode: $sweep_mode) with t in: ${t_values[*]}, r in: ${r_values[*]} (files: $file_count, cores: ${core_count}), keep_open in: ${keep_values[*]}" >&2
 
-for t in "${thread_values[@]}"; do
-  for r in "${thread_values[@]}"; do
+for t in "${t_values[@]}"; do
+  for r in "${r_values[@]}"; do
     for keep in "${keep_values[@]}"; do
       cmd=("$BINARY_PATH" -S "$LOOKUPS_VAL" -D "$DIFFICULTY_VAL" -f "$TARGET_PATH" -t "$t" -r "$r" -O "$keep" -b true)
       echo "--> ${cmd[*]}" >&2
 
       set +e
-      output="$(${cmd[@]} 2>&1)"
+      output="$("${cmd[@]}" 2>&1)"
       status=$?
       set -e
 
@@ -151,12 +185,9 @@ for t in "${thread_values[@]}"; do
 
       timestamp=$(date -Iseconds)
       total_s=$(awk -v ms="$total_ms" 'BEGIN { printf "%.6f", ms/1000.0 }')
-      avg_ms_csv=$(printf "%.2f" "$avg_ms")
-      total_ms_csv=$(printf "%.2f" "$total_ms")
-      total_s_csv=$(printf "%.2f" "$total_s")
 
-      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
-        "$timestamp" "$BINARY_PATH" "$TARGET_PATH" "$t" "$r" "$keep" \
+      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+        "$timestamp" "$BINARY_PATH" "$TARGET_PATH" "$file_count" "$sweep_mode" "$t" "$r" "$keep" \
         "$lookups_field" "$DIFFICULTY_VAL" "$found_field" "$not_found_field" \
         "$matches_field" "$avg_ms" "$total_ms" "$total_s" >> "$OUTPUT_PATH"
 
