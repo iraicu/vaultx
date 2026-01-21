@@ -1,0 +1,17 @@
+timestamp,binary,file,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,avg_ms_per_lookup,total_ms,total_s
+2026-01-21T22:48:49+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,1,false,10,4,10,0,4350,68.6404,686.40,0.686400
+2026-01-21T22:48:49+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,1,true,10,4,10,0,4439,51.8181,518.18,0.518180
+2026-01-21T22:48:50+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,2,false,10,4,10,0,4331,51.2881,512.88,0.512880
+2026-01-21T22:48:50+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,2,true,10,4,10,0,4331,17.2664,172.66,0.172660
+2026-01-21T22:48:51+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,4,false,10,4,10,0,4331,27.0902,270.90,0.270900
+2026-01-21T22:48:51+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,4,true,10,4,10,0,4396,41.8785,418.78,0.418780
+2026-01-21T22:48:52+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,8,false,10,4,10,0,4396,37.3951,373.95,0.373950
+2026-01-21T22:48:52+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,8,true,10,4,10,0,4504,54.6655,546.66,0.546660
+2026-01-21T22:48:53+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,16,false,10,4,10,0,4421,40.7415,407.41,0.407410
+2026-01-21T22:48:53+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,16,true,10,4,10,0,4421,12.5872,125.87,0.125870
+2026-01-21T22:48:54+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,32,false,10,4,10,0,4421,27.9427,279.43,0.279430
+2026-01-21T22:48:54+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,32,true,10,4,10,0,4311,35.3204,353.20,0.353200
+2026-01-21T22:48:55+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,64,false,10,4,10,0,4311,19.4822,194.82,0.194820
+2026-01-21T22:48:55+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,64,true,10,4,10,0,4333,27.6346,276.35,0.276350
+2026-01-21T22:48:55+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,128,false,10,4,10,0,4333,21.8291,218.29,0.218290
+2026-01-21T22:48:55+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,128,true,10,4,10,0,4333,12.0586,120.59,0.120590

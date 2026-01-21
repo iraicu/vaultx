@@ -1,0 +1,17 @@
+timestamp,binary,file,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,avg_ms_per_lookup,total_ms,total_s
+2026-01-21T22:49:56+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,1,false,1000,4,1000,0,437228,47.9447,47944.68,47.944680
+2026-01-21T22:50:48+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,1,true,1000,4,1000,0,437078,51.5412,51541.21,51.541210
+2026-01-21T22:51:41+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,2,false,1000,4,1000,0,438352,52.0750,52075.04,52.075040
+2026-01-21T22:52:33+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,2,true,1000,4,1000,0,438554,52.1006,52100.62,52.100620
+2026-01-21T22:53:19+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,4,false,1000,4,1000,0,437577,44.9124,44912.35,44.912350
+2026-01-21T22:54:03+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,4,true,1000,4,1000,0,437855,44.6648,44664.80,44.664800
+2026-01-21T22:54:57+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,8,false,1000,4,1000,0,437937,52.5290,52528.98,52.528980
+2026-01-21T22:55:47+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,8,true,1000,4,1000,0,436134,50.3383,50338.27,50.338270
+2026-01-21T22:56:40+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,16,false,1000,4,1000,0,438421,52.1361,52136.11,52.136110
+2026-01-21T22:57:30+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,16,true,1000,4,1000,0,436986,50.1509,50150.90,50.150900
+2026-01-21T22:58:13+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,32,false,1000,4,1000,0,437545,41.2308,41230.83,41.230830
+2026-01-21T22:58:55+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,32,true,1000,4,1000,0,438217,42.4207,42420.71,42.420710
+2026-01-21T22:59:28+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,64,false,1000,4,1000,0,438281,32.0697,32069.73,32.069730
+2026-01-21T23:00:03+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,64,true,1000,4,1000,0,436760,35.1987,35198.66,35.198660
+2026-01-21T23:00:30+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,128,false,1000,4,1000,0,436716,25.6524,25652.36,25.652360
+2026-01-21T23:00:56+00:00,./vaultx,/data-m/iraicu/vaults/,1,r-sweep,1,128,true,1000,4,1000,0,437270,26.4165,26416.48,26.416480
