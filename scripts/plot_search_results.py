@@ -67,6 +67,7 @@ def make_heatmaps(
     total_label: str,
     avg_fmt: str,
     total_fmt: str,
+    leaderboard_avg_col: str,
 ) -> plt.Figure:
     sns.set_theme(style="whitegrid", font_scale=1.0)
     cmap_avg = sns.color_palette("rocket_r", as_cmap=True)
@@ -75,7 +76,7 @@ def make_heatmaps(
     fig, axes = plt.subplots(
         nrows=3,
         ncols=len(keep_values),
-        figsize=(4.5 * len(keep_values) + 1.5, 11.0),
+        figsize=(5.5 * len(keep_values) + 2.0, 11.0),
         squeeze=False,
         gridspec_kw={"height_ratios": [1.0, 1.0, 0.4]},
     )
@@ -127,16 +128,16 @@ def make_heatmaps(
     # Leaderboard (top 5 fastest avg lookups) placed in bottom-left cell; others hidden.
     leaderboard_ax = axes[2, 0]
     axes[2, 1:] = [ax.axis("off") for ax in axes[2, 1:]]
-    top = df.sort_values(avg_col).head(5)
+    top = df.sort_values(leaderboard_avg_col).head(5)
     lines = [
-        f"{i+1}. -t {row.t} -r {row.r} -O {row.keep_open} | avg {row[avg_col]:.2f} s | total {row[total_col]:.2f} s"
+        f"{i+1}. -t {row.t} -r {row.r} -O {row.keep_open} | avg {row[leaderboard_avg_col]:.2f} ms | total {row[total_col]:.2f} s"
         for i, row in top.reset_index(drop=True).iterrows()
     ]
     leaderboard_ax.axis("off")
     leaderboard_ax.text(
         0.01,
         0.95,
-        "Top 5 fastest (avg s/lookup):\n" + "\n".join(lines),
+        "Top 5 fastest (avg ms/lookup):\n" + "\n".join(lines),
         va="top",
         ha="left",
         fontsize=10,
@@ -177,10 +178,12 @@ def main() -> None:
     keep_values = sorted(df["keep_open"].unique())
 
     # Unit handling
-    # Always display in seconds: convert avg from ms to seconds, keep total as seconds.
-    df["avg_disp"] = df["avg_ms_per_lookup"] / 1000.0
+    # Top heatmaps: show avg lookup times in milliseconds.
+    df["avg_heatmap"] = df["avg_ms_per_lookup"]
+    # Leaderboard uses ms for avg; totals remain in seconds.
+    df["avg_leader_ms"] = df["avg_ms_per_lookup"]
     df["total_disp"] = df["total_s"]
-    avg_label = "Avg s/lookup"
+    avg_label = "Avg ms/lookup"
     total_label = "Total time s"
     avg_fmt = ".2f"
     total_fmt = ".2f"
@@ -188,12 +191,13 @@ def main() -> None:
     fig = make_heatmaps(
         df,
         keep_values,
-        avg_col="avg_disp",
+        avg_col="avg_heatmap",
         total_col="total_disp",
         avg_label=avg_label,
         total_label=total_label,
         avg_fmt=avg_fmt,
         total_fmt=total_fmt,
+        leaderboard_avg_col="avg_leader_ms",
     )
 
     title_text = args.title or f"VAULTX search benchmark ({csv_path.name})"
