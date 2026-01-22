@@ -174,6 +174,8 @@ keep_values=(false true)
 
 echo "Running benchmarks (mode: $sweep_mode) with t in: ${t_values[*]}, r in: ${r_values[*]} (files: $file_count, cores: ${core_count}), keep_open in: ${keep_values[*]}" >&2
 
+drop_caches
+
 for t in "${t_values[@]}"; do
   # Clear cache between thread count changes.
   if [[ "$sweep_mode" == "t-sweep" ]]; then

@@ -75,48 +75,45 @@ def plot_panels(df: pd.DataFrame, sweep_dim: str, keep_values: list[str]) -> plt
     x_label = "I/O threads (-t)" if sweep_dim == "t" else "Record threads (-r)"
     x_col = sweep_dim
 
-    for idx, keep_flag in enumerate(keep_values):
-        ax = axes[0, idx]
+    grouped_map: dict[str, pd.DataFrame | None] = {}
+    global_max = 0.0
+    for keep_flag in keep_values:
         subset = df[df["keep_open"] == keep_flag]
         if subset.empty:
-            ax.set_title(f"keep_open={keep_flag} (no data)")
-            ax.axis("off")
+            grouped_map[keep_flag] = None
             continue
 
         grouped = (
             subset
             .groupby(x_col)
-            .agg(avg_ms_per_lookup=("avg_ms_per_lookup", "mean"), total_s=("total_s", "mean"))
+            .agg(avg_ms_per_lookup=("avg_ms_per_lookup", "mean"))
             .reset_index()
             .sort_values(x_col)
         )
-        x_positions = range(len(grouped))
+        grouped_map[keep_flag] = grouped
 
-        # Primary axis: avg ms/lookup bars
-        bar_width = 0.4
+        max_val = grouped["avg_ms_per_lookup"].max()
+        if pd.notna(max_val):
+            global_max = max(global_max, float(max_val))
+
+    ylim_max = global_max * 1.1 if global_max > 0 else 1.0
+
+    for idx, keep_flag in enumerate(keep_values):
+        ax = axes[0, idx]
+        grouped = grouped_map.get(keep_flag)
+        if grouped is None or grouped.empty:
+            ax.set_title(f"keep_open={keep_flag} (no data)")
+            ax.axis("off")
+            continue
+
+        x_positions = range(len(grouped))
+        bar_width = 0.5
         ax.bar(x_positions, grouped["avg_ms_per_lookup"], width=bar_width, color="#1f77b4", label="avg ms/lookup")
         ax.set_xlabel(x_label)
-        ax.set_ylabel("Avg ms/lookup", color="#1f77b4")
-        ax.tick_params(axis="y", labelcolor="#1f77b4")
+        ax.set_ylabel("Avg ms/lookup")
         ax.set_xticks(list(x_positions), grouped[x_col])
-
-        # Secondary axis: total time bars (right y-axis)
-        ax2 = ax.twinx()
-        ax2.bar(x_positions, grouped["total_s"], width=bar_width * 0.55, color="#d62728", alpha=0.7, label="total s")
-        ax2.set_ylabel("Total time (s)", color="#d62728")
-        ax2.tick_params(axis="y", labelcolor="#d62728")
-        max_total = grouped["total_s"].max()
-        upper = max_total * 1.1 if max_total and max_total > 0 else 1.0
-        ax2.set_ylim(bottom=0.0, top=upper)
-
-        # Legends: combine handles
-        handles, labels = [], []
-        for a in (ax, ax2):
-            h, l = a.get_legend_handles_labels()
-            handles.extend(h)
-            labels.extend(l)
-        ax.legend(handles, labels, loc="best")
-
+        ax.set_ylim(bottom=0.0, top=ylim_max)
+        ax.legend(loc="best")
         ax.set_title(f"keep_open={keep_flag}")
 
     fig.tight_layout()

@@ -451,11 +451,6 @@ SearchResult search_memo_records(const char *filename,
                            num_threads_bucket, plotData_array, num_files,
                            records_per_file, local_key, &matches_found);
 
-  // Clean up
-  if (plotData_array != NULL) {
-    free(plotData_array);
-  }
-
   double elapsed_time = (omp_get_wtime() - start_time) * 1000.0;
 
   // Check for reading errors
@@ -465,7 +460,6 @@ SearchResult search_memo_records(const char *filename,
 
   // Clean up
   fclose(file);
-  free(buffer);
 
   result.search_time_ms = elapsed_time;
   result.avg_time_per_lookup_ms = elapsed_time;
@@ -525,6 +519,12 @@ SearchResult search_memo_records(const char *filename,
   }
 
   printf("search time %.2f ms\n", elapsed_time);
+
+  // Clean up after any printing that relies on buffer/plotData_array.
+  if (plotData_array != NULL) {
+    free(plotData_array);
+  }
+  free(buffer);
 
   return result;
 }
