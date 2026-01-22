@@ -1,0 +1,27 @@
+nohup: ignoring input
+Error creating merge file: Permission denied
+Selected Approach           : for
+Number of Threads           : 128
+Number of Threads I/O       : 1
+Exponent k                  : 32
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 0.0
+Table2 Size (GB)            : 0.0
+Max Memory Size (GB)        : 2.0
+Expected Memory Size (GB)   : 1.6
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 0.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 1
+Number of Records in Bucket : 1
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : false
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+Peak Memory Usage: 3.96 MB
