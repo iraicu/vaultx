@@ -1,7 +1,0 @@
-timestamp,binary,file,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,open_close_ms,seek_ms,read_ms,hash_ms,avg_ms_per_lookup,total_ms,total_s
-2026-01-22T20:05:53-06:00,/home/devgs/vaultx/vaultx,tmp/,10,t-sweep,1,1,false,10,3,100,0,800,0.4243,7.5086,5.5755,0.0311,13.5394,135.3941,0.135394
-2026-01-22T20:05:53-06:00,/home/devgs/vaultx/vaultx,tmp/,10,t-sweep,1,1,true,10,3,100,0,800,0.0546,7.8078,0.3402,0.0247,8.2273,82.2733,0.082273
-2026-01-22T20:05:53-06:00,/home/devgs/vaultx/vaultx,tmp/,10,t-sweep,2,1,false,10,3,100,0,800,0.1745,0.0513,5.4226,0.0145,5.6628,56.6284,0.056628
-2026-01-22T20:05:53-06:00,/home/devgs/vaultx/vaultx,tmp/,10,t-sweep,2,1,true,10,3,100,0,800,0.0175,0.0294,0.0030,0.0132,0.0631,0.6310,0.000631
-2026-01-22T20:05:53-06:00,/home/devgs/vaultx/vaultx,tmp/,10,t-sweep,4,1,false,10,3,100,0,800,0.2955,0.0573,0.0425,0.0231,0.4184,4.1837,0.004184
-2026-01-22T20:05:53-06:00,/home/devgs/vaultx/vaultx,tmp/,10,t-sweep,4,1,true,10,3,100,0,800,0.0217,0.0361,0.0033,0.0152,0.0763,0.7630,0.000763
