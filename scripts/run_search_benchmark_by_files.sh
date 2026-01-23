@@ -163,7 +163,7 @@ fi
 
 mkdir -p "$(dirname "$OUTPUT_PATH")"
 
-printf "timestamp,binary,file,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,avg_ms_per_lookup,total_ms,total_s\n" > "$OUTPUT_PATH"
+printf "timestamp,binary,file,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,open_close_ms,seek_ms,read_ms,hash_ms,avg_ms_per_lookup,total_ms,total_s\n" > "$OUTPUT_PATH"
 
 best_avg_ms=999999
 best_avg_cmd=""
@@ -200,27 +200,47 @@ for t in "${t_values[@]}"; do
         continue
       fi
 
-      sum_line=$(grep '^SUM' <<<"$output" || true)
-      if [[ -z "$sum_line" ]]; then
-        echo "WARN: could not find SUM line in output; skipping entry" >&2
+      # Parse TIMING line: TIMING open_close_ms seek_ms read_ms hash_ms total_wall_ms avg_per_lookup_ms
+      timing_line=$(grep '^TIMING' <<<"$output" || true)
+      if [[ -z "$timing_line" ]]; then
+        echo "WARN: could not find TIMING line in output; skipping entry" >&2
         echo "$output" >&2
         continue
       fi
 
-      lookups_field=$(awk '{print $(NF-5)}' <<<"$sum_line")
-      found_field=$(awk '{print $(NF-4)}' <<<"$sum_line")
-      not_found_field=$(awk '{print $(NF-3)}' <<<"$sum_line")
-      matches_field=$(awk '{print $(NF-2)}' <<<"$sum_line")
-      avg_ms=$(awk '{print $(NF-1)}' <<<"$sum_line")
-      total_ms=$(awk '{print $NF}' <<<"$sum_line")
+      # Extract component timing (avg per lookup)
+      open_close_ms=$(awk '{print $2}' <<<"$timing_line")
+      seek_ms=$(awk '{print $3}' <<<"$timing_line")
+      read_ms=$(awk '{print $4}' <<<"$timing_line")
+      hash_ms=$(awk '{print $5}' <<<"$timing_line")
+      total_ms=$(awk '{print $6}' <<<"$timing_line")
+      avg_ms=$(awk '{print $7}' <<<"$timing_line")
+
+      # Parse TOTAL line for found/not_found/matches counts
+      # Format: TOTAL (all lookups)  <blanks> lookups found not_found matches avg total
+      total_line=$(grep 'TOTAL (all lookups)' <<<"$output" || true)
+      if [[ -n "$total_line" ]]; then
+        # Extract numeric fields from the TOTAL line
+        lookups_field=$(echo "$total_line" | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/) {print $i; exit}}')
+        found_field=$(echo "$total_line" | awk '{n=0; for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/) {n++; if(n==2) {print $i; exit}}}')
+        not_found_field=$(echo "$total_line" | awk '{n=0; for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/) {n++; if(n==3) {print $i; exit}}}')
+        matches_field=$(echo "$total_line" | awk '{n=0; for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/) {n++; if(n==4) {print $i; exit}}}')
+      else
+        # Fallback: use lookups from args, zeros for counts
+        lookups_field="$LOOKUPS_VAL"
+        found_field=0
+        not_found_field=0
+        matches_field=0
+      fi
 
       timestamp=$(date -Iseconds)
       total_s=$(awk -v ms="$total_ms" 'BEGIN { printf "%.6f", ms/1000.0 }')
 
-      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
         "$timestamp" "$BINARY_PATH" "$TARGET_PATH" "$file_count" "$sweep_mode" "$t" "$r" "$keep" \
         "$lookups_field" "$DIFFICULTY_VAL" "$found_field" "$not_found_field" \
-        "$matches_field" "$avg_ms" "$total_ms" "$total_s" >> "$OUTPUT_PATH"
+        "$matches_field" "$open_close_ms" "$seek_ms" "$read_ms" "$hash_ms" \
+        "$avg_ms" "$total_ms" "$total_s" >> "$OUTPUT_PATH"
 
       cmd_repr="$BINARY_PATH -S $LOOKUPS_VAL -D $DIFFICULTY_VAL -f $TARGET_PATH -t $t -r $r -O $keep"
       if awk -v avg="$avg_ms" -v best="$best_avg_ms" 'BEGIN { exit (avg < best ? 0 : 1) }'; then
