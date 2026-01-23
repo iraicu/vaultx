@@ -572,6 +572,61 @@ bool read_bucket_into_buffer(SearchFileCtx *ctx, const uint8_t *query,
   return true;
 }
 
+// Timed variant that returns seek and read times separately.
+bool read_bucket_into_buffer_timed(SearchFileCtx *ctx, const uint8_t *query,
+                                   size_t search_length, size_t *records_read,
+                                   size_t *effective_records_read,
+                                   double *seek_ms_out, double *read_ms_out) {
+  if (!ctx || !ctx->file || !ctx->buffer || !records_read ||
+      !effective_records_read) {
+    return false;
+  }
+
+  if (search_length > HASH_SIZE) {
+    search_length = HASH_SIZE;
+  }
+
+  off_t bucketIndex = getBucketIndex(query);
+  off_t offset = bucketIndex * (off_t)ctx->num_records_in_bucket_search *
+                 (off_t)sizeof(MemoTable2Record);
+
+  // Time the seek operation
+  double seek_start = omp_get_wtime();
+  if (fseek(ctx->file, offset, SEEK_SET) != 0) {
+    perror("Error seeking in file");
+    return false;
+  }
+  double seek_end = omp_get_wtime();
+  if (seek_ms_out) {
+    *seek_ms_out = (seek_end - seek_start) * 1000.0;
+  }
+
+  // Time the read operation
+  double read_start = omp_get_wtime();
+  size_t read_count = fread(ctx->buffer, sizeof(MemoTable2Record),
+                            ctx->num_records_in_bucket_search, ctx->file);
+  double read_end = omp_get_wtime();
+  if (read_ms_out) {
+    *read_ms_out = (read_end - read_start) * 1000.0;
+  }
+
+  *records_read = read_count;
+  size_t effective = read_count;
+
+  if (ctx->plotData_array == NULL || ctx->num_files == 0 ||
+      ctx->records_per_file == 0) {
+    for (size_t i = 0; i < read_count; ++i) {
+      if (is_record_empty(&ctx->buffer[i])) {
+        effective = i;
+        break;
+      }
+    }
+  }
+
+  *effective_records_read = effective;
+  return true;
+}
+
 // Hash bucket contents and check for a match using optional per-bucket threading.
 size_t hash_bucket_buffer(const SearchFileCtx *ctx, const uint8_t *query,
                           size_t search_length, size_t effective_records,

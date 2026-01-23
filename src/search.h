@@ -15,6 +15,15 @@ typedef struct {
   double avg_time_per_lookup_ms;
 } SearchResult;
 
+// Timing breakdown for detailed search performance analysis
+typedef struct {
+  double open_close_ms;   // Time spent opening and closing files
+  double seek_ms;         // Time spent seeking to bucket positions
+  double read_ms;         // Time spent reading bucket data from disk
+  double hash_ms;         // Time spent hashing records (-r threads)
+  double total_ms;        // Total wall-clock time (should equal sum of above)
+} SearchTimingBreakdown;
+
 typedef struct {
   MemoTable2Record record;
   int file_index;
@@ -56,6 +65,11 @@ SearchResult search_query_with_ctx(SearchFileCtx *ctx, const uint8_t *query,
 bool read_bucket_into_buffer(SearchFileCtx *ctx, const uint8_t *query,
                              size_t search_length, size_t *records_read,
                              size_t *effective_records_read);
+// Timed variant that returns seek and read times separately
+bool read_bucket_into_buffer_timed(SearchFileCtx *ctx, const uint8_t *query,
+                                   size_t search_length, size_t *records_read,
+                                   size_t *effective_records_read,
+                                   double *seek_ms_out, double *read_ms_out);
 size_t hash_bucket_buffer(const SearchFileCtx *ctx, const uint8_t *query,
                           size_t search_length, size_t effective_records,
                           int num_threads_bucket, size_t *records_checked,
@@ -71,6 +85,16 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
                            size_t *matches_by_file,
                            double *io_ms_out, double *hash_ms_out,
                            double *total_ms_out);
+
+// Extended version with detailed timing breakdown
+bool search_rewrite_lookup_timed(const uint8_t *query, size_t search_length,
+                                 SearchFileCtx *ctx_list, int file_count,
+                                 int io_threads, int hash_threads,
+                                 SearchMatch **matches_out,
+                                 size_t *match_count_out,
+                                 size_t *records_hashed_out,
+                                 size_t *matches_by_file,
+                                 SearchTimingBreakdown *timing_out);
 
 void print_buckets(const char *filename, int num_buckets_to_print);
 void print_records(const char *filename, int num_records_to_print);

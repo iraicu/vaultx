@@ -1,7 +1,0 @@
-timestamp,binary,file,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,avg_ms_per_lookup,total_ms,total_s
-2026-01-22T13:31:34-06:00,./vaultx,./plots/,1,r-sweep,1,1,false,100,4,24,76,26,1.0409,104.09,0.104090
-2026-01-22T13:31:34-06:00,./vaultx,./plots/,1,r-sweep,1,1,true,100,4,24,76,26,0.0180,1.80,0.001800
-2026-01-22T13:31:34-06:00,./vaultx,./plots/,1,r-sweep,1,2,false,100,4,24,76,26,0.0263,2.63,0.002630
-2026-01-22T13:31:34-06:00,./vaultx,./plots/,1,r-sweep,1,2,true,100,4,24,76,26,0.0536,5.36,0.005360
-2026-01-22T13:31:34-06:00,./vaultx,./plots/,1,r-sweep,1,4,false,100,4,24,76,26,0.0280,2.80,0.002800
-2026-01-22T13:31:34-06:00,./vaultx,./plots/,1,r-sweep,1,4,true,100,4,24,76,26,0.0170,1.70,0.001700
