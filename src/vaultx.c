@@ -3038,84 +3038,133 @@ int main(int argc, char *argv[]) {
           query[j] = rand() % 256;
         }
 
-        double per_lookup_open_ms = 0.0;
-        if (!keep_open) {
-          double open_start = omp_get_wtime();
-          for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-            if (!search_ctx_open(SEARCH_FILES[i], &ctx_list[i])) {
-              fprintf(stderr, "Error: Failed to open %s for lookup %d.\n",
-                      SEARCH_FILES[i], lookup);
-              exit(EXIT_FAILURE);
-            }
-          }
-          per_lookup_open_ms = (omp_get_wtime() - open_start) * 1000.0;
-        }
-
         memset(matches_by_file, 0,
                sizeof(size_t) * (size_t)SEARCH_FILES_COUNT);
-        SearchMatch *matches = NULL;
-        size_t match_count = 0;
-        size_t records_hashed = 0;
-        SearchTimingBreakdown timing = {0};
 
-        bool ok = search_rewrite_lookup_timed(query, search_length, ctx_list,
-                                              SEARCH_FILES_COUNT, io_threads,
-                                              hash_threads, &matches, &match_count,
-                                              &records_hashed, matches_by_file,
-                                              &timing);
+        if (keep_open) {
+          // keep_open=true: All files are already open; search them all at once
+          SearchMatch *matches = NULL;
+          size_t match_count = 0;
+          size_t records_hashed = 0;
+          SearchTimingBreakdown timing = {0};
 
-        if (matches) {
-          free(matches);
-        }
+          bool ok = search_rewrite_lookup_timed(query, search_length, ctx_list,
+                                                SEARCH_FILES_COUNT, io_threads,
+                                                hash_threads, &matches, &match_count,
+                                                &records_hashed, matches_by_file,
+                                                &timing);
 
-        if (!ok) {
-          fprintf(stderr, "Search failed during batch lookup %d.\n", lookup);
-        }
-
-        // Accumulate timing breakdown
-        total_timing.seek_ms += timing.seek_ms;
-        total_timing.read_ms += timing.read_ms;
-        total_timing.hash_ms += timing.hash_ms;
-        total_timing.total_ms += timing.total_ms;
-        if (!keep_open) {
-          total_timing.open_close_ms += per_lookup_open_ms;
-        }
-
-        total_wall_time_ms += timing.total_ms + per_lookup_open_ms;
-
-        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-          if (results[i].filename[0] == '\0') {
-            strncpy(results[i].filename,
-                    keep_open ? ctx_list[i].filename : SEARCH_FILES[i],
-                    sizeof(results[i].filename) - 1);
+          if (matches) {
+            free(matches);
           }
-          if (results[i].filesize == 0) {
-            results[i].filesize = ctx_list[i].filesize;
-          }
-          results[i].num_lookups += 1;
-          results[i].match_count += (long long)matches_by_file[i];
-          if (matches_by_file[i] > 0) {
-            results[i].found_count += 1;
-          } else {
-            results[i].not_found_count += 1;
-          }
-           /* timing.total_ms is wall-clock for all files; distribute evenly to avoid
-             multiplying by SEARCH_FILES_COUNT when aggregating per-file totals. */
-           double per_file_ms = (SEARCH_FILES_COUNT > 0)
-                            ? ((timing.total_ms + per_lookup_open_ms) / (double)SEARCH_FILES_COUNT)
-                            : (timing.total_ms + per_lookup_open_ms);
-           results[i].search_time_ms += per_file_ms;
-        }
 
-        double per_lookup_close_ms = 0.0;
-        if (!keep_open) {
-          double close_start = omp_get_wtime();
+          if (!ok) {
+            fprintf(stderr, "Search failed during batch lookup %d.\n", lookup);
+          }
+
+          // Accumulate timing breakdown
+          total_timing.seek_ms += timing.seek_ms;
+          total_timing.read_ms += timing.read_ms;
+          total_timing.hash_ms += timing.hash_ms;
+          total_timing.total_ms += timing.total_ms;
+          total_wall_time_ms += timing.total_ms;
+
           for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-            search_ctx_close(&ctx_list[i]);
+            results[i].num_lookups += 1;
+            results[i].match_count += (long long)matches_by_file[i];
+            if (matches_by_file[i] > 0) {
+              results[i].found_count += 1;
+            } else {
+              results[i].not_found_count += 1;
+            }
+            double per_file_ms = (SEARCH_FILES_COUNT > 0)
+                             ? (timing.total_ms / (double)SEARCH_FILES_COUNT)
+                             : timing.total_ms;
+            results[i].search_time_ms += per_file_ms;
           }
-          per_lookup_close_ms = (omp_get_wtime() - close_start) * 1000.0;
-          total_timing.open_close_ms += per_lookup_close_ms;
-          total_wall_time_ms += per_lookup_close_ms;
+        } else {
+          // keep_open=false: Open -> Search -> Close each file individually
+          double lookup_start = omp_get_wtime();
+
+          // Per-file timing accumulators for this lookup
+          double lookup_open_close_ms = 0.0;
+          double lookup_seek_ms = 0.0;
+          double lookup_read_ms = 0.0;
+          double lookup_hash_ms = 0.0;
+
+          omp_set_num_threads(io_threads);
+#pragma omp parallel for schedule(dynamic) reduction(+:lookup_open_close_ms, lookup_seek_ms, lookup_read_ms, lookup_hash_ms)
+          for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+            SearchFileCtx ctx_temp;
+            SearchTimingBreakdown file_timing = {0};
+
+            // Time file open
+            double open_start = omp_get_wtime();
+            if (!search_ctx_open(SEARCH_FILES[i], &ctx_temp)) {
+              fprintf(stderr, "Error: Failed to open %s for lookup %d.\n",
+                      SEARCH_FILES[i], lookup);
+              continue;
+            }
+            double open_ms = (omp_get_wtime() - open_start) * 1000.0;
+
+            // Search this single file
+            SearchMatch *file_matches_arr = NULL;
+            size_t file_match_count = 0;
+            size_t file_records_hashed = 0;
+            size_t single_file_matches = 0;
+
+            (void)search_rewrite_lookup_timed(query, search_length, &ctx_temp,
+                                                  1, 1, hash_threads,
+                                                  &file_matches_arr, &file_match_count,
+                                                  &file_records_hashed, &single_file_matches,
+                                                  &file_timing);
+
+            if (file_matches_arr) {
+              free(file_matches_arr);
+            }
+
+            // Time file close
+            double close_start = omp_get_wtime();
+            search_ctx_close(&ctx_temp);
+            double close_ms = (omp_get_wtime() - close_start) * 1000.0;
+
+            // Accumulate per-file timing
+            lookup_open_close_ms += open_ms + close_ms;
+            lookup_seek_ms += file_timing.seek_ms;
+            lookup_read_ms += file_timing.read_ms;
+            lookup_hash_ms += file_timing.hash_ms;
+
+            // Update per-file results (thread-safe via atomic or critical)
+#pragma omp critical
+            {
+              if (results[i].filename[0] == '\0') {
+                strncpy(results[i].filename, SEARCH_FILES[i],
+                        sizeof(results[i].filename) - 1);
+              }
+              if (results[i].filesize == 0) {
+                results[i].filesize = ctx_temp.filesize;
+              }
+              results[i].num_lookups += 1;
+              results[i].match_count += (long long)file_match_count;
+              matches_by_file[i] = file_match_count;
+              if (file_match_count > 0) {
+                results[i].found_count += 1;
+              } else {
+                results[i].not_found_count += 1;
+              }
+              results[i].search_time_ms += file_timing.total_ms + open_ms + close_ms;
+            }
+          }
+
+          double lookup_wall_ms = (omp_get_wtime() - lookup_start) * 1000.0;
+          total_wall_time_ms += lookup_wall_ms;
+
+          // Accumulate timing breakdown (cumulative across threads)
+          total_timing.open_close_ms += lookup_open_close_ms;
+          total_timing.seek_ms += lookup_seek_ms;
+          total_timing.read_ms += lookup_read_ms;
+          total_timing.hash_ms += lookup_hash_ms;
+          total_timing.total_ms += lookup_wall_ms;
         }
       }
 
