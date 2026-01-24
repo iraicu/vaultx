@@ -40,7 +40,7 @@ for i in {0..7}; do
     
     echo "Executing command..."
     # Using eval to handle the complexity of the command string with bash -c and pipes
-    cmd="stdbuf -o0 -e0 bash -c 'time ./vaultx -P merge -k 32 -n $n -F /data-l/iraicu/tmp/ -T /$drive_name/iraicu/vaults/ -t 1 -R 1024  -A pipelined -B $b' 2>&1 | tee $log_file"
+    cmd="stdbuf -o0 -e0 bash -c 'time ./vaultx -P merge -k 32 -n $n -F /data-l/iraicu/tmp/ -T /$drive_name/iraicu/vaults/ -t 1 -R 1024  -A pipelined -B $b' 2>&1 | tee ./logs/$log_file"
     
     echo "$cmd"
     eval "$cmd"
