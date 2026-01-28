@@ -1,0 +1,569 @@
+Selected Approach           : for
+Number of Threads           : 1
+Number of Threads I/O       : 1
+Exponent k                  : 32
+Threads (Hash/Sort)         : 1
+Threads (I/O)               : 1
+Table1 Size (GB)            : 0.0
+Table2 Size (GB)            : 0.0
+Max Memory Size (GB)        : 2.0
+Expected Memory Size (GB)   : 1.6
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 0.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 1
+Number of Records in Bucket : 1
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1024
+HASHGEN                     : false
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+Peak Memory Usage: 2.11 MB
+Memory Size per Batch: 256MB
+Buckets processed from each file per batch: 32768
+Bucket size: 2048 bytes
+Data read from each file per batch: 64.00MB
+
+Total Batches: 512
+Merge Approach [0]: Pipelined
+Source: /data-l/iraicu/tmp/
+Destination: /data-r/iraicu/vaults/
+Threads: 1
+Files: 4, K32
+Memory Limit: 483544MB
+
+
+posix_fallocate (137438953616 bytes) took 0.865 seconds
+
+
+[0.20%] | Read: 1.4686s | Write: 0.2225s | Batch Time: 1.691053s | Total Time: 1.69s | ETA: 864.13s | Throughput: 151.38 MB/s
+[0.39%] | Read: 1.3249s | Write: 0.2236s | Batch Time: 1.548460s | Total Time: 3.24s | ETA: 826.08s | Throughput: 165.33 MB/s
+[0.59%] | Read: 1.2944s | Write: 0.2188s | Batch Time: 1.513193s | Total Time: 4.75s | ETA: 806.38s | Throughput: 169.18 MB/s
+[0.78%] | Read: 1.3139s | Write: 0.2182s | Batch Time: 1.532093s | Total Time: 6.28s | ETA: 798.17s | Throughput: 167.09 MB/s
+[0.98%] | Read: 1.2954s | Write: 0.2216s | Batch Time: 1.516950s | Total Time: 7.80s | ETA: 791.10s | Throughput: 168.76 MB/s
+[1.17%] | Read: 1.3224s | Write: 0.2215s | Batch Time: 1.543871s | Total Time: 9.35s | ETA: 788.15s | Throughput: 165.82 MB/s
+[1.37%] | Read: 1.3061s | Write: 0.2244s | Batch Time: 1.530500s | Total Time: 10.88s | ETA: 784.64s | Throughput: 167.27 MB/s
+[1.56%] | Read: 1.3108s | Write: 0.2210s | Batch Time: 1.531716s | Total Time: 12.41s | ETA: 781.70s | Throughput: 167.13 MB/s
+[1.76%] | Read: 1.2975s | Write: 0.2235s | Batch Time: 1.520927s | Total Time: 13.93s | ETA: 778.47s | Throughput: 168.32 MB/s
+[1.95%] | Read: 1.3119s | Write: 0.2199s | Batch Time: 1.531885s | Total Time: 15.46s | ETA: 776.13s | Throughput: 167.11 MB/s
+[2.15%] | Read: 1.3075s | Write: 0.2200s | Batch Time: 1.527501s | Total Time: 16.99s | ETA: 773.74s | Throughput: 167.59 MB/s
+[2.34%] | Read: 1.3075s | Write: 0.2196s | Batch Time: 1.527184s | Total Time: 18.52s | ETA: 771.48s | Throughput: 167.63 MB/s
+[2.54%] | Read: 1.3072s | Write: 0.2191s | Batch Time: 1.526356s | Total Time: 20.04s | ETA: 769.30s | Throughput: 167.72 MB/s
+[2.73%] | Read: 1.3075s | Write: 0.2236s | Batch Time: 1.531171s | Total Time: 21.57s | ETA: 767.38s | Throughput: 167.19 MB/s
+[2.93%] | Read: 1.2965s | Write: 0.2199s | Batch Time: 1.516415s | Total Time: 23.09s | ETA: 765.03s | Throughput: 168.82 MB/s
+[3.12%] | Read: 1.3112s | Write: 0.2193s | Batch Time: 1.530471s | Total Time: 24.62s | ETA: 763.22s | Throughput: 167.27 MB/s
+[3.32%] | Read: 1.2993s | Write: 0.2191s | Batch Time: 1.518375s | Total Time: 26.14s | ETA: 761.09s | Throughput: 168.60 MB/s
+[3.52%] | Read: 1.3219s | Write: 0.2200s | Batch Time: 1.541860s | Total Time: 27.68s | ETA: 759.67s | Throughput: 166.03 MB/s
+[3.71%] | Read: 1.3126s | Write: 0.2208s | Batch Time: 1.533370s | Total Time: 29.21s | ETA: 758.01s | Throughput: 166.95 MB/s
+[3.91%] | Read: 1.3197s | Write: 0.2529s | Batch Time: 1.572576s | Total Time: 30.79s | ETA: 757.34s | Throughput: 162.79 MB/s
+[4.10%] | Read: 1.3183s | Write: 0.2545s | Batch Time: 1.572823s | Total Time: 32.36s | ETA: 756.58s | Throughput: 162.76 MB/s
+[4.30%] | Read: 1.3067s | Write: 0.2567s | Batch Time: 1.563377s | Total Time: 33.92s | ETA: 755.54s | Throughput: 163.75 MB/s
+[4.49%] | Read: 1.3346s | Write: 0.2525s | Batch Time: 1.587097s | Total Time: 35.51s | ETA: 754.96s | Throughput: 161.30 MB/s
+[4.69%] | Read: 1.2899s | Write: 0.2407s | Batch Time: 1.530653s | Total Time: 37.04s | ETA: 753.15s | Throughput: 167.25 MB/s
+[4.88%] | Read: 1.3171s | Write: 0.2583s | Batch Time: 1.575408s | Total Time: 38.62s | ETA: 752.23s | Throughput: 162.50 MB/s
+[5.08%] | Read: 1.2877s | Write: 0.2346s | Batch Time: 1.522331s | Total Time: 40.14s | ETA: 750.27s | Throughput: 168.16 MB/s
+[5.27%] | Read: 1.3099s | Write: 0.2372s | Batch Time: 1.547091s | Total Time: 41.68s | ETA: 748.79s | Throughput: 165.47 MB/s
+[5.47%] | Read: 1.3124s | Write: 0.2570s | Batch Time: 1.569435s | Total Time: 43.25s | ETA: 747.68s | Throughput: 163.12 MB/s
+[5.66%] | Read: 1.3250s | Write: 0.2611s | Batch Time: 1.586076s | Total Time: 44.84s | ETA: 746.83s | Throughput: 161.40 MB/s
+[5.86%] | Read: 1.3127s | Write: 0.2565s | Batch Time: 1.569252s | Total Time: 46.41s | ETA: 745.65s | Throughput: 163.14 MB/s
+[6.05%] | Read: 1.3110s | Write: 0.2380s | Batch Time: 1.548938s | Total Time: 47.96s | ETA: 744.13s | Throughput: 165.27 MB/s
+[6.25%] | Read: 1.2947s | Write: 0.2376s | Batch Time: 1.532276s | Total Time: 49.49s | ETA: 742.37s | Throughput: 167.07 MB/s
+[6.45%] | Read: 1.3027s | Write: 0.2357s | Batch Time: 1.538406s | Total Time: 51.03s | ETA: 740.70s | Throughput: 166.41 MB/s
+[6.64%] | Read: 1.3061s | Write: 0.2608s | Batch Time: 1.566926s | Total Time: 52.60s | ETA: 739.44s | Throughput: 163.38 MB/s
+[6.84%] | Read: 1.3389s | Write: 0.2545s | Batch Time: 1.593394s | Total Time: 54.19s | ETA: 738.53s | Throughput: 160.66 MB/s
+[7.03%] | Read: 1.3033s | Write: 0.2380s | Batch Time: 1.541373s | Total Time: 55.73s | ETA: 736.89s | Throughput: 166.09 MB/s
+[7.23%] | Read: 1.2947s | Write: 0.2241s | Batch Time: 1.518819s | Total Time: 57.25s | ETA: 734.97s | Throughput: 168.55 MB/s
+[7.42%] | Read: 1.3011s | Write: 0.2188s | Batch Time: 1.519880s | Total Time: 58.77s | ETA: 733.08s | Throughput: 168.43 MB/s
+[7.62%] | Read: 1.2833s | Write: 0.2201s | Batch Time: 1.503432s | Total Time: 60.27s | ETA: 731.01s | Throughput: 170.28 MB/s
+[7.81%] | Read: 1.3008s | Write: 0.2196s | Batch Time: 1.520336s | Total Time: 61.79s | ETA: 729.17s | Throughput: 168.38 MB/s
+[8.01%] | Read: 1.2802s | Write: 0.2379s | Batch Time: 1.518068s | Total Time: 63.31s | ETA: 727.31s | Throughput: 168.64 MB/s
+[8.20%] | Read: 1.3038s | Write: 0.2382s | Batch Time: 1.541988s | Total Time: 64.85s | ETA: 725.74s | Throughput: 166.02 MB/s
+[8.40%] | Read: 1.2946s | Write: 0.2377s | Batch Time: 1.532271s | Total Time: 66.39s | ETA: 724.07s | Throughput: 167.07 MB/s
+[8.59%] | Read: 1.3081s | Write: 0.2355s | Batch Time: 1.543665s | Total Time: 67.93s | ETA: 722.52s | Throughput: 165.84 MB/s
+[8.79%] | Read: 1.3005s | Write: 0.2354s | Batch Time: 1.535918s | Total Time: 69.47s | ETA: 720.90s | Throughput: 166.68 MB/s
+[8.98%] | Read: 1.3311s | Write: 0.2370s | Batch Time: 1.568075s | Total Time: 71.03s | ETA: 719.60s | Throughput: 163.26 MB/s
+[9.18%] | Read: 1.3036s | Write: 0.2411s | Batch Time: 1.544707s | Total Time: 72.58s | ETA: 718.06s | Throughput: 165.73 MB/s
+[9.38%] | Read: 1.3258s | Write: 0.2369s | Batch Time: 1.562718s | Total Time: 74.14s | ETA: 716.70s | Throughput: 163.82 MB/s
+[9.57%] | Read: 1.3339s | Write: 0.2302s | Batch Time: 1.564156s | Total Time: 75.71s | ETA: 715.34s | Throughput: 163.67 MB/s
+[9.77%] | Read: 1.3061s | Write: 0.2316s | Batch Time: 1.537738s | Total Time: 77.24s | ETA: 713.73s | Throughput: 166.48 MB/s
+[9.96%] | Read: 1.3344s | Write: 0.2291s | Batch Time: 1.563554s | Total Time: 78.81s | ETA: 712.35s | Throughput: 163.73 MB/s
+[10.16%] | Read: 1.3032s | Write: 0.2299s | Batch Time: 1.533165s | Total Time: 80.34s | ETA: 710.70s | Throughput: 166.97 MB/s
+[10.35%] | Read: 1.3202s | Write: 0.2301s | Batch Time: 1.550225s | Total Time: 81.89s | ETA: 709.20s | Throughput: 165.14 MB/s
+[10.55%] | Read: 1.3108s | Write: 0.2346s | Batch Time: 1.545448s | Total Time: 83.44s | ETA: 707.66s | Throughput: 165.65 MB/s
+[10.74%] | Read: 1.3240s | Write: 0.2302s | Batch Time: 1.554234s | Total Time: 84.99s | ETA: 706.19s | Throughput: 164.71 MB/s
+[10.94%] | Read: 1.3076s | Write: 0.2302s | Batch Time: 1.537820s | Total Time: 86.53s | ETA: 704.58s | Throughput: 166.47 MB/s
+[11.13%] | Read: 1.3299s | Write: 0.2303s | Batch Time: 1.560250s | Total Time: 88.09s | ETA: 703.16s | Throughput: 164.08 MB/s
+[11.33%] | Read: 1.3200s | Write: 0.2312s | Batch Time: 1.551262s | Total Time: 89.64s | ETA: 701.66s | Throughput: 165.03 MB/s
+[11.52%] | Read: 1.3354s | Write: 0.2200s | Batch Time: 1.555371s | Total Time: 91.19s | ETA: 700.19s | Throughput: 164.59 MB/s
+[11.72%] | Read: 1.3209s | Write: 0.2193s | Batch Time: 1.540197s | Total Time: 92.73s | ETA: 698.60s | Throughput: 166.21 MB/s
+[11.91%] | Read: 1.3298s | Write: 0.2228s | Batch Time: 1.552590s | Total Time: 94.29s | ETA: 697.11s | Throughput: 164.89 MB/s
+[12.11%] | Read: 1.3096s | Write: 0.2376s | Batch Time: 1.547263s | Total Time: 95.83s | ETA: 695.57s | Throughput: 165.45 MB/s
+[12.30%] | Read: 1.3385s | Write: 0.2303s | Batch Time: 1.568760s | Total Time: 97.40s | ETA: 694.19s | Throughput: 163.19 MB/s
+[12.50%] | Read: 1.3094s | Write: 0.2307s | Batch Time: 1.540120s | Total Time: 98.94s | ETA: 692.60s | Throughput: 166.22 MB/s
+[12.70%] | Read: 1.3357s | Write: 0.2307s | Batch Time: 1.566406s | Total Time: 100.51s | ETA: 691.20s | Throughput: 163.43 MB/s
+[12.89%] | Read: 1.3105s | Write: 0.2316s | Batch Time: 1.542057s | Total Time: 102.05s | ETA: 689.62s | Throughput: 166.01 MB/s
+[13.09%] | Read: 1.3258s | Write: 0.2283s | Batch Time: 1.554166s | Total Time: 103.61s | ETA: 688.13s | Throughput: 164.72 MB/s
+[13.28%] | Read: 1.3187s | Write: 0.2316s | Batch Time: 1.550332s | Total Time: 105.16s | ETA: 686.61s | Throughput: 165.13 MB/s
+[13.48%] | Read: 1.3287s | Write: 0.2342s | Batch Time: 1.562887s | Total Time: 106.72s | ETA: 685.17s | Throughput: 163.80 MB/s
+[13.67%] | Read: 1.3078s | Write: 0.2357s | Batch Time: 1.543487s | Total Time: 108.26s | ETA: 683.60s | Throughput: 165.86 MB/s
+[13.87%] | Read: 1.3300s | Write: 0.2361s | Batch Time: 1.566127s | Total Time: 109.83s | ETA: 682.18s | Throughput: 163.46 MB/s
+[14.06%] | Read: 1.3211s | Write: 0.2371s | Batch Time: 1.558223s | Total Time: 111.39s | ETA: 680.70s | Throughput: 164.29 MB/s
+[14.26%] | Read: 1.3626s | Write: 0.2399s | Batch Time: 1.602539s | Total Time: 112.99s | ETA: 679.49s | Throughput: 159.75 MB/s
+[14.45%] | Read: 1.3267s | Write: 0.2363s | Batch Time: 1.563050s | Total Time: 114.55s | ETA: 678.03s | Throughput: 163.78 MB/s
+[14.65%] | Read: 1.3472s | Write: 0.2508s | Batch Time: 1.598008s | Total Time: 116.15s | ETA: 676.77s | Throughput: 160.20 MB/s
+[14.84%] | Read: 1.3146s | Write: 0.2343s | Batch Time: 1.548866s | Total Time: 117.70s | ETA: 675.23s | Throughput: 165.28 MB/s
+[15.04%] | Read: 1.3403s | Write: 0.2298s | Batch Time: 1.570174s | Total Time: 119.27s | ETA: 673.80s | Throughput: 163.04 MB/s
+[15.23%] | Read: 1.3193s | Write: 0.2342s | Batch Time: 1.553453s | Total Time: 120.82s | ETA: 672.27s | Throughput: 164.79 MB/s
+[15.43%] | Read: 1.3404s | Write: 0.2293s | Batch Time: 1.569649s | Total Time: 122.39s | ETA: 670.84s | Throughput: 163.09 MB/s
+[15.62%] | Read: 1.3173s | Write: 0.2184s | Batch Time: 1.535751s | Total Time: 123.93s | ETA: 669.22s | Throughput: 166.69 MB/s
+[15.82%] | Read: 1.3346s | Write: 0.2191s | Batch Time: 1.553695s | Total Time: 125.48s | ETA: 667.69s | Throughput: 164.77 MB/s
+[16.02%] | Read: 1.3133s | Write: 0.2188s | Batch Time: 1.532045s | Total Time: 127.01s | ETA: 666.05s | Throughput: 167.10 MB/s
+[16.21%] | Read: 1.3224s | Write: 0.2329s | Batch Time: 1.555362s | Total Time: 128.57s | ETA: 664.54s | Throughput: 164.59 MB/s
+[16.41%] | Read: 1.3253s | Write: 0.2297s | Batch Time: 1.555008s | Total Time: 130.12s | ETA: 663.02s | Throughput: 164.63 MB/s
+[16.60%] | Read: 1.3187s | Write: 0.2427s | Batch Time: 1.561467s | Total Time: 131.69s | ETA: 661.53s | Throughput: 163.95 MB/s
+[16.80%] | Read: 1.3075s | Write: 0.2306s | Batch Time: 1.538097s | Total Time: 133.22s | ETA: 659.93s | Throughput: 166.44 MB/s
+[16.99%] | Read: 1.3326s | Write: 0.2354s | Batch Time: 1.568074s | Total Time: 134.79s | ETA: 658.47s | Throughput: 163.26 MB/s
+[17.19%] | Read: 1.3085s | Write: 0.2329s | Batch Time: 1.541458s | Total Time: 136.33s | ETA: 656.88s | Throughput: 166.08 MB/s
+[17.38%] | Read: 1.3419s | Write: 0.2341s | Batch Time: 1.575976s | Total Time: 137.91s | ETA: 655.46s | Throughput: 162.44 MB/s
+[17.58%] | Read: 1.3149s | Write: 0.2403s | Batch Time: 1.555180s | Total Time: 139.47s | ETA: 653.94s | Throughput: 164.61 MB/s
+[17.77%] | Read: 1.3349s | Write: 0.2355s | Batch Time: 1.570394s | Total Time: 141.04s | ETA: 652.48s | Throughput: 163.02 MB/s
+[17.97%] | Read: 1.3106s | Write: 0.2353s | Batch Time: 1.545890s | Total Time: 142.58s | ETA: 650.92s | Throughput: 165.60 MB/s
+[18.16%] | Read: 1.3424s | Write: 0.2363s | Batch Time: 1.578670s | Total Time: 144.16s | ETA: 649.50s | Throughput: 162.16 MB/s
+[18.36%] | Read: 1.3298s | Write: 0.2305s | Batch Time: 1.560236s | Total Time: 145.72s | ETA: 647.99s | Throughput: 164.08 MB/s
+[18.55%] | Read: 1.3525s | Write: 0.2303s | Batch Time: 1.582850s | Total Time: 147.30s | ETA: 646.58s | Throughput: 161.73 MB/s
+[18.75%] | Read: 1.3362s | Write: 0.2341s | Batch Time: 1.570291s | Total Time: 148.87s | ETA: 645.12s | Throughput: 163.03 MB/s
+[18.95%] | Read: 1.3480s | Write: 0.2390s | Batch Time: 1.586921s | Total Time: 150.46s | ETA: 643.72s | Throughput: 161.32 MB/s
+[19.14%] | Read: 1.3364s | Write: 0.2406s | Batch Time: 1.576985s | Total Time: 152.04s | ETA: 642.28s | Throughput: 162.34 MB/s
+[19.34%] | Read: 1.3671s | Write: 0.2369s | Batch Time: 1.604029s | Total Time: 153.64s | ETA: 640.95s | Throughput: 159.60 MB/s
+[19.53%] | Read: 1.3285s | Write: 0.2346s | Batch Time: 1.563094s | Total Time: 155.20s | ETA: 639.44s | Throughput: 163.78 MB/s
+[19.73%] | Read: 1.3655s | Write: 0.2196s | Batch Time: 1.585037s | Total Time: 156.79s | ETA: 638.03s | Throughput: 161.51 MB/s
+[19.92%] | Read: 1.3470s | Write: 0.2203s | Batch Time: 1.567282s | Total Time: 158.36s | ETA: 636.53s | Throughput: 163.34 MB/s
+[20.12%] | Read: 1.3705s | Write: 0.2188s | Batch Time: 1.589219s | Total Time: 159.95s | ETA: 635.13s | Throughput: 161.09 MB/s
+[20.31%] | Read: 1.3550s | Write: 0.2339s | Batch Time: 1.588863s | Total Time: 161.54s | ETA: 633.72s | Throughput: 161.12 MB/s
+[20.51%] | Read: 1.3742s | Write: 0.2302s | Batch Time: 1.604333s | Total Time: 163.14s | ETA: 632.36s | Throughput: 159.57 MB/s
+[20.70%] | Read: 1.3664s | Write: 0.2295s | Batch Time: 1.595848s | Total Time: 164.74s | ETA: 630.97s | Throughput: 160.42 MB/s
+[20.90%] | Read: 1.3814s | Write: 0.2347s | Batch Time: 1.616096s | Total Time: 166.35s | ETA: 629.65s | Throughput: 158.41 MB/s
+[21.09%] | Read: 1.3733s | Write: 0.2304s | Batch Time: 1.603687s | Total Time: 167.96s | ETA: 628.28s | Throughput: 159.63 MB/s
+[21.29%] | Read: 1.3692s | Write: 0.2396s | Batch Time: 1.608770s | Total Time: 169.56s | ETA: 626.92s | Throughput: 159.13 MB/s
+[21.48%] | Read: 1.3517s | Write: 0.2365s | Batch Time: 1.588215s | Total Time: 171.15s | ETA: 625.48s | Throughput: 161.19 MB/s
+[21.68%] | Read: 1.3800s | Write: 0.2386s | Batch Time: 1.618604s | Total Time: 172.77s | ETA: 624.15s | Throughput: 158.16 MB/s
+[21.88%] | Read: 1.3609s | Write: 0.2343s | Batch Time: 1.595177s | Total Time: 174.37s | ETA: 622.74s | Throughput: 160.48 MB/s
+[22.07%] | Read: 1.3837s | Write: 0.2366s | Batch Time: 1.620323s | Total Time: 175.99s | ETA: 621.40s | Throughput: 157.99 MB/s
+[22.27%] | Read: 1.3544s | Write: 0.2389s | Batch Time: 1.593294s | Total Time: 177.58s | ETA: 619.97s | Throughput: 160.67 MB/s
+[22.46%] | Read: 1.3858s | Write: 0.2337s | Batch Time: 1.619463s | Total Time: 179.20s | ETA: 618.63s | Throughput: 158.08 MB/s
+[22.66%] | Read: 1.3576s | Write: 0.2395s | Batch Time: 1.597045s | Total Time: 180.80s | ETA: 617.20s | Throughput: 160.30 MB/s
+[22.85%] | Read: 1.3729s | Write: 0.2539s | Batch Time: 1.626748s | Total Time: 182.42s | ETA: 615.87s | Throughput: 157.37 MB/s
+[23.05%] | Read: 1.3665s | Write: 0.2284s | Batch Time: 1.594897s | Total Time: 184.02s | ETA: 614.43s | Throughput: 160.51 MB/s
+[23.24%] | Read: 1.3791s | Write: 0.2337s | Batch Time: 1.612824s | Total Time: 185.63s | ETA: 613.05s | Throughput: 158.73 MB/s
+[23.44%] | Read: 1.3658s | Write: 0.2335s | Batch Time: 1.599266s | Total Time: 187.23s | ETA: 611.62s | Throughput: 160.07 MB/s
+[23.63%] | Read: 1.3741s | Write: 0.2349s | Batch Time: 1.609009s | Total Time: 188.84s | ETA: 610.22s | Throughput: 159.10 MB/s
+[23.83%] | Read: 1.3565s | Write: 0.2313s | Batch Time: 1.587800s | Total Time: 190.43s | ETA: 608.74s | Throughput: 161.23 MB/s
+[24.02%] | Read: 1.3842s | Write: 0.2338s | Batch Time: 1.618052s | Total Time: 192.04s | ETA: 607.36s | Throughput: 158.21 MB/s
+[24.22%] | Read: 1.3508s | Write: 0.2358s | Batch Time: 1.586563s | Total Time: 193.63s | ETA: 605.88s | Throughput: 161.36 MB/s
+[24.41%] | Read: 1.3787s | Write: 0.2568s | Batch Time: 1.635498s | Total Time: 195.27s | ETA: 604.55s | Throughput: 156.53 MB/s
+[24.61%] | Read: 1.3513s | Write: 0.2702s | Batch Time: 1.621508s | Total Time: 196.89s | ETA: 603.17s | Throughput: 157.88 MB/s
+[24.80%] | Read: 1.3801s | Write: 0.2590s | Batch Time: 1.639058s | Total Time: 198.53s | ETA: 601.84s | Throughput: 156.19 MB/s
+[25.00%] | Read: 1.3560s | Write: 0.2586s | Batch Time: 1.614526s | Total Time: 200.14s | ETA: 600.43s | Throughput: 158.56 MB/s
+[25.20%] | Read: 1.3748s | Write: 0.2680s | Batch Time: 1.642836s | Total Time: 201.78s | ETA: 599.10s | Throughput: 155.83 MB/s
+[25.39%] | Read: 1.3418s | Write: 0.2738s | Batch Time: 1.615608s | Total Time: 203.40s | ETA: 597.68s | Throughput: 158.45 MB/s
+[25.59%] | Read: 1.3789s | Write: 0.2639s | Batch Time: 1.642870s | Total Time: 205.04s | ETA: 596.35s | Throughput: 155.82 MB/s
+[25.78%] | Read: 1.3632s | Write: 0.2491s | Batch Time: 1.612293s | Total Time: 206.66s | ETA: 594.92s | Throughput: 158.78 MB/s
+[25.98%] | Read: 1.3674s | Write: 0.2442s | Batch Time: 1.611552s | Total Time: 208.27s | ETA: 593.48s | Throughput: 158.85 MB/s
+[26.17%] | Read: 1.3388s | Write: 0.2480s | Batch Time: 1.586767s | Total Time: 209.85s | ETA: 591.98s | Throughput: 161.33 MB/s
+[26.37%] | Read: 1.3597s | Write: 0.2478s | Batch Time: 1.607569s | Total Time: 211.46s | ETA: 590.53s | Throughput: 159.25 MB/s
+[26.56%] | Read: 1.3572s | Write: 0.2482s | Batch Time: 1.605407s | Total Time: 213.07s | ETA: 589.07s | Throughput: 159.46 MB/s
+[26.76%] | Read: 1.3708s | Write: 0.2442s | Batch Time: 1.615044s | Total Time: 214.68s | ETA: 587.63s | Throughput: 158.51 MB/s
+[26.95%] | Read: 1.3795s | Write: 0.2748s | Batch Time: 1.654325s | Total Time: 216.34s | ETA: 586.30s | Throughput: 154.75 MB/s
+[27.15%] | Read: 1.3740s | Write: 0.2710s | Batch Time: 1.645031s | Total Time: 217.98s | ETA: 584.94s | Throughput: 155.62 MB/s
+[27.34%] | Read: 1.3627s | Write: 0.2676s | Batch Time: 1.630276s | Total Time: 219.61s | ETA: 583.54s | Throughput: 157.03 MB/s
+[27.54%] | Read: 1.3656s | Write: 0.2487s | Batch Time: 1.614306s | Total Time: 221.23s | ETA: 582.09s | Throughput: 158.58 MB/s
+[27.73%] | Read: 1.3509s | Write: 0.2334s | Batch Time: 1.584233s | Total Time: 222.81s | ETA: 580.56s | Throughput: 161.59 MB/s
+[27.93%] | Read: 1.3584s | Write: 0.2334s | Batch Time: 1.591862s | Total Time: 224.40s | ETA: 579.05s | Throughput: 160.82 MB/s
+[28.12%] | Read: 1.3405s | Write: 0.2373s | Batch Time: 1.577732s | Total Time: 225.98s | ETA: 577.50s | Throughput: 162.26 MB/s
+[28.32%] | Read: 1.3703s | Write: 0.2329s | Batch Time: 1.603219s | Total Time: 227.58s | ETA: 576.02s | Throughput: 159.68 MB/s
+[28.52%] | Read: 1.3554s | Write: 0.2427s | Batch Time: 1.598101s | Total Time: 229.18s | ETA: 574.52s | Throughput: 160.19 MB/s
+[28.71%] | Read: 1.3599s | Write: 0.2435s | Batch Time: 1.603457s | Total Time: 230.78s | ETA: 573.04s | Throughput: 159.66 MB/s
+[28.91%] | Read: 1.3476s | Write: 0.2430s | Batch Time: 1.590629s | Total Time: 232.38s | ETA: 571.52s | Throughput: 160.94 MB/s
+[29.10%] | Read: 1.3812s | Write: 0.2516s | Batch Time: 1.632786s | Total Time: 234.01s | ETA: 570.10s | Throughput: 156.79 MB/s
+[29.30%] | Read: 1.3478s | Write: 0.2428s | Batch Time: 1.590591s | Total Time: 235.60s | ETA: 568.58s | Throughput: 160.95 MB/s
+[29.49%] | Read: 1.3790s | Write: 0.2439s | Batch Time: 1.622916s | Total Time: 237.22s | ETA: 567.13s | Throughput: 157.74 MB/s
+[29.69%] | Read: 1.3585s | Write: 0.2512s | Batch Time: 1.609718s | Total Time: 238.83s | ETA: 565.65s | Throughput: 159.03 MB/s
+[29.88%] | Read: 1.3813s | Write: 0.2439s | Batch Time: 1.625226s | Total Time: 240.46s | ETA: 564.21s | Throughput: 157.52 MB/s
+[30.08%] | Read: 1.3478s | Write: 0.2468s | Batch Time: 1.594592s | Total Time: 242.05s | ETA: 562.69s | Throughput: 160.54 MB/s
+[30.27%] | Read: 1.3691s | Write: 0.2486s | Batch Time: 1.617757s | Total Time: 243.67s | ETA: 561.23s | Throughput: 158.24 MB/s
+[30.47%] | Read: 1.3646s | Write: 0.2446s | Batch Time: 1.609154s | Total Time: 245.28s | ETA: 559.74s | Throughput: 159.09 MB/s
+[30.66%] | Read: 1.3743s | Write: 0.2426s | Batch Time: 1.616854s | Total Time: 246.90s | ETA: 558.27s | Throughput: 158.33 MB/s
+[30.86%] | Read: 1.3574s | Write: 0.2498s | Batch Time: 1.607206s | Total Time: 248.50s | ETA: 556.77s | Throughput: 159.28 MB/s
+[31.05%] | Read: 1.3579s | Write: 0.2505s | Batch Time: 1.608425s | Total Time: 250.11s | ETA: 555.28s | Throughput: 159.16 MB/s
+[31.25%] | Read: 1.3571s | Write: 0.2438s | Batch Time: 1.600944s | Total Time: 251.71s | ETA: 553.77s | Throughput: 159.91 MB/s
+[31.45%] | Read: 1.3809s | Write: 0.2511s | Batch Time: 1.631965s | Total Time: 253.34s | ETA: 552.32s | Throughput: 156.87 MB/s
+[31.64%] | Read: 1.3644s | Write: 0.2758s | Batch Time: 1.640133s | Total Time: 254.98s | ETA: 550.89s | Throughput: 156.08 MB/s
+[31.84%] | Read: 1.3659s | Write: 0.2329s | Batch Time: 1.598839s | Total Time: 256.58s | ETA: 549.37s | Throughput: 160.12 MB/s
+[32.03%] | Read: 1.3584s | Write: 0.2333s | Batch Time: 1.591702s | Total Time: 258.17s | ETA: 547.83s | Throughput: 160.83 MB/s
+[32.23%] | Read: 1.3497s | Write: 0.2339s | Batch Time: 1.583648s | Total Time: 259.76s | ETA: 546.28s | Throughput: 161.65 MB/s
+[32.42%] | Read: 1.3231s | Write: 0.2439s | Batch Time: 1.567055s | Total Time: 261.33s | ETA: 544.69s | Throughput: 163.36 MB/s
+[32.62%] | Read: 1.3391s | Write: 0.2472s | Batch Time: 1.586339s | Total Time: 262.91s | ETA: 543.14s | Throughput: 161.38 MB/s
+[32.81%] | Read: 1.3356s | Write: 0.2442s | Batch Time: 1.579762s | Total Time: 264.49s | ETA: 541.58s | Throughput: 162.05 MB/s
+[33.01%] | Read: 1.3468s | Write: 0.2494s | Batch Time: 1.596213s | Total Time: 266.09s | ETA: 540.05s | Throughput: 160.38 MB/s
+[33.20%] | Read: 1.3253s | Write: 0.2533s | Batch Time: 1.578534s | Total Time: 267.67s | ETA: 538.48s | Throughput: 162.18 MB/s
+[33.40%] | Read: 1.3470s | Write: 0.2495s | Batch Time: 1.596492s | Total Time: 269.26s | ETA: 536.95s | Throughput: 160.35 MB/s
+[33.59%] | Read: 1.3212s | Write: 0.2496s | Batch Time: 1.570816s | Total Time: 270.83s | ETA: 535.37s | Throughput: 162.97 MB/s
+[33.79%] | Read: 1.3365s | Write: 0.2493s | Batch Time: 1.585784s | Total Time: 272.42s | ETA: 533.82s | Throughput: 161.43 MB/s
+[33.98%] | Read: 1.3247s | Write: 0.2598s | Batch Time: 1.584451s | Total Time: 274.00s | ETA: 532.26s | Throughput: 161.57 MB/s
+[34.18%] | Read: 1.3323s | Write: 0.2548s | Batch Time: 1.587145s | Total Time: 275.59s | ETA: 530.71s | Throughput: 161.30 MB/s
+[34.38%] | Read: 1.3192s | Write: 0.2527s | Batch Time: 1.571945s | Total Time: 277.16s | ETA: 529.13s | Throughput: 162.86 MB/s
+[34.57%] | Read: 1.3385s | Write: 0.2516s | Batch Time: 1.590086s | Total Time: 278.75s | ETA: 527.58s | Throughput: 161.00 MB/s
+[34.77%] | Read: 1.3149s | Write: 0.2525s | Batch Time: 1.567349s | Total Time: 280.32s | ETA: 525.99s | Throughput: 163.33 MB/s
+[34.96%] | Read: 1.3472s | Write: 0.2500s | Batch Time: 1.597190s | Total Time: 281.92s | ETA: 524.46s | Throughput: 160.28 MB/s
+[35.16%] | Read: 1.3207s | Write: 0.2509s | Batch Time: 1.571636s | Total Time: 283.49s | ETA: 522.88s | Throughput: 162.89 MB/s
+[35.35%] | Read: 1.3435s | Write: 0.2510s | Batch Time: 1.594532s | Total Time: 285.08s | ETA: 521.34s | Throughput: 160.55 MB/s
+[35.55%] | Read: 1.3228s | Write: 0.2604s | Batch Time: 1.583192s | Total Time: 286.67s | ETA: 519.78s | Throughput: 161.70 MB/s
+[35.74%] | Read: 1.3315s | Write: 0.2366s | Batch Time: 1.568108s | Total Time: 288.23s | ETA: 518.19s | Throughput: 163.25 MB/s
+[35.94%] | Read: 1.3132s | Write: 0.2334s | Batch Time: 1.546578s | Total Time: 289.78s | ETA: 516.57s | Throughput: 165.53 MB/s
+[36.13%] | Read: 1.3291s | Write: 0.2345s | Batch Time: 1.563573s | Total Time: 291.35s | ETA: 514.97s | Throughput: 163.73 MB/s
+[36.33%] | Read: 1.3348s | Write: 0.2762s | Batch Time: 1.611056s | Total Time: 292.96s | ETA: 513.46s | Throughput: 158.90 MB/s
+[36.52%] | Read: 1.3560s | Write: 0.2733s | Batch Time: 1.629323s | Total Time: 294.59s | ETA: 511.98s | Throughput: 157.12 MB/s
+[36.72%] | Read: 1.3387s | Write: 0.2715s | Batch Time: 1.610152s | Total Time: 296.20s | ETA: 510.46s | Throughput: 158.99 MB/s
+[36.91%] | Read: 1.3573s | Write: 0.2749s | Batch Time: 1.632230s | Total Time: 297.83s | ETA: 508.99s | Throughput: 156.84 MB/s
+[37.11%] | Read: 1.3576s | Write: 0.2748s | Batch Time: 1.632369s | Total Time: 299.46s | ETA: 507.51s | Throughput: 156.83 MB/s
+[37.30%] | Read: 1.3740s | Write: 0.2837s | Batch Time: 1.657690s | Total Time: 301.12s | ETA: 506.07s | Throughput: 154.43 MB/s
+[37.50%] | Read: 1.3569s | Write: 0.2759s | Batch Time: 1.632888s | Total Time: 302.75s | ETA: 504.58s | Throughput: 156.78 MB/s
+[37.70%] | Read: 1.3829s | Write: 0.2733s | Batch Time: 1.656186s | Total Time: 304.41s | ETA: 503.14s | Throughput: 154.57 MB/s
+[37.89%] | Read: 1.3408s | Write: 0.2503s | Batch Time: 1.591118s | Total Time: 306.00s | ETA: 501.58s | Throughput: 160.89 MB/s
+[38.09%] | Read: 1.3604s | Write: 0.2524s | Batch Time: 1.612818s | Total Time: 307.61s | ETA: 500.07s | Throughput: 158.73 MB/s
+[38.28%] | Read: 1.3640s | Write: 0.2509s | Batch Time: 1.614954s | Total Time: 309.23s | ETA: 498.55s | Throughput: 158.52 MB/s
+[38.48%] | Read: 1.3825s | Write: 0.2582s | Batch Time: 1.640679s | Total Time: 310.87s | ETA: 497.07s | Throughput: 156.03 MB/s
+[38.67%] | Read: 1.3662s | Write: 0.2510s | Batch Time: 1.617163s | Total Time: 312.48s | ETA: 495.56s | Throughput: 158.30 MB/s
+[38.87%] | Read: 1.3808s | Write: 0.2730s | Batch Time: 1.653810s | Total Time: 314.14s | ETA: 494.10s | Throughput: 154.79 MB/s
+[39.06%] | Read: 1.3516s | Write: 0.2811s | Batch Time: 1.632671s | Total Time: 315.77s | ETA: 492.60s | Throughput: 156.80 MB/s
+[39.26%] | Read: 1.3846s | Write: 0.2766s | Batch Time: 1.661244s | Total Time: 317.43s | ETA: 491.15s | Throughput: 154.10 MB/s
+[39.45%] | Read: 1.3729s | Write: 0.2580s | Batch Time: 1.630913s | Total Time: 319.06s | ETA: 489.65s | Throughput: 156.97 MB/s
+[39.65%] | Read: 1.3759s | Write: 0.2369s | Batch Time: 1.612773s | Total Time: 320.68s | ETA: 488.12s | Throughput: 158.73 MB/s
+[39.84%] | Read: 1.3379s | Write: 0.2331s | Batch Time: 1.570999s | Total Time: 322.25s | ETA: 486.53s | Throughput: 162.95 MB/s
+[40.04%] | Read: 1.3632s | Write: 0.2346s | Batch Time: 1.597809s | Total Time: 323.84s | ETA: 484.98s | Throughput: 160.22 MB/s
+[40.23%] | Read: 1.3582s | Write: 0.2787s | Batch Time: 1.636884s | Total Time: 325.48s | ETA: 483.48s | Throughput: 156.39 MB/s
+[40.43%] | Read: 1.3637s | Write: 0.2489s | Batch Time: 1.612678s | Total Time: 327.09s | ETA: 481.95s | Throughput: 158.74 MB/s
+[40.62%] | Read: 1.3550s | Write: 0.2488s | Batch Time: 1.603823s | Total Time: 328.70s | ETA: 480.40s | Throughput: 159.62 MB/s
+[40.82%] | Read: 1.3818s | Write: 0.2498s | Batch Time: 1.631540s | Total Time: 330.33s | ETA: 478.90s | Throughput: 156.91 MB/s
+[41.02%] | Read: 1.3637s | Write: 0.2726s | Batch Time: 1.636274s | Total Time: 331.97s | ETA: 477.40s | Throughput: 156.45 MB/s
+[41.21%] | Read: 1.3645s | Write: 0.2477s | Batch Time: 1.612244s | Total Time: 333.58s | ETA: 475.86s | Throughput: 158.78 MB/s
+[41.41%] | Read: 1.3526s | Write: 0.2570s | Batch Time: 1.609612s | Total Time: 335.19s | ETA: 474.32s | Throughput: 159.04 MB/s
+[41.60%] | Read: 1.3578s | Write: 0.2485s | Batch Time: 1.606311s | Total Time: 336.79s | ETA: 472.78s | Throughput: 159.37 MB/s
+[41.80%] | Read: 1.3665s | Write: 0.2532s | Batch Time: 1.619718s | Total Time: 338.41s | ETA: 471.25s | Throughput: 158.05 MB/s
+[41.99%] | Read: 1.4027s | Write: 0.2497s | Batch Time: 1.652459s | Total Time: 340.07s | ETA: 469.77s | Throughput: 154.92 MB/s
+[42.19%] | Read: 1.3726s | Write: 0.2496s | Batch Time: 1.622222s | Total Time: 341.69s | ETA: 468.24s | Throughput: 157.81 MB/s
+[42.38%] | Read: 1.3486s | Write: 0.2527s | Batch Time: 1.601230s | Total Time: 343.29s | ETA: 466.68s | Throughput: 159.88 MB/s
+[42.58%] | Read: 1.3363s | Write: 0.2508s | Batch Time: 1.587095s | Total Time: 344.88s | ETA: 465.11s | Throughput: 161.30 MB/s
+[42.77%] | Read: 1.3272s | Write: 0.2509s | Batch Time: 1.578051s | Total Time: 346.45s | ETA: 463.52s | Throughput: 162.23 MB/s
+[42.97%] | Read: 1.3080s | Write: 0.2511s | Batch Time: 1.559097s | Total Time: 348.01s | ETA: 461.91s | Throughput: 164.20 MB/s
+[43.16%] | Read: 1.3133s | Write: 0.2507s | Batch Time: 1.563976s | Total Time: 349.58s | ETA: 460.30s | Throughput: 163.69 MB/s
+[43.36%] | Read: 1.3058s | Write: 0.2363s | Batch Time: 1.542042s | Total Time: 351.12s | ETA: 458.67s | Throughput: 166.01 MB/s
+[43.55%] | Read: 1.3289s | Write: 0.2326s | Batch Time: 1.561507s | Total Time: 352.68s | ETA: 457.06s | Throughput: 163.94 MB/s
+[43.75%] | Read: 1.3073s | Write: 0.2334s | Batch Time: 1.540690s | Total Time: 354.22s | ETA: 455.43s | Throughput: 166.16 MB/s
+[43.95%] | Read: 1.3135s | Write: 0.2342s | Batch Time: 1.547632s | Total Time: 355.77s | ETA: 453.80s | Throughput: 165.41 MB/s
+[44.14%] | Read: 1.3054s | Write: 0.2644s | Batch Time: 1.569771s | Total Time: 357.34s | ETA: 452.21s | Throughput: 163.08 MB/s
+[44.34%] | Read: 1.3079s | Write: 0.2690s | Batch Time: 1.576968s | Total Time: 358.92s | ETA: 450.62s | Throughput: 162.34 MB/s
+[44.53%] | Read: 1.3210s | Write: 0.2677s | Batch Time: 1.588670s | Total Time: 360.50s | ETA: 449.05s | Throughput: 161.14 MB/s
+[44.73%] | Read: 1.3213s | Write: 0.2665s | Batch Time: 1.587799s | Total Time: 362.09s | ETA: 447.48s | Throughput: 161.23 MB/s
+[44.92%] | Read: 1.2980s | Write: 0.2704s | Batch Time: 1.568363s | Total Time: 363.66s | ETA: 445.88s | Throughput: 163.23 MB/s
+[45.12%] | Read: 1.3608s | Write: 0.2627s | Batch Time: 1.623491s | Total Time: 365.28s | ETA: 444.35s | Throughput: 157.68 MB/s
+[45.31%] | Read: 1.2987s | Write: 0.2644s | Batch Time: 1.563123s | Total Time: 366.85s | ETA: 442.75s | Throughput: 163.77 MB/s
+[45.51%] | Read: 1.3195s | Write: 0.2672s | Batch Time: 1.586744s | Total Time: 368.43s | ETA: 441.17s | Throughput: 161.34 MB/s
+[45.70%] | Read: 1.3148s | Write: 0.2612s | Batch Time: 1.576003s | Total Time: 370.01s | ETA: 439.59s | Throughput: 162.44 MB/s
+[45.90%] | Read: 1.2948s | Write: 0.2686s | Batch Time: 1.563401s | Total Time: 371.57s | ETA: 437.98s | Throughput: 163.75 MB/s
+[46.09%] | Read: 1.3040s | Write: 0.2660s | Batch Time: 1.569917s | Total Time: 373.14s | ETA: 436.39s | Throughput: 163.07 MB/s
+[46.29%] | Read: 1.3066s | Write: 0.2668s | Batch Time: 1.573360s | Total Time: 374.72s | ETA: 434.80s | Throughput: 162.71 MB/s
+[46.48%] | Read: 1.3059s | Write: 0.2700s | Batch Time: 1.575960s | Total Time: 376.29s | ETA: 433.21s | Throughput: 162.44 MB/s
+[46.68%] | Read: 1.3080s | Write: 0.2651s | Batch Time: 1.573179s | Total Time: 377.87s | ETA: 431.62s | Throughput: 162.73 MB/s
+[46.88%] | Read: 1.3126s | Write: 0.2661s | Batch Time: 1.578675s | Total Time: 379.45s | ETA: 430.04s | Throughput: 162.16 MB/s
+[47.07%] | Read: 1.2931s | Write: 0.2568s | Batch Time: 1.549847s | Total Time: 380.99s | ETA: 428.42s | Throughput: 165.18 MB/s
+[47.27%] | Read: 1.3335s | Write: 0.2509s | Batch Time: 1.584377s | Total Time: 382.58s | ETA: 426.84s | Throughput: 161.58 MB/s
+[47.46%] | Read: 1.2972s | Write: 0.2368s | Batch Time: 1.533966s | Total Time: 384.11s | ETA: 425.21s | Throughput: 166.89 MB/s
+[47.66%] | Read: 1.3103s | Write: 0.2349s | Batch Time: 1.545156s | Total Time: 385.66s | ETA: 423.59s | Throughput: 165.68 MB/s
+[47.85%] | Read: 1.3015s | Write: 0.2379s | Batch Time: 1.539345s | Total Time: 387.20s | ETA: 421.97s | Throughput: 166.30 MB/s
+[48.05%] | Read: 1.3291s | Write: 0.2655s | Batch Time: 1.594559s | Total Time: 388.79s | ETA: 420.40s | Throughput: 160.55 MB/s
+[48.24%] | Read: 1.2822s | Write: 0.2594s | Batch Time: 1.541606s | Total Time: 390.33s | ETA: 418.78s | Throughput: 166.06 MB/s
+[48.44%] | Read: 1.3020s | Write: 0.2597s | Batch Time: 1.561701s | Total Time: 391.90s | ETA: 417.18s | Throughput: 163.92 MB/s
+[48.63%] | Read: 1.2829s | Write: 0.2627s | Batch Time: 1.545561s | Total Time: 393.44s | ETA: 415.56s | Throughput: 165.64 MB/s
+[48.83%] | Read: 1.3684s | Write: 0.2603s | Batch Time: 1.628788s | Total Time: 395.07s | ETA: 414.03s | Throughput: 157.17 MB/s
+[49.02%] | Read: 1.2961s | Write: 0.2655s | Batch Time: 1.561662s | Total Time: 396.63s | ETA: 412.43s | Throughput: 163.93 MB/s
+[49.22%] | Read: 1.2908s | Write: 0.2560s | Batch Time: 1.546788s | Total Time: 398.18s | ETA: 410.82s | Throughput: 165.50 MB/s
+[49.41%] | Read: 1.3155s | Write: 0.2847s | Batch Time: 1.600225s | Total Time: 399.78s | ETA: 409.26s | Throughput: 159.98 MB/s
+[49.61%] | Read: 1.2878s | Write: 0.2784s | Batch Time: 1.566161s | Total Time: 401.34s | ETA: 407.67s | Throughput: 163.46 MB/s
+[49.80%] | Read: 1.2964s | Write: 0.2588s | Batch Time: 1.555241s | Total Time: 402.90s | ETA: 406.06s | Throughput: 164.60 MB/s
+[50.00%] | Read: 1.2971s | Write: 0.2583s | Batch Time: 1.555375s | Total Time: 404.46s | ETA: 404.46s | Throughput: 164.59 MB/s
+[50.20%] | Read: 1.3140s | Write: 0.2658s | Batch Time: 1.579787s | Total Time: 406.04s | ETA: 402.88s | Throughput: 162.05 MB/s
+[50.39%] | Read: 1.2986s | Write: 0.2601s | Batch Time: 1.558697s | Total Time: 407.59s | ETA: 401.27s | Throughput: 164.24 MB/s
+[50.59%] | Read: 1.3796s | Write: 0.2632s | Batch Time: 1.642860s | Total Time: 409.24s | ETA: 399.76s | Throughput: 155.83 MB/s
+[50.78%] | Read: 1.2846s | Write: 0.2614s | Batch Time: 1.546059s | Total Time: 410.78s | ETA: 398.14s | Throughput: 165.58 MB/s
+[50.98%] | Read: 1.3033s | Write: 0.2598s | Batch Time: 1.563066s | Total Time: 412.35s | ETA: 396.55s | Throughput: 163.78 MB/s
+[51.17%] | Read: 1.2934s | Write: 0.2591s | Batch Time: 1.552519s | Total Time: 413.90s | ETA: 394.94s | Throughput: 164.89 MB/s
+[51.37%] | Read: 1.3084s | Write: 0.2444s | Batch Time: 1.552818s | Total Time: 415.45s | ETA: 393.34s | Throughput: 164.86 MB/s
+[51.56%] | Read: 1.2951s | Write: 0.2426s | Batch Time: 1.537657s | Total Time: 416.99s | ETA: 391.72s | Throughput: 166.49 MB/s
+[51.76%] | Read: 1.3134s | Write: 0.2469s | Batch Time: 1.560249s | Total Time: 418.55s | ETA: 390.12s | Throughput: 164.08 MB/s
+[51.95%] | Read: 1.2843s | Write: 0.2590s | Batch Time: 1.543289s | Total Time: 420.09s | ETA: 388.51s | Throughput: 165.88 MB/s
+[52.15%] | Read: 1.3303s | Write: 0.2818s | Batch Time: 1.612080s | Total Time: 421.70s | ETA: 386.96s | Throughput: 158.80 MB/s
+[52.34%] | Read: 1.2907s | Write: 0.2660s | Batch Time: 1.556628s | Total Time: 423.26s | ETA: 385.36s | Throughput: 164.46 MB/s
+[52.54%] | Read: 1.3124s | Write: 0.2616s | Batch Time: 1.574008s | Total Time: 424.84s | ETA: 383.77s | Throughput: 162.64 MB/s
+[52.73%] | Read: 1.2832s | Write: 0.2605s | Batch Time: 1.543767s | Total Time: 426.38s | ETA: 382.16s | Throughput: 165.83 MB/s
+[52.93%] | Read: 1.3070s | Write: 0.2733s | Batch Time: 1.580276s | Total Time: 427.96s | ETA: 380.58s | Throughput: 162.00 MB/s
+[53.12%] | Read: 1.2991s | Write: 0.2744s | Batch Time: 1.573502s | Total Time: 429.53s | ETA: 379.00s | Throughput: 162.69 MB/s
+[53.32%] | Read: 1.3067s | Write: 0.2777s | Batch Time: 1.584350s | Total Time: 431.12s | ETA: 377.43s | Throughput: 161.58 MB/s
+[53.52%] | Read: 1.2949s | Write: 0.2734s | Batch Time: 1.568306s | Total Time: 432.69s | ETA: 375.84s | Throughput: 163.23 MB/s
+[53.71%] | Read: 1.3215s | Write: 0.2682s | Batch Time: 1.589663s | Total Time: 434.28s | ETA: 374.27s | Throughput: 161.04 MB/s
+[53.91%] | Read: 1.3156s | Write: 0.2706s | Batch Time: 1.586222s | Total Time: 435.86s | ETA: 372.69s | Throughput: 161.39 MB/s
+[54.10%] | Read: 1.3360s | Write: 0.2701s | Batch Time: 1.606115s | Total Time: 437.47s | ETA: 371.14s | Throughput: 159.39 MB/s
+[54.30%] | Read: 1.3752s | Write: 0.2695s | Batch Time: 1.644750s | Total Time: 439.11s | ETA: 369.61s | Throughput: 155.65 MB/s
+[54.49%] | Read: 1.3304s | Write: 0.2640s | Batch Time: 1.594329s | Total Time: 440.71s | ETA: 368.05s | Throughput: 160.57 MB/s
+[54.69%] | Read: 1.3178s | Write: 0.2690s | Batch Time: 1.586869s | Total Time: 442.29s | ETA: 366.47s | Throughput: 161.32 MB/s
+[54.88%] | Read: 1.3285s | Write: 0.2743s | Batch Time: 1.602857s | Total Time: 443.90s | ETA: 364.91s | Throughput: 159.71 MB/s
+[55.08%] | Read: 1.3230s | Write: 0.2702s | Batch Time: 1.593147s | Total Time: 445.49s | ETA: 363.34s | Throughput: 160.69 MB/s
+[55.27%] | Read: 1.3363s | Write: 0.2423s | Batch Time: 1.578646s | Total Time: 447.07s | ETA: 361.76s | Throughput: 162.16 MB/s
+[55.47%] | Read: 1.3141s | Write: 0.2464s | Batch Time: 1.560495s | Total Time: 448.63s | ETA: 360.17s | Throughput: 164.05 MB/s
+[55.66%] | Read: 1.3260s | Write: 0.2427s | Batch Time: 1.568774s | Total Time: 450.20s | ETA: 358.58s | Throughput: 163.18 MB/s
+[55.86%] | Read: 1.3186s | Write: 0.2722s | Batch Time: 1.590723s | Total Time: 451.79s | ETA: 357.01s | Throughput: 160.93 MB/s
+[56.05%] | Read: 1.3951s | Write: 0.2735s | Batch Time: 1.668669s | Total Time: 453.46s | ETA: 355.50s | Throughput: 153.42 MB/s
+[56.25%] | Read: 1.3499s | Write: 0.2634s | Batch Time: 1.613338s | Total Time: 455.07s | ETA: 353.94s | Throughput: 158.68 MB/s
+[56.45%] | Read: 1.3348s | Write: 0.2726s | Batch Time: 1.607487s | Total Time: 456.68s | ETA: 352.38s | Throughput: 159.25 MB/s
+[56.64%] | Read: 1.3162s | Write: 0.2688s | Batch Time: 1.584934s | Total Time: 458.26s | ETA: 350.81s | Throughput: 161.52 MB/s
+[56.84%] | Read: 1.3285s | Write: 0.2750s | Batch Time: 1.603462s | Total Time: 459.87s | ETA: 349.25s | Throughput: 159.65 MB/s
+[57.03%] | Read: 1.3149s | Write: 0.2741s | Batch Time: 1.588976s | Total Time: 461.46s | ETA: 347.67s | Throughput: 161.11 MB/s
+[57.23%] | Read: 1.3317s | Write: 0.2665s | Batch Time: 1.598219s | Total Time: 463.05s | ETA: 346.10s | Throughput: 160.18 MB/s
+[57.42%] | Read: 1.3193s | Write: 0.2688s | Batch Time: 1.588132s | Total Time: 464.64s | ETA: 344.53s | Throughput: 161.20 MB/s
+[57.62%] | Read: 1.3406s | Write: 0.2594s | Batch Time: 1.600037s | Total Time: 466.24s | ETA: 342.96s | Throughput: 160.00 MB/s
+[57.81%] | Read: 1.3652s | Write: 0.2605s | Batch Time: 1.625738s | Total Time: 467.87s | ETA: 341.42s | Throughput: 157.47 MB/s
+[58.01%] | Read: 1.3393s | Write: 0.2582s | Batch Time: 1.597551s | Total Time: 469.47s | ETA: 339.85s | Throughput: 160.25 MB/s
+[58.20%] | Read: 1.3281s | Write: 0.2583s | Batch Time: 1.586353s | Total Time: 471.05s | ETA: 338.27s | Throughput: 161.38 MB/s
+[58.40%] | Read: 1.3528s | Write: 0.2596s | Batch Time: 1.612394s | Total Time: 472.66s | ETA: 336.71s | Throughput: 158.77 MB/s
+[58.59%] | Read: 1.3067s | Write: 0.2638s | Batch Time: 1.570552s | Total Time: 474.23s | ETA: 335.13s | Throughput: 163.00 MB/s
+[58.79%] | Read: 1.3398s | Write: 0.2616s | Batch Time: 1.601413s | Total Time: 475.84s | ETA: 333.56s | Throughput: 159.86 MB/s
+[58.98%] | Read: 1.3110s | Write: 0.2681s | Batch Time: 1.579065s | Total Time: 477.41s | ETA: 331.98s | Throughput: 162.12 MB/s
+[59.18%] | Read: 1.3049s | Write: 0.2459s | Batch Time: 1.550810s | Total Time: 478.97s | ETA: 330.38s | Throughput: 165.08 MB/s
+[59.38%] | Read: 1.2855s | Write: 0.2432s | Batch Time: 1.528664s | Total Time: 480.49s | ETA: 328.76s | Throughput: 167.47 MB/s
+[59.57%] | Read: 1.3262s | Write: 0.2421s | Batch Time: 1.568301s | Total Time: 482.06s | ETA: 327.17s | Throughput: 163.23 MB/s
+[59.77%] | Read: 1.2845s | Write: 0.2728s | Batch Time: 1.557224s | Total Time: 483.62s | ETA: 325.57s | Throughput: 164.40 MB/s
+[59.96%] | Read: 1.2938s | Write: 0.2747s | Batch Time: 1.568568s | Total Time: 485.19s | ETA: 323.99s | Throughput: 163.21 MB/s
+[60.16%] | Read: 1.2641s | Write: 0.2765s | Batch Time: 1.540626s | Total Time: 486.73s | ETA: 322.38s | Throughput: 166.17 MB/s
+[60.35%] | Read: 1.2733s | Write: 0.2789s | Batch Time: 1.552261s | Total Time: 488.28s | ETA: 320.78s | Throughput: 164.92 MB/s
+[60.55%] | Read: 1.2752s | Write: 0.2781s | Batch Time: 1.553304s | Total Time: 489.83s | ETA: 319.18s | Throughput: 164.81 MB/s
+[60.74%] | Read: 1.2862s | Write: 0.2789s | Batch Time: 1.565104s | Total Time: 491.40s | ETA: 317.59s | Throughput: 163.57 MB/s
+[60.94%] | Read: 1.2785s | Write: 0.2737s | Batch Time: 1.552188s | Total Time: 492.95s | ETA: 315.99s | Throughput: 164.93 MB/s
+[61.13%] | Read: 1.2960s | Write: 0.2710s | Batch Time: 1.567026s | Total Time: 494.52s | ETA: 314.41s | Throughput: 163.37 MB/s
+[61.33%] | Read: 1.2904s | Write: 0.2763s | Batch Time: 1.566672s | Total Time: 496.09s | ETA: 312.82s | Throughput: 163.40 MB/s
+[61.52%] | Read: 1.2773s | Write: 0.2747s | Batch Time: 1.551974s | Total Time: 497.64s | ETA: 311.22s | Throughput: 164.95 MB/s
+[61.72%] | Read: 1.2700s | Write: 0.2764s | Batch Time: 1.546416s | Total Time: 499.18s | ETA: 309.62s | Throughput: 165.54 MB/s
+[61.91%] | Read: 1.2911s | Write: 0.2765s | Batch Time: 1.567546s | Total Time: 500.75s | ETA: 308.03s | Throughput: 163.31 MB/s
+[62.11%] | Read: 1.2801s | Write: 0.2762s | Batch Time: 1.556270s | Total Time: 502.31s | ETA: 306.44s | Throughput: 164.50 MB/s
+[62.30%] | Read: 1.2797s | Write: 0.2748s | Batch Time: 1.554515s | Total Time: 503.86s | ETA: 304.84s | Throughput: 164.68 MB/s
+[62.50%] | Read: 1.2733s | Write: 0.2693s | Batch Time: 1.542571s | Total Time: 505.41s | ETA: 303.24s | Throughput: 165.96 MB/s
+[62.70%] | Read: 1.2755s | Write: 0.2760s | Batch Time: 1.551485s | Total Time: 506.96s | ETA: 301.65s | Throughput: 165.00 MB/s
+[62.89%] | Read: 1.2687s | Write: 0.2759s | Batch Time: 1.544586s | Total Time: 508.50s | ETA: 300.05s | Throughput: 165.74 MB/s
+[63.09%] | Read: 1.2866s | Write: 0.2747s | Batch Time: 1.561295s | Total Time: 510.06s | ETA: 298.46s | Throughput: 163.97 MB/s
+[63.28%] | Read: 1.3294s | Write: 0.2425s | Batch Time: 1.571980s | Total Time: 511.63s | ETA: 296.87s | Throughput: 162.85 MB/s
+[63.48%] | Read: 1.2834s | Write: 0.2434s | Batch Time: 1.526862s | Total Time: 513.16s | ETA: 295.27s | Throughput: 167.66 MB/s
+[63.67%] | Read: 1.2788s | Write: 0.2420s | Batch Time: 1.520799s | Total Time: 514.68s | ETA: 293.65s | Throughput: 168.33 MB/s
+[63.87%] | Read: 1.2805s | Write: 0.2646s | Batch Time: 1.545017s | Total Time: 516.23s | ETA: 292.06s | Throughput: 165.69 MB/s
+[64.06%] | Read: 1.2916s | Write: 0.2590s | Batch Time: 1.550527s | Total Time: 517.78s | ETA: 290.46s | Throughput: 165.11 MB/s
+[64.26%] | Read: 1.2827s | Write: 0.2605s | Batch Time: 1.543187s | Total Time: 519.32s | ETA: 288.86s | Throughput: 165.89 MB/s
+[64.45%] | Read: 1.3235s | Write: 0.2601s | Batch Time: 1.583603s | Total Time: 520.90s | ETA: 287.29s | Throughput: 161.66 MB/s
+[64.65%] | Read: 1.3298s | Write: 0.2603s | Batch Time: 1.590100s | Total Time: 522.49s | ETA: 285.71s | Throughput: 161.00 MB/s
+[64.84%] | Read: 1.3491s | Write: 0.2602s | Batch Time: 1.609343s | Total Time: 524.10s | ETA: 284.15s | Throughput: 159.07 MB/s
+[65.04%] | Read: 1.3509s | Write: 0.2591s | Batch Time: 1.610039s | Total Time: 525.71s | ETA: 282.59s | Throughput: 159.00 MB/s
+[65.23%] | Read: 1.3477s | Write: 0.2605s | Batch Time: 1.608234s | Total Time: 527.32s | ETA: 281.03s | Throughput: 159.18 MB/s
+[65.43%] | Read: 1.3164s | Write: 0.2660s | Batch Time: 1.582362s | Total Time: 528.90s | ETA: 279.45s | Throughput: 161.78 MB/s
+[65.62%] | Read: 1.3354s | Write: 0.2615s | Batch Time: 1.596940s | Total Time: 530.50s | ETA: 277.88s | Throughput: 160.31 MB/s
+[65.82%] | Read: 1.3256s | Write: 0.2603s | Batch Time: 1.585971s | Total Time: 532.09s | ETA: 276.31s | Throughput: 161.42 MB/s
+[66.02%] | Read: 1.3401s | Write: 0.2630s | Batch Time: 1.603042s | Total Time: 533.69s | ETA: 274.74s | Throughput: 159.70 MB/s
+[66.21%] | Read: 1.3344s | Write: 0.2618s | Batch Time: 1.596228s | Total Time: 535.29s | ETA: 273.17s | Throughput: 160.38 MB/s
+[66.41%] | Read: 1.3422s | Write: 0.2623s | Batch Time: 1.604441s | Total Time: 536.89s | ETA: 271.60s | Throughput: 159.56 MB/s
+[66.60%] | Read: 1.3224s | Write: 0.2625s | Batch Time: 1.584865s | Total Time: 538.48s | ETA: 270.03s | Throughput: 161.53 MB/s
+[66.80%] | Read: 1.4350s | Write: 0.2621s | Batch Time: 1.697094s | Total Time: 540.17s | ETA: 268.51s | Throughput: 150.85 MB/s
+[66.99%] | Read: 1.3187s | Write: 0.2616s | Batch Time: 1.580316s | Total Time: 541.75s | ETA: 266.93s | Throughput: 161.99 MB/s
+[67.19%] | Read: 1.3367s | Write: 0.2608s | Batch Time: 1.597465s | Total Time: 543.35s | ETA: 265.36s | Throughput: 160.25 MB/s
+[67.38%] | Read: 1.3287s | Write: 0.2435s | Batch Time: 1.572218s | Total Time: 544.92s | ETA: 263.77s | Throughput: 162.83 MB/s
+[67.58%] | Read: 1.3387s | Write: 0.2456s | Batch Time: 1.584294s | Total Time: 546.51s | ETA: 262.20s | Throughput: 161.59 MB/s
+[67.77%] | Read: 1.3104s | Write: 0.2416s | Batch Time: 1.552034s | Total Time: 548.06s | ETA: 260.60s | Throughput: 164.94 MB/s
+[67.97%] | Read: 1.3279s | Write: 0.2747s | Batch Time: 1.602571s | Total Time: 549.66s | ETA: 259.04s | Throughput: 159.74 MB/s
+[68.16%] | Read: 1.3009s | Write: 0.2763s | Batch Time: 1.577181s | Total Time: 551.24s | ETA: 257.46s | Throughput: 162.31 MB/s
+[68.36%] | Read: 1.2966s | Write: 0.2751s | Batch Time: 1.571621s | Total Time: 552.81s | ETA: 255.87s | Throughput: 162.89 MB/s
+[68.55%] | Read: 1.3402s | Write: 0.2790s | Batch Time: 1.619166s | Total Time: 554.43s | ETA: 254.31s | Throughput: 158.11 MB/s
+[68.75%] | Read: 1.2934s | Write: 0.2755s | Batch Time: 1.568959s | Total Time: 556.00s | ETA: 252.73s | Throughput: 163.17 MB/s
+[68.95%] | Read: 1.3217s | Write: 0.2891s | Batch Time: 1.610865s | Total Time: 557.61s | ETA: 251.16s | Throughput: 158.92 MB/s
+[69.14%] | Read: 1.2954s | Write: 0.2956s | Batch Time: 1.590945s | Total Time: 559.20s | ETA: 249.59s | Throughput: 160.91 MB/s
+[69.34%] | Read: 1.3073s | Write: 0.2836s | Batch Time: 1.590866s | Total Time: 560.79s | ETA: 248.01s | Throughput: 160.92 MB/s
+[69.53%] | Read: 1.2891s | Write: 0.2856s | Batch Time: 1.574657s | Total Time: 562.37s | ETA: 246.43s | Throughput: 162.58 MB/s
+[69.73%] | Read: 1.3131s | Write: 0.2870s | Batch Time: 1.600135s | Total Time: 563.97s | ETA: 244.86s | Throughput: 159.99 MB/s
+[69.92%] | Read: 1.2774s | Write: 0.2835s | Batch Time: 1.560894s | Total Time: 565.53s | ETA: 243.27s | Throughput: 164.01 MB/s
+[70.12%] | Read: 1.2798s | Write: 0.2808s | Batch Time: 1.560603s | Total Time: 567.09s | ETA: 241.68s | Throughput: 164.04 MB/s
+[70.31%] | Read: 1.2563s | Write: 0.2873s | Batch Time: 1.543568s | Total Time: 568.63s | ETA: 240.09s | Throughput: 165.85 MB/s
+[70.51%] | Read: 1.2865s | Write: 0.2823s | Batch Time: 1.568828s | Total Time: 570.20s | ETA: 238.51s | Throughput: 163.18 MB/s
+[70.70%] | Read: 1.2656s | Write: 0.2843s | Batch Time: 1.549854s | Total Time: 571.75s | ETA: 236.91s | Throughput: 165.18 MB/s
+[70.90%] | Read: 1.2719s | Write: 0.2872s | Batch Time: 1.559105s | Total Time: 573.31s | ETA: 235.33s | Throughput: 164.20 MB/s
+[71.09%] | Read: 1.2606s | Write: 0.2839s | Batch Time: 1.544514s | Total Time: 574.85s | ETA: 233.73s | Throughput: 165.75 MB/s
+[71.29%] | Read: 1.2886s | Write: 0.2850s | Batch Time: 1.573549s | Total Time: 576.43s | ETA: 232.15s | Throughput: 162.69 MB/s
+[71.48%] | Read: 1.2630s | Write: 0.2538s | Batch Time: 1.516799s | Total Time: 577.94s | ETA: 230.55s | Throughput: 168.78 MB/s
+[71.68%] | Read: 1.2785s | Write: 0.2494s | Batch Time: 1.527922s | Total Time: 579.47s | ETA: 228.95s | Throughput: 167.55 MB/s
+[71.88%] | Read: 1.2692s | Write: 0.2504s | Batch Time: 1.519576s | Total Time: 580.99s | ETA: 227.34s | Throughput: 168.47 MB/s
+[72.07%] | Read: 1.2839s | Write: 0.2716s | Batch Time: 1.555582s | Total Time: 582.55s | ETA: 225.76s | Throughput: 164.57 MB/s
+[72.27%] | Read: 1.3093s | Write: 0.2863s | Batch Time: 1.595627s | Total Time: 584.14s | ETA: 224.18s | Throughput: 160.44 MB/s
+[72.46%] | Read: 1.2907s | Write: 0.2736s | Batch Time: 1.564219s | Total Time: 585.71s | ETA: 222.60s | Throughput: 163.66 MB/s
+[72.66%] | Read: 1.2791s | Write: 0.2786s | Batch Time: 1.557716s | Total Time: 587.27s | ETA: 221.01s | Throughput: 164.34 MB/s
+[72.85%] | Read: 1.2862s | Write: 0.2778s | Batch Time: 1.563999s | Total Time: 588.83s | ETA: 219.43s | Throughput: 163.68 MB/s
+[73.05%] | Read: 1.2670s | Write: 0.2751s | Batch Time: 1.542026s | Total Time: 590.37s | ETA: 217.84s | Throughput: 166.02 MB/s
+[73.24%] | Read: 1.2842s | Write: 0.2809s | Batch Time: 1.565072s | Total Time: 591.94s | ETA: 216.25s | Throughput: 163.57 MB/s
+[73.44%] | Read: 1.2751s | Write: 0.2750s | Batch Time: 1.550113s | Total Time: 593.49s | ETA: 214.67s | Throughput: 165.15 MB/s
+[73.63%] | Read: 1.2864s | Write: 0.2778s | Batch Time: 1.564182s | Total Time: 595.05s | ETA: 213.08s | Throughput: 163.66 MB/s
+[73.83%] | Read: 1.2812s | Write: 0.2800s | Batch Time: 1.561168s | Total Time: 596.61s | ETA: 211.50s | Throughput: 163.98 MB/s
+[74.02%] | Read: 1.3187s | Write: 0.2742s | Batch Time: 1.592902s | Total Time: 598.20s | ETA: 209.92s | Throughput: 160.71 MB/s
+[74.22%] | Read: 1.2785s | Write: 0.2842s | Batch Time: 1.562722s | Total Time: 599.77s | ETA: 208.34s | Throughput: 163.82 MB/s
+[74.41%] | Read: 1.2838s | Write: 0.2806s | Batch Time: 1.564377s | Total Time: 601.33s | ETA: 206.76s | Throughput: 163.64 MB/s
+[74.61%] | Read: 1.2754s | Write: 0.2736s | Batch Time: 1.548971s | Total Time: 602.88s | ETA: 205.17s | Throughput: 165.27 MB/s
+[74.80%] | Read: 1.2795s | Write: 0.2727s | Batch Time: 1.552153s | Total Time: 604.43s | ETA: 203.58s | Throughput: 164.93 MB/s
+[75.00%] | Read: 1.2699s | Write: 0.2785s | Batch Time: 1.548438s | Total Time: 605.98s | ETA: 201.99s | Throughput: 165.33 MB/s
+[75.20%] | Read: 1.2780s | Write: 0.2770s | Batch Time: 1.555061s | Total Time: 607.54s | ETA: 200.41s | Throughput: 164.62 MB/s
+[75.39%] | Read: 1.3091s | Write: 0.2774s | Batch Time: 1.586498s | Total Time: 609.12s | ETA: 198.83s | Throughput: 161.36 MB/s
+[75.59%] | Read: 1.3322s | Write: 0.2745s | Batch Time: 1.606692s | Total Time: 610.73s | ETA: 197.26s | Throughput: 159.33 MB/s
+[75.78%] | Read: 1.3230s | Write: 0.2493s | Batch Time: 1.572309s | Total Time: 612.30s | ETA: 195.68s | Throughput: 162.82 MB/s
+[75.98%] | Read: 1.3457s | Write: 0.2535s | Batch Time: 1.599238s | Total Time: 613.90s | ETA: 194.11s | Throughput: 160.08 MB/s
+[76.17%] | Read: 1.3191s | Write: 0.2502s | Batch Time: 1.569329s | Total Time: 615.47s | ETA: 192.53s | Throughput: 163.13 MB/s
+[76.37%] | Read: 1.3398s | Write: 0.2752s | Batch Time: 1.615017s | Total Time: 617.09s | ETA: 190.97s | Throughput: 158.51 MB/s
+[76.56%] | Read: 1.3220s | Write: 0.2791s | Batch Time: 1.601145s | Total Time: 618.69s | ETA: 189.39s | Throughput: 159.89 MB/s
+[76.76%] | Read: 1.3358s | Write: 0.2757s | Batch Time: 1.611446s | Total Time: 620.30s | ETA: 187.83s | Throughput: 158.86 MB/s
+[76.95%] | Read: 1.3240s | Write: 0.2813s | Batch Time: 1.605265s | Total Time: 621.90s | ETA: 186.26s | Throughput: 159.48 MB/s
+[77.15%] | Read: 1.3400s | Write: 0.2772s | Batch Time: 1.617257s | Total Time: 623.52s | ETA: 184.69s | Throughput: 158.29 MB/s
+[77.34%] | Read: 1.3201s | Write: 0.2760s | Batch Time: 1.596041s | Total Time: 625.12s | ETA: 183.12s | Throughput: 160.40 MB/s
+[77.54%] | Read: 1.3306s | Write: 0.2770s | Batch Time: 1.607601s | Total Time: 626.72s | ETA: 181.54s | Throughput: 159.24 MB/s
+[77.73%] | Read: 1.3121s | Write: 0.2754s | Batch Time: 1.587478s | Total Time: 628.31s | ETA: 179.97s | Throughput: 161.26 MB/s
+[77.93%] | Read: 1.3395s | Write: 0.2873s | Batch Time: 1.626817s | Total Time: 629.94s | ETA: 178.40s | Throughput: 157.36 MB/s
+[78.12%] | Read: 1.3104s | Write: 0.2791s | Batch Time: 1.589506s | Total Time: 631.53s | ETA: 176.83s | Throughput: 161.06 MB/s
+[78.32%] | Read: 1.3358s | Write: 0.2816s | Batch Time: 1.617366s | Total Time: 633.15s | ETA: 175.26s | Throughput: 158.28 MB/s
+[78.52%] | Read: 1.3250s | Write: 0.2803s | Batch Time: 1.605254s | Total Time: 634.75s | ETA: 173.69s | Throughput: 159.48 MB/s
+[78.71%] | Read: 1.3337s | Write: 0.2858s | Batch Time: 1.619454s | Total Time: 636.37s | ETA: 172.12s | Throughput: 158.08 MB/s
+[78.91%] | Read: 1.3124s | Write: 0.2801s | Batch Time: 1.592420s | Total Time: 637.96s | ETA: 170.54s | Throughput: 160.76 MB/s
+[79.10%] | Read: 1.3504s | Write: 0.2767s | Batch Time: 1.627061s | Total Time: 639.59s | ETA: 168.98s | Throughput: 157.34 MB/s
+[79.30%] | Read: 1.3543s | Write: 0.2861s | Batch Time: 1.640379s | Total Time: 641.23s | ETA: 167.41s | Throughput: 156.06 MB/s
+[79.49%] | Read: 1.3780s | Write: 0.2866s | Batch Time: 1.664627s | Total Time: 642.90s | ETA: 165.86s | Throughput: 153.79 MB/s
+[79.69%] | Read: 1.3685s | Write: 0.2833s | Batch Time: 1.651813s | Total Time: 644.55s | ETA: 164.30s | Throughput: 154.98 MB/s
+[79.88%] | Read: 1.3808s | Write: 0.2538s | Batch Time: 1.634571s | Total Time: 646.18s | ETA: 162.73s | Throughput: 156.62 MB/s
+[80.08%] | Read: 1.3606s | Write: 0.2513s | Batch Time: 1.611861s | Total Time: 647.79s | ETA: 161.16s | Throughput: 158.82 MB/s
+[80.27%] | Read: 1.3790s | Write: 0.2493s | Batch Time: 1.628304s | Total Time: 649.42s | ETA: 159.59s | Throughput: 157.22 MB/s
+[80.47%] | Read: 1.3568s | Write: 0.2620s | Batch Time: 1.618792s | Total Time: 651.04s | ETA: 158.02s | Throughput: 158.14 MB/s
+[80.66%] | Read: 1.3758s | Write: 0.2808s | Batch Time: 1.656668s | Total Time: 652.70s | ETA: 156.46s | Throughput: 154.53 MB/s
+[80.86%] | Read: 1.3637s | Write: 0.2819s | Batch Time: 1.645653s | Total Time: 654.34s | ETA: 154.89s | Throughput: 155.56 MB/s
+[81.05%] | Read: 1.3264s | Write: 0.2794s | Batch Time: 1.605830s | Total Time: 655.95s | ETA: 153.32s | Throughput: 159.42 MB/s
+[81.25%] | Read: 1.3101s | Write: 0.2794s | Batch Time: 1.589525s | Total Time: 657.54s | ETA: 151.74s | Throughput: 161.05 MB/s
+[81.45%] | Read: 1.3310s | Write: 0.2810s | Batch Time: 1.611973s | Total Time: 659.15s | ETA: 150.17s | Throughput: 158.81 MB/s
+[81.64%] | Read: 1.3104s | Write: 0.2791s | Batch Time: 1.589542s | Total Time: 660.74s | ETA: 148.59s | Throughput: 161.05 MB/s
+[81.84%] | Read: 1.3309s | Write: 0.2813s | Batch Time: 1.612195s | Total Time: 662.35s | ETA: 147.01s | Throughput: 158.79 MB/s
+[82.03%] | Read: 1.2992s | Write: 0.2850s | Batch Time: 1.584255s | Total Time: 663.94s | ETA: 145.43s | Throughput: 161.59 MB/s
+[82.23%] | Read: 1.3378s | Write: 0.2792s | Batch Time: 1.616945s | Total Time: 665.55s | ETA: 143.86s | Throughput: 158.32 MB/s
+[82.42%] | Read: 1.3174s | Write: 0.2819s | Batch Time: 1.599323s | Total Time: 667.15s | ETA: 142.28s | Throughput: 160.07 MB/s
+[82.62%] | Read: 1.3315s | Write: 0.2863s | Batch Time: 1.617811s | Total Time: 668.77s | ETA: 140.71s | Throughput: 158.24 MB/s
+[82.81%] | Read: 1.3201s | Write: 0.2825s | Batch Time: 1.602601s | Total Time: 670.37s | ETA: 139.13s | Throughput: 159.74 MB/s
+[83.01%] | Read: 1.3392s | Write: 0.2826s | Batch Time: 1.621840s | Total Time: 671.99s | ETA: 137.56s | Throughput: 157.85 MB/s
+[83.20%] | Read: 1.3153s | Write: 0.2839s | Batch Time: 1.599242s | Total Time: 673.59s | ETA: 135.98s | Throughput: 160.08 MB/s
+[83.40%] | Read: 1.3209s | Write: 0.2828s | Batch Time: 1.603635s | Total Time: 675.20s | ETA: 134.41s | Throughput: 159.64 MB/s
+[83.59%] | Read: 1.3225s | Write: 0.2814s | Batch Time: 1.603947s | Total Time: 676.80s | ETA: 132.83s | Throughput: 159.61 MB/s
+[83.79%] | Read: 1.3249s | Write: 0.2845s | Batch Time: 1.609356s | Total Time: 678.41s | ETA: 131.25s | Throughput: 159.07 MB/s
+[83.98%] | Read: 1.3207s | Write: 0.2837s | Batch Time: 1.604441s | Total Time: 680.02s | ETA: 129.68s | Throughput: 159.56 MB/s
+[84.18%] | Read: 1.3472s | Write: 0.2513s | Batch Time: 1.598496s | Total Time: 681.61s | ETA: 128.10s | Throughput: 160.15 MB/s
+[84.38%] | Read: 1.3210s | Write: 0.2541s | Batch Time: 1.575115s | Total Time: 683.19s | ETA: 126.52s | Throughput: 162.53 MB/s
+[84.57%] | Read: 1.3342s | Write: 0.2502s | Batch Time: 1.584361s | Total Time: 684.77s | ETA: 124.94s | Throughput: 161.58 MB/s
+[84.77%] | Read: 1.3189s | Write: 0.2650s | Batch Time: 1.583911s | Total Time: 686.36s | ETA: 123.35s | Throughput: 161.63 MB/s
+[84.96%] | Read: 1.3267s | Write: 0.2678s | Batch Time: 1.594577s | Total Time: 687.95s | ETA: 121.78s | Throughput: 160.54 MB/s
+[85.16%] | Read: 1.3136s | Write: 0.2656s | Batch Time: 1.579187s | Total Time: 689.53s | ETA: 120.19s | Throughput: 162.11 MB/s
+[85.35%] | Read: 1.3234s | Write: 0.2857s | Batch Time: 1.609113s | Total Time: 691.14s | ETA: 118.62s | Throughput: 159.09 MB/s
+[85.55%] | Read: 1.3272s | Write: 0.2675s | Batch Time: 1.594686s | Total Time: 692.74s | ETA: 117.04s | Throughput: 160.53 MB/s
+[85.74%] | Read: 1.3378s | Write: 0.2645s | Batch Time: 1.602335s | Total Time: 694.34s | ETA: 115.46s | Throughput: 159.77 MB/s
+[85.94%] | Read: 1.3251s | Write: 0.2736s | Batch Time: 1.598700s | Total Time: 695.94s | ETA: 113.88s | Throughput: 160.13 MB/s
+[86.13%] | Read: 1.3319s | Write: 0.2651s | Batch Time: 1.597025s | Total Time: 697.53s | ETA: 112.30s | Throughput: 160.30 MB/s
+[86.33%] | Read: 1.3205s | Write: 0.2680s | Batch Time: 1.588461s | Total Time: 699.12s | ETA: 110.72s | Throughput: 161.16 MB/s
+[86.52%] | Read: 1.3987s | Write: 0.2729s | Batch Time: 1.671535s | Total Time: 700.79s | ETA: 109.15s | Throughput: 153.15 MB/s
+[86.72%] | Read: 1.3579s | Write: 0.2675s | Batch Time: 1.625387s | Total Time: 702.42s | ETA: 107.58s | Throughput: 157.50 MB/s
+[86.91%] | Read: 1.3431s | Write: 0.2687s | Batch Time: 1.611789s | Total Time: 704.03s | ETA: 106.00s | Throughput: 158.83 MB/s
+[87.11%] | Read: 1.3571s | Write: 0.2687s | Batch Time: 1.625800s | Total Time: 705.66s | ETA: 104.42s | Throughput: 157.46 MB/s
+[87.30%] | Read: 1.3376s | Write: 0.2658s | Batch Time: 1.603386s | Total Time: 707.26s | ETA: 102.85s | Throughput: 159.66 MB/s
+[87.50%] | Read: 1.3611s | Write: 0.2672s | Batch Time: 1.628330s | Total Time: 708.89s | ETA: 101.27s | Throughput: 157.22 MB/s
+[87.70%] | Read: 1.3537s | Write: 0.2691s | Batch Time: 1.622843s | Total Time: 710.51s | ETA: 99.69s | Throughput: 157.75 MB/s
+[87.89%] | Read: 1.3526s | Write: 0.2663s | Batch Time: 1.618939s | Total Time: 712.13s | ETA: 98.12s | Throughput: 158.13 MB/s
+[88.09%] | Read: 1.3566s | Write: 0.2722s | Batch Time: 1.628719s | Total Time: 713.76s | ETA: 96.54s | Throughput: 157.18 MB/s
+[88.28%] | Read: 1.3662s | Write: 0.2506s | Batch Time: 1.616780s | Total Time: 715.38s | ETA: 94.96s | Throughput: 158.34 MB/s
+[88.48%] | Read: 1.3472s | Write: 0.2500s | Batch Time: 1.597202s | Total Time: 716.97s | ETA: 93.38s | Throughput: 160.28 MB/s
+[88.67%] | Read: 1.3554s | Write: 0.2584s | Batch Time: 1.613803s | Total Time: 718.59s | ETA: 91.80s | Throughput: 158.63 MB/s
+[88.87%] | Read: 1.3390s | Write: 0.2760s | Batch Time: 1.614966s | Total Time: 720.20s | ETA: 90.22s | Throughput: 158.52 MB/s
+[89.06%] | Read: 1.3550s | Write: 0.2752s | Batch Time: 1.630267s | Total Time: 721.83s | ETA: 88.65s | Throughput: 157.03 MB/s
+[89.26%] | Read: 1.3379s | Write: 0.2794s | Batch Time: 1.617299s | Total Time: 723.45s | ETA: 87.07s | Throughput: 158.29 MB/s
+[89.45%] | Read: 1.3681s | Write: 0.2761s | Batch Time: 1.644266s | Total Time: 725.09s | ETA: 85.49s | Throughput: 155.69 MB/s
+[89.65%] | Read: 1.3381s | Write: 0.2742s | Batch Time: 1.612322s | Total Time: 726.71s | ETA: 83.91s | Throughput: 158.78 MB/s
+[89.84%] | Read: 1.3626s | Write: 0.3265s | Batch Time: 1.689062s | Total Time: 728.39s | ETA: 82.34s | Throughput: 151.56 MB/s
+[90.04%] | Read: 1.3457s | Write: 0.3148s | Batch Time: 1.660505s | Total Time: 730.05s | ETA: 80.77s | Throughput: 154.17 MB/s
+[90.23%] | Read: 1.3668s | Write: 0.3301s | Batch Time: 1.696896s | Total Time: 731.75s | ETA: 79.19s | Throughput: 150.86 MB/s
+[90.43%] | Read: 1.3407s | Write: 0.3156s | Batch Time: 1.656312s | Total Time: 733.41s | ETA: 77.62s | Throughput: 154.56 MB/s
+[90.62%] | Read: 1.3492s | Write: 0.3146s | Batch Time: 1.663784s | Total Time: 735.07s | ETA: 76.04s | Throughput: 153.87 MB/s
+[90.82%] | Read: 1.3577s | Write: 0.3152s | Batch Time: 1.672926s | Total Time: 736.74s | ETA: 74.47s | Throughput: 153.03 MB/s
+[91.02%] | Read: 1.3653s | Write: 0.3177s | Batch Time: 1.682946s | Total Time: 738.43s | ETA: 72.89s | Throughput: 152.11 MB/s
+[91.21%] | Read: 1.3463s | Write: 0.3127s | Batch Time: 1.659010s | Total Time: 740.09s | ETA: 71.31s | Throughput: 154.31 MB/s
+[91.41%] | Read: 1.3756s | Write: 0.3158s | Batch Time: 1.691448s | Total Time: 741.78s | ETA: 69.74s | Throughput: 151.35 MB/s
+[91.60%] | Read: 1.3866s | Write: 0.3145s | Batch Time: 1.701063s | Total Time: 743.48s | ETA: 68.17s | Throughput: 150.49 MB/s
+[91.80%] | Read: 1.3524s | Write: 0.3187s | Batch Time: 1.671115s | Total Time: 745.15s | ETA: 66.59s | Throughput: 153.19 MB/s
+[91.99%] | Read: 1.3793s | Write: 0.3097s | Batch Time: 1.689024s | Total Time: 746.84s | ETA: 65.01s | Throughput: 151.57 MB/s
+[92.19%] | Read: 1.3626s | Write: 0.2974s | Batch Time: 1.660060s | Total Time: 748.50s | ETA: 63.43s | Throughput: 154.21 MB/s
+[92.38%] | Read: 1.3797s | Write: 0.2969s | Batch Time: 1.676644s | Total Time: 750.18s | ETA: 61.85s | Throughput: 152.69 MB/s
+[92.58%] | Read: 1.3617s | Write: 0.3025s | Batch Time: 1.664159s | Total Time: 751.84s | ETA: 60.27s | Throughput: 153.83 MB/s
+[92.77%] | Read: 1.3778s | Write: 0.3117s | Batch Time: 1.689430s | Total Time: 753.53s | ETA: 58.70s | Throughput: 151.53 MB/s
+[92.97%] | Read: 1.3691s | Write: 0.3158s | Batch Time: 1.684961s | Total Time: 755.21s | ETA: 57.12s | Throughput: 151.93 MB/s
+[93.16%] | Read: 1.3807s | Write: 0.3167s | Batch Time: 1.697431s | Total Time: 756.91s | ETA: 55.54s | Throughput: 150.82 MB/s
+[93.36%] | Read: 1.4061s | Write: 0.3186s | Batch Time: 1.724648s | Total Time: 758.64s | ETA: 53.96s | Throughput: 148.44 MB/s
+[93.55%] | Read: 1.3986s | Write: 0.3156s | Batch Time: 1.714247s | Total Time: 760.35s | ETA: 52.38s | Throughput: 149.34 MB/s
+[93.75%] | Read: 1.3645s | Write: 0.3136s | Batch Time: 1.678069s | Total Time: 762.03s | ETA: 50.80s | Throughput: 152.56 MB/s
+[93.95%] | Read: 1.3763s | Write: 0.3177s | Batch Time: 1.694000s | Total Time: 763.72s | ETA: 49.22s | Throughput: 151.12 MB/s
+[94.14%] | Read: 1.3624s | Write: 0.3174s | Batch Time: 1.679807s | Total Time: 765.40s | ETA: 47.64s | Throughput: 152.40 MB/s
+[94.34%] | Read: 1.3799s | Write: 0.3123s | Batch Time: 1.692159s | Total Time: 767.10s | ETA: 46.06s | Throughput: 151.29 MB/s
+[94.53%] | Read: 1.3599s | Write: 0.3159s | Batch Time: 1.675810s | Total Time: 768.77s | ETA: 44.47s | Throughput: 152.76 MB/s
+[94.73%] | Read: 1.3728s | Write: 0.3151s | Batch Time: 1.687921s | Total Time: 770.46s | ETA: 42.89s | Throughput: 151.67 MB/s
+[94.92%] | Read: 1.3571s | Write: 0.3106s | Batch Time: 1.667699s | Total Time: 772.13s | ETA: 41.31s | Throughput: 153.50 MB/s
+[95.12%] | Read: 1.3790s | Write: 0.3150s | Batch Time: 1.694002s | Total Time: 773.82s | ETA: 39.72s | Throughput: 151.12 MB/s
+[95.31%] | Read: 1.3539s | Write: 0.3126s | Batch Time: 1.666527s | Total Time: 775.49s | ETA: 38.14s | Throughput: 153.61 MB/s
+[95.51%] | Read: 1.3791s | Write: 0.3171s | Batch Time: 1.696186s | Total Time: 777.18s | ETA: 36.55s | Throughput: 150.93 MB/s
+[95.70%] | Read: 1.3551s | Write: 0.3002s | Batch Time: 1.655332s | Total Time: 778.84s | ETA: 34.97s | Throughput: 154.65 MB/s
+[95.90%] | Read: 1.3804s | Write: 0.2971s | Batch Time: 1.677521s | Total Time: 780.52s | ETA: 33.38s | Throughput: 152.61 MB/s
+[96.09%] | Read: 1.3503s | Write: 0.3014s | Batch Time: 1.651716s | Total Time: 782.17s | ETA: 31.80s | Throughput: 154.99 MB/s
+[96.29%] | Read: 1.3871s | Write: 0.2981s | Batch Time: 1.685132s | Total Time: 783.85s | ETA: 30.21s | Throughput: 151.92 MB/s
+[96.48%] | Read: 1.3574s | Write: 0.3106s | Batch Time: 1.668015s | Total Time: 785.52s | ETA: 28.62s | Throughput: 153.48 MB/s
+[96.68%] | Read: 1.3865s | Write: 0.3101s | Batch Time: 1.696568s | Total Time: 787.22s | ETA: 27.04s | Throughput: 150.89 MB/s
+[96.88%] | Read: 1.3620s | Write: 0.3114s | Batch Time: 1.673407s | Total Time: 788.89s | ETA: 25.45s | Throughput: 152.98 MB/s
+[97.07%] | Read: 1.3782s | Write: 0.3138s | Batch Time: 1.691994s | Total Time: 790.58s | ETA: 23.86s | Throughput: 151.30 MB/s
+[97.27%] | Read: 1.3747s | Write: 0.3078s | Batch Time: 1.682450s | Total Time: 792.27s | ETA: 22.27s | Throughput: 152.16 MB/s
+[97.46%] | Read: 1.3811s | Write: 0.3120s | Batch Time: 1.693052s | Total Time: 793.96s | ETA: 20.68s | Throughput: 151.21 MB/s
+[97.66%] | Read: 1.3685s | Write: 0.3176s | Batch Time: 1.686138s | Total Time: 795.65s | ETA: 19.10s | Throughput: 151.83 MB/s
+[97.85%] | Read: 1.3883s | Write: 0.3070s | Batch Time: 1.695257s | Total Time: 797.34s | ETA: 17.51s | Throughput: 151.01 MB/s
+[98.05%] | Read: 1.3652s | Write: 0.3093s | Batch Time: 1.674531s | Total Time: 799.01s | ETA: 15.92s | Throughput: 152.88 MB/s
+[98.24%] | Read: 1.3930s | Write: 0.3072s | Batch Time: 1.700273s | Total Time: 800.72s | ETA: 14.33s | Throughput: 150.56 MB/s
+[98.44%] | Read: 1.3315s | Write: 0.3113s | Batch Time: 1.642800s | Total Time: 802.36s | ETA: 12.74s | Throughput: 155.83 MB/s
+[98.63%] | Read: 1.3489s | Write: 0.3104s | Batch Time: 1.659344s | Total Time: 804.02s | ETA: 11.14s | Throughput: 154.28 MB/s
+[98.83%] | Read: 1.3319s | Write: 0.3136s | Batch Time: 1.645480s | Total Time: 805.66s | ETA: 9.55s | Throughput: 155.58 MB/s
+[99.02%] | Read: 1.3383s | Write: 0.3156s | Batch Time: 1.653859s | Total Time: 807.32s | ETA: 7.96s | Throughput: 154.79 MB/s
+[99.22%] | Read: 1.3357s | Write: 0.3133s | Batch Time: 1.648921s | Total Time: 808.97s | ETA: 6.37s | Throughput: 155.25 MB/s
+[99.41%] | Read: 1.3518s | Write: 0.2974s | Batch Time: 1.649231s | Total Time: 810.61s | ETA: 4.78s | Throughput: 155.22 MB/s
+[99.61%] | Read: 1.3370s | Write: 0.2981s | Batch Time: 1.635163s | Total Time: 812.25s | ETA: 3.19s | Throughput: 156.56 MB/s
+[99.80%] | Read: 1.3615s | Write: 0.3010s | Batch Time: 1.662476s | Total Time: 813.91s | ETA: 1.59s | Throughput: 153.99 MB/s
+[100.00%] | Read: 1.3260s | Write: 0.3126s | Batch Time: 1.638585s | Total Time: 815.55s | ETA: 0.00s | Throughput: 156.23 MB/s
+
+
+[844.98s] Completed merging 4 K32-files of total size 128.00GB
+Merge Approach: Pipelined
+Source: /data-l/iraicu/tmp/
+Destination: /data-r/iraicu/vaults/
+Read Time: 648.01s
+Write Time: 29.43s
+Merge Time: 844.98s
+
+
+
+real	14m6.056s
+user	0m0.004s
+sys	0m0.015s

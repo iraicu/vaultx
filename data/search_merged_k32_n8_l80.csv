@@ -1,0 +1,17 @@
+timestamp,binary,file,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,open_close_ms,seek_ms,read_ms,hash_ms,avg_ms_per_lookup,total_ms,total_s
+2026-01-28T03:15:42+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,1,false,80,4,80,0,655,0.2600,0.0004,7.4518,0.2889,8.0010,640.0830,0.640083
+2026-01-28T03:15:42+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,1,true,80,4,80,0,641,0.0008,0.0009,6.5421,0.2817,6.8255,546.0381,0.546038
+2026-01-28T03:15:42+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,2,false,80,4,80,0,641,0.0355,0.0004,0.2254,0.4922,0.7536,60.2857,0.060286
+2026-01-28T03:15:43+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,2,true,80,4,80,0,641,0.0016,0.0013,0.0106,0.4604,0.4739,37.9110,0.037911
+2026-01-28T03:15:43+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,4,false,80,4,80,0,638,0.0836,0.0011,6.8774,0.7123,7.6744,613.9502,0.613950
+2026-01-28T03:15:44+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,4,true,80,4,80,0,638,0.0016,0.0013,0.0110,0.3723,0.3863,30.9026,0.030903
+2026-01-28T03:15:45+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,8,false,80,4,79,1,628,0.0790,0.0012,7.5204,1.2361,8.8366,706.9310,0.706931
+2026-01-28T03:15:45+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,8,true,80,4,80,0,627,0.0015,0.0026,6.4562,0.6303,7.0906,567.2502,0.567250
+2026-01-28T03:15:46+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,16,false,80,4,80,0,627,0.0842,0.0011,0.2584,2.2432,2.5869,206.9545,0.206954
+2026-01-28T03:15:46+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,16,true,80,4,80,0,622,0.0019,0.0026,6.4756,0.4428,6.9229,553.8337,0.553834
+2026-01-28T03:15:47+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,32,false,80,4,80,0,622,0.0791,0.0011,0.2564,4.8536,5.1902,415.2137,0.415214
+2026-01-28T03:15:48+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,32,true,80,4,80,0,630,0.0009,0.0027,6.8985,0.4077,7.3099,584.7883,0.584788
+2026-01-28T03:15:49+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,64,false,80,4,80,0,647,0.0663,0.0008,6.2368,7.7298,14.0337,1122.6922,1.122692
+2026-01-28T03:15:50+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,64,true,80,4,80,0,673,0.0011,0.0026,6.5001,0.5772,7.0810,566.4803,0.566480
+2026-01-28T03:15:52+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,128,false,80,4,80,0,666,0.0967,0.0008,12.7490,14.1128,26.9593,2156.7472,2.156747
+2026-01-28T03:15:53+00:00,/home/sfatunmbi/vaultx/vaultx,/data-r/iraicu/vaults/merge_32_8.plot,1,r-sweep,1,128,true,80,4,80,0,641,0.0013,0.0027,6.7635,2.0279,8.7954,703.6350,0.703635
