@@ -56,7 +56,7 @@ def parse_log_file(filepath):
 
 def main():
     log_dir = './logs'
-    k_values = range(33, 40) # 33 to 39
+    k_values = range(33, 41) # 33 to 40
     
     mems = []
     batches = []
@@ -108,7 +108,7 @@ def main():
     axes[3].set_title('Merge Time vs k')
 
     plt.tight_layout()
-    output_path = './graphs/merged_stats_k33_k39.png'
+    output_path = './graphs/merged_stats_k33_k40.png'
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     plt.savefig(output_path)
     print(f"Plot saved to {output_path}")

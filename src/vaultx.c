@@ -287,6 +287,15 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
       }
       break;
+    case 'i': {
+      num_threads_io = atoi(optarg);
+      if (num_threads_io <= 0) {
+        fprintf(stderr, "Number of I/O threads must be positive.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+      }
+      break;
+    }
     case 'k':
       K = atoi(optarg);
       if (K <= 0) {
