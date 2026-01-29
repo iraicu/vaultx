@@ -124,10 +124,8 @@ run_once() {
       32) mem_gb=25.5 ;;
       *) mem_gb=0 ;;
     esac
-    # Convert GB -> MB (integer) for the -m flag expected by vaultx
-    local mem_mb
-    mem_mb=$(awk "BEGIN{printf(\"%d\", ${mem_gb}*1024)}")
-    mem_arg=(-m "${mem_mb}")
+    # Pass GB directly to vaultx -m flag (it expects GB, not MB)
+    mem_arg=(-m "${mem_gb}")
   fi
 
   echo "=== Running k=${k} ===" >&2
