@@ -3,9 +3,9 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN="${BIN:-${ROOT_DIR}/vaultx}"
-PLOTS_DIR="${PLOTS_DIR:-${ROOT_DIR}/plots}"
-TMP_DIR="${TMP_DIR:-${ROOT_DIR}/temps}"
-DATA_DIR="${DATA_DIR:-${ROOT_DIR}/data}"
+PLOTS_DIR="/data-m/sfatunmbi/plots"
+TMP_DIR="/data-m/sfatunmbi/tmp"
+DATA_DIR="/data-m/sfatunmbi/data"
 CSV_OUT="${DATA_DIR}/gen_k27_k32_$(date +%Y%m%d_%H%M%S).csv"
 
 usage() {
@@ -133,7 +133,7 @@ run_once() {
   echo "=== Running k=${k} ===" >&2
   drop_caches
   # Use long form for I/O threads to avoid getopt issues with short -i parsing.
-  if ! "${BIN}" -k "${k}" -g "${TMP_DIR}" -f "${PLOTS_DIR}" -t 40 -threads_io 4 "${mem_arg[@]}" | tee "${log}"; then
+  if ! "${BIN}" -k "${k}" -g "${TMP_DIR}" -f "${PLOTS_DIR}" -t 40 --threads_io 1 "${mem_arg[@]}" | tee "${log}"; then
     echo "Error: vaultx run failed for k=${k}" >&2
     rm -f "${log}"
     return 1
