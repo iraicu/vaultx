@@ -314,6 +314,22 @@ int main(int argc, char *argv[]) {
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
       }
+      // Cap to system memory if specified value exceeds available RAM
+      {
+        double system_memory_gb = get_total_system_memory_gb();
+        if (system_memory_gb > 0.0 && memory_input_gb > system_memory_gb) {
+          fprintf(stderr, "Warning: Specified memory (%.1f GB) exceeds available "
+                          "system memory (%.1f GB). Capping to %.1f GB.\n",
+                          memory_input_gb, system_memory_gb, system_memory_gb);
+          memory_input_gb = system_memory_gb;
+          if (memory_input_gb < 2.0) {
+            fprintf(stderr, "Error: System memory (%.1f GB) is below minimum "
+                            "requirement of 2 GB.\n", system_memory_gb);
+            print_usage(argv[0]);
+            exit(EXIT_FAILURE);
+          }
+        }
+      }
       set_global_memory_limit_mb(
           (unsigned long long)(memory_input_gb * 1024.0));
       MEMORY_SIZE_MB =
