@@ -2,86 +2,13 @@
 #include <limits.h>
 #include <stdbool.h>
 
-static unsigned long long get_system_memory_mb(void) {
-#ifdef __APPLE__
-  uint64_t memsize = 0;
-  size_t len = sizeof(memsize);
-  int mib[2] = {CTL_HW, HW_MEMSIZE};
-
-  if (sysctl(mib, 2, &memsize, &len, NULL, 0) == -1) {
-    return 0;
-  }
-  return memsize / (1024ULL * 1024ULL);
-#elif defined(__linux__)
-  long pages = sysconf(_SC_PHYS_PAGES);
-  long page_size = sysconf(_SC_PAGE_SIZE);
-  if (pages < 0 || page_size < 0) {
-    return 0;
-  }
-  return (unsigned long long)pages * (unsigned long long)page_size /
-         (1024ULL * 1024ULL);
-#else
-  return 0;
-#endif
-}
-
-static int get_system_cores(void) {
-#ifdef __APPLE__
-  int mib[2];
-  int cores = 0;
-  size_t len = sizeof(cores);
-
-  mib[0] = CTL_HW;
-  mib[1] = HW_NCPU;
-
-  if (sysctl(mib, 2, &cores, &len, NULL, 0) == -1) {
-    return -1;
-  }
-  return cores;
-#elif defined(__linux__)
-  long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
-  if (nprocs < 1) {
-    return -1;
-  }
-  return (int)nprocs;
-#else
-  return -1;
-#endif
-}
-
-void init_system_defaults(void) {
-  unsigned long long mem_mb = get_system_memory_mb();
-  if (mem_mb > 0) {
-    MEMORY_LIMIT_MB =
-        (mem_mb > (unsigned long long)INT_MAX) ? INT_MAX : (int)mem_mb;
-  }
-
-  int cores = get_system_cores();
-  if (cores > 0) {
-    num_threads = cores;
-  }
-}
-
-void set_global_num_threads(int threads) {
-  if (threads > 0) {
-    num_threads = threads;
-  }
-}
-
-void set_global_memory_limit_mb(unsigned long long mb) {
-  if (mb > 0) {
-    MEMORY_LIMIT_MB =
-        (mb > (unsigned long long)INT_MAX) ? INT_MAX : (int)mb;
-  }
-}
-
 // Defaults
 int K = 27;
 int current_file = 1;
 int MERGE_APPROACH = 0;
 int TOTAL_FILES = 2;
 int BATCH_MEMORY_MB = 256;
-int MEMORY_LIMIT_MB = 1024;
+int MEMORY_LIMIT_MB = 4096;
 int num_threads = 1;
 int MERGE_IO_THREADS = 1;
 int DIFFICULTY = 0;
@@ -170,3 +97,34 @@ unsigned long long total_bytes_read = 0;
 
 // Initialize global metrics structure
 // GlobalMetrics global_metrics = {0};
+
+void init_system_defaults(void) {
+  int max_threads = omp_get_max_threads();
+  if (max_threads < 1) {
+    max_threads = 1;
+  }
+  num_threads = max_threads;
+  MERGE_IO_THREADS = max_threads;
+  if (MEMORY_LIMIT_MB < 1) {
+    MEMORY_LIMIT_MB = 4096;
+  }
+}
+
+void set_global_num_threads(int threads) {
+  if (threads < 1) {
+    threads = 1;
+  }
+  num_threads = threads;
+  omp_set_num_threads(threads);
+}
+
+void set_global_memory_limit_mb(unsigned long long mb) {
+  if (mb == 0) {
+    return;
+  }
+  if (mb > (unsigned long long)INT_MAX) {
+    MEMORY_LIMIT_MB = INT_MAX;
+  } else {
+    MEMORY_LIMIT_MB = (int)mb;
+  }
+}

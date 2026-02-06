@@ -208,24 +208,45 @@ int merge() {
   int MAX_FILENAME_LEN = 256;
   char filenames[TOTAL_FILES][MAX_FILENAME_LEN];
   const char *dir_name = SOURCE;
+  int desired_k = K;
 
   DIR *d = opendir(dir_name);
   struct dirent *dir;
 
-  int count = 0;
+  int stored = 0;
+  int matching = 0;
 
   if (d) {
-    while ((dir = readdir(d)) != NULL && count < TOTAL_FILES) {
+    while ((dir = readdir(d)) != NULL) {
       if (dir->d_name[0] != '.' && dir->d_name[0] == 'k' &&
           isdigit(dir->d_name[1]) && strstr(dir->d_name, ".plot") != NULL) {
-        path_join(filenames[count], MAX_FILENAME_LEN, dir_name, dir->d_name);
-        filenames[count][MAX_FILENAME_LEN - 1] = '\0'; // safety null-terminate
-        count++;
+        int kVal = 0;
+        char hex[129];
+        if (sscanf(dir->d_name, "k%d-%128[^.].plot", &kVal, hex) != 2) {
+          continue;
+        }
+        if (kVal != desired_k) {
+          continue;
+        }
+
+        matching++;
+        if (stored < TOTAL_FILES) {
+          path_join(filenames[stored], MAX_FILENAME_LEN, dir_name, dir->d_name);
+          filenames[stored][MAX_FILENAME_LEN - 1] = '\0'; // safety null-terminate
+          stored++;
+        }
       }
     }
     closedir(d);
   } else {
     perror("opendir");
+    return 1;
+  }
+
+  if (matching < TOTAL_FILES) {
+    fprintf(stderr,
+            "Error: Expected %d plot(s) with K=%d but found %d in '%s'\n",
+            TOTAL_FILES, desired_k, matching, dir_name);
     return 1;
   }
 
@@ -266,14 +287,6 @@ int merge() {
    * any -m value passed on the CLI. All merged files must share the same K. */
   {
     int first_k = plotData[0].K;
-    for (int i = 1; i < TOTAL_FILES; i++) {
-      if (plotData[i].K != first_k) {
-        fprintf(stderr, "Error: All source plots must have the same K (got %d and %d)\n",
-                first_k, plotData[i].K);
-        return 1;
-      }
-    }
-
     K = first_k;
     total_buckets = 1ULL << (PREFIX_SIZE * 8);
     unsigned long long num_records_total_local = 1ULL << K;

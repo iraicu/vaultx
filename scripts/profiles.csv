@@ -1,0 +1,4 @@
+hostname,system_name,cores,memory_gb,vaultx_path,NVME,SSD,HDD,NFS_NVME,NFS_HDD,CEPH_HDD
+MacBook-Pro-189,laptop,12,32,/Users/iraicu/source-code/vaultx/integration/vaultx,/Users/iraicu/source-code/vaultx/integration/tmp,/Users/iraicu/source-code/vaultx/integration/tmp,/Users/iraicu/source-code/vaultx/integration/tmp,/nfs_nvme/iraicu/tmp,/nfs_hdd/iraicu/tmp,/ceph/iraicu/tmp
+eightsocket,Eight Socket Box,384,512,/home/iraicu/vaultx-integration/vaultx,/nvme/iraicu/tmp,/ssd/iraicu/tmp,/hdd/iraicu/tmp,/nfs/nvme/iraicu/tmp,/nfs/hdd/iraicu/tmp,/ceph/iraicu/tmp
+torusnode01,Torus Node 01,64,48,/opt/vaultx/vaultx,/local_nvme/tmp,/local_ssd/tmp,/local_hdd/tmp,/mnt/nfs_nvme/tmp,/mnt/nfs_hdd/tmp,/ceph/tmp

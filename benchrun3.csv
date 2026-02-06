@@ -1,0 +1,4 @@
+[DRYRUN] /Users/iraicu/source-code/vaultx/integration/vaultx -k 12 -t 1 -i -b -f /Users/iraicu/source-code/vaultx/integration/tmp
+[DRYRUN] /Users/iraicu/source-code/vaultx/integration/vaultx -k 12 -t 1 -i true -f /Users/iraicu/source-code/vaultx/integration/tmp
+[DRYRUN] /Users/iraicu/source-code/vaultx/integration/vaultx -k 12 -t 1 -i -b -T /Users/iraicu/source-code/vaultx/integration/tmp -F /Users/iraicu/source-code/vaultx/integration/tmp -n 2
+[DRYRUN] /Users/iraicu/source-code/vaultx/integration/vaultx -k 12 -t 1 -i true -T /Users/iraicu/source-code/vaultx/integration/tmp -F /Users/iraicu/source-code/vaultx/integration/tmp -n 2

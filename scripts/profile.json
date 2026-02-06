@@ -1,0 +1,100 @@
+{
+  "profiles": [
+    {
+      "match_hostnames": ["MacBook-Pro-189"],
+      "system_name": "laptop",
+      "cores": 12,
+      "memory_gb": 32,
+      "vaultx_path": "/Users/iraicu/source-code/vaultx/integration/vaultx",
+      "storage": {
+        "NVME": "/Users/iraicu/source-code/vaultx/integration/tmp",
+        "SSD": "/Users/iraicu/source-code/vaultx/integration/tmp",
+        "HDD": "/Users/iraicu/source-code/vaultx/integration/tmp",
+        "NFS_NVME": "/nfs/nvme/iraicu/tmp",
+        "NFS_HDD": "/nfs/hdd/iraicu/tmp",
+        "CEPH_HDD": "/ceph/iraicu/tmp"
+      },
+      "experiments": [
+        {
+          "name": "sweep_k_t_on_nvme_and_ssd",
+          "enabled": true,
+          "storage_targets": ["NVME", "SSD"],
+          "grid": {
+            "k": [30, 31, 32],
+            "t": [32, 64, 128],
+            "i": [1, 2]
+          },
+          "extra_args": ["-b", "true"]
+        }
+      ]
+    },
+    {
+      "match_hostnames": ["eightsocket", "eightsocket.local"],
+      "system_name": "Eight Socket Box",
+      "cores": 384,
+      "memory_gb": 512,
+      "vaultx_path": "/home/iraicu/vaultx-integration/vaultx",
+      "storage": {
+        "NVME": "/nvme/iraicu/tmp",
+        "SSD": "/ssd/iraicu/tmp",
+        "HDD": "/hdd/iraicu/tmp",
+        "NFS_NVME": "/nfs/nvme/iraicu/tmp",
+        "NFS_HDD": "/nfs/hdd/iraicu/tmp",
+        "CEPH_HDD": "/ceph/iraicu/tmp"
+      },
+      "experiments": [
+        {
+          "name": "baseline_ceph",
+          "enabled": true,
+          "storage_targets": ["CEPH_HDD"],
+          "grid": {
+            "k": [32],
+            "t": [64],
+            "i": [1]
+          },
+          "extra_args": ["-b", "true"]
+        },
+        {
+          "name": "sweep_k_t_on_nvme_and_ssd",
+          "enabled": true,
+          "storage_targets": ["NVME", "SSD"],
+          "grid": {
+            "k": [30, 31, 32],
+            "t": [32, 64, 128],
+            "i": [1, 2]
+          },
+          "extra_args": ["-b", "true"]
+        }
+      ]
+    },
+
+    {
+      "match_hostnames": ["torusnode01"],
+      "system_name": "Torus Node 01",
+      "cores": 64,
+      "memory_gb": 48,
+      "vaultx_path": "/opt/vaultx/vaultx",
+      "storage": {
+        "NVME": "/local_nvme/tmp",
+        "SSD": "/local_ssd/tmp",
+        "HDD": "/local_hdd/tmp",
+        "NFS_NVME": "/mnt/nfs_nvme/tmp",
+        "NFS_HDD": "/mnt/nfs_hdd/tmp",
+        "CEPH_HDD": "/ceph/tmp"
+      },
+      "experiments": [
+        {
+          "name": "torus_small_sweep",
+          "enabled": true,
+          "storage_targets": ["NVME", "CEPH_HDD"],
+          "grid": {
+            "k": [27, 28, 29],
+            "t": [16, 32, 64],
+            "i": [1]
+          },
+          "extra_args": ["-b", "true"]
+        }
+      ]
+    }
+  ]
+}
