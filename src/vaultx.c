@@ -135,6 +135,70 @@ static unsigned long long get_free_space_bytes(const char *path) {
          (unsigned long long)vfs.f_frsize;
 }
 
+// Write search benchmark results to CSV file
+static int write_search_benchmark_csv(
+    const char *search_type,
+    int files_count,
+    int lookups,
+    size_t difficulty,
+    int io_threads,
+    int hash_threads,
+    int keep_open,
+    double open_close_ms,
+    double seek_ms,
+    double read_ms,
+    double hash_ms,
+    double total_wall_ms,
+    double avg_per_lookup_ms,
+    int total_found,
+    int total_not_found,
+    long long total_matches,
+    size_t records_hashed,
+    const char *path
+) {
+  const char *csv_path = "./search-b.csv";
+  
+  // Check if file exists to determine if we need to write headers
+  FILE *check = fopen(csv_path, "r");
+  bool write_header = (check == NULL);
+  if (check) fclose(check);
+  
+  FILE *csv = fopen(csv_path, "a");
+  if (!csv) {
+    fprintf(stderr, "Error: Unable to open %s for writing\n", csv_path);
+    return -1;
+  }
+  
+  if (write_header) {
+    fprintf(csv, "type,files,lookups,difficulty,io_threads,hash_threads,keep_open,"
+                 "open_close_ms,seek_ms,read_ms,hash_ms,total_wall_ms,avg_per_lookup_ms,"
+                 "found,not_found,matches,records_hashed,path\n");
+  }
+  
+  fprintf(csv, "%s,%d,%d,%zu,%d,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%d,%d,%lld,%zu,%s\n",
+          search_type,
+          files_count,
+          lookups,
+          difficulty,
+          io_threads,
+          hash_threads,
+          keep_open,
+          open_close_ms,
+          seek_ms,
+          read_ms,
+          hash_ms,
+          total_wall_ms,
+          avg_per_lookup_ms,
+          total_found,
+          total_not_found,
+          total_matches,
+          records_hashed,
+          path ? path : "");
+  
+  fclose(csv);
+  return 0;
+}
+
 int main(int argc, char *argv[]) {
   // Default values
   const char *approach = "for"; // Default approach
@@ -2638,49 +2702,83 @@ int main(int argc, char *argv[]) {
           results[i].avg_time_per_lookup_ms = timing.total_ms + timing.open_close_ms;
         }
 
-        printf("\n=== New search path ===\n");
-        printf("Files: %d | Matches: %zu | Records hashed: %zu\n",
-               SEARCH_FILES_COUNT, match_count, records_hashed);
-
         // Print detailed timing breakdown
         double wall_clock_ms = timing.total_ms + timing.open_close_ms;
         double cumulative_ms = timing.open_close_ms + timing.seek_ms + timing.read_ms + timing.hash_ms;
-        printf("\n--- Timing Breakdown ---\n");
-        printf("  [Component times are cumulative CPU time across all threads]\n");
-        printf("  File Open/Close:  %8.4f ms\n", timing.open_close_ms);
-        printf("  Disk Seek:        %8.4f ms\n", timing.seek_ms);
-        printf("  Disk Read:        %8.4f ms\n", timing.read_ms);
-        printf("  Record Hashing:   %8.4f ms\n", timing.hash_ms);
-        printf("  ------------------------\n");
-        printf("  Subtotal (IO):    %8.4f ms (seek + read)\n", timing.seek_ms + timing.read_ms);
-        printf("  Cumulative Total: %8.4f ms\n", cumulative_ms);
-        printf("  ========================\n");
-        printf("  Wall-Clock Time:  %8.4f ms (actual elapsed)\n", wall_clock_ms);
-        printf("------------------------\n\n");
 
-        printf("Thread config: read(-t)=%d hash(-r)=%d\n", io_threads,
-               hash_threads);
+        // Calculate totals for benchmark output
+        int total_found = 0;
+        int total_not_found = 0;
+        long long total_matches_sum = 0;
         for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-          printf("  [%d] %s -> matches: %zu\n", i + 1, results[i].filename,
-                 matches_by_file[i]);
+          total_found += results[i].found_count;
+          total_not_found += results[i].not_found_count;
+          total_matches_sum += results[i].match_count;
         }
 
-        if (match_count > 0 && matches != NULL) {
-          printf("\nMatches (all):\n");
-          for (size_t m = 0; m < match_count; m++) {
-            int idx = matches[m].file_index;
-            const char *fname = (idx >= 0 && idx < SEARCH_FILES_COUNT)
-                                    ? results[idx].filename
-                                    : "unknown";
-            printf("  %s : nonce1=", fname);
-            for (size_t n = 0; n < NONCE_SIZE; ++n)
-              printf("%02X", matches[m].record.nonce1[n]);
-            printf(" nonce2=");
-            for (size_t n = 0; n < NONCE_SIZE; ++n)
-              printf("%02X", matches[m].record.nonce2[n]);
+        if (BENCHMARK) {
+          write_search_benchmark_csv(
+              "single",
+              SEARCH_FILES_COUNT,
+              1,  // single lookup
+              search_length,
+              io_threads,
+              hash_threads,
+              0,  // keep_open not applicable to single search
+              timing.open_close_ms,
+              timing.seek_ms,
+              timing.read_ms,
+              timing.hash_ms,
+              wall_clock_ms,
+              wall_clock_ms,
+              total_found,
+              total_not_found,
+              total_matches_sum,
+              records_hashed,
+              DIR_TABLE2 ? DIR_TABLE2 : ""
+          );
+        } else {
+          printf("\n=== New search path ===\n");
+          printf("Files: %d | Matches: %zu | Records hashed: %zu\n",
+                 SEARCH_FILES_COUNT, match_count, records_hashed);
+
+          printf("\n--- Timing Breakdown ---\n");
+          printf("  [Component times are cumulative CPU time across all threads]\n");
+          printf("  File Open/Close:  %8.4f ms\n", timing.open_close_ms);
+          printf("  Disk Seek:        %8.4f ms\n", timing.seek_ms);
+          printf("  Disk Read:        %8.4f ms\n", timing.read_ms);
+          printf("  Record Hashing:   %8.4f ms\n", timing.hash_ms);
+          printf("  ------------------------\n");
+          printf("  Subtotal (IO):    %8.4f ms (seek + read)\n", timing.seek_ms + timing.read_ms);
+          printf("  Cumulative Total: %8.4f ms\n", cumulative_ms);
+          printf("  ========================\n");
+          printf("  Wall-Clock Time:  %8.4f ms (actual elapsed)\n", wall_clock_ms);
+          printf("------------------------\n\n");
+
+          printf("Thread config: read(-t)=%d hash(-r)=%d\n", io_threads,
+                 hash_threads);
+          for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+            printf("  [%d] %s -> matches: %zu\n", i + 1, results[i].filename,
+                   matches_by_file[i]);
+          }
+
+          if (match_count > 0 && matches != NULL) {
+            printf("\nMatches (all):\n");
+            for (size_t m = 0; m < match_count; m++) {
+              int idx = matches[m].file_index;
+              const char *fname = (idx >= 0 && idx < SEARCH_FILES_COUNT)
+                                      ? results[idx].filename
+                                      : "unknown";
+              printf("  %s : nonce1=", fname);
+              for (size_t n = 0; n < NONCE_SIZE; ++n)
+                printf("%02X", matches[m].record.nonce1[n]);
+              printf(" nonce2=");
+              for (size_t n = 0; n < NONCE_SIZE; ++n)
+                printf("%02X", matches[m].record.nonce2[n]);
+              printf("\n");
+            }
             printf("\n");
           }
-          printf("\n");
         }
       }
 
@@ -3225,9 +3323,6 @@ int main(int argc, char *argv[]) {
         total_time_ms += results[i].search_time_ms;
       }
 
-      printf("\n=== New batch search path ===\n");
-      printf("Files: %d | Lookups: %d\n", SEARCH_FILES_COUNT, LOOKUP_COUNT);
-
       // Print detailed timing breakdown before the summary table
       // Component times are cumulative (sum across all parallel threads)
       // Wall-clock time is the actual elapsed time
@@ -3248,50 +3343,77 @@ int main(int argc, char *argv[]) {
       double read_avg_wall = LOOKUP_COUNT > 0 ? read_wall_ms / LOOKUP_COUNT : 0.0;
       double hash_avg_wall = LOOKUP_COUNT > 0 ? hash_wall_ms / LOOKUP_COUNT : 0.0;
 
-      printf("\n--- Timing Breakdown (Total for %d lookups on %d files) ---\n", 
-             LOOKUP_COUNT, SEARCH_FILES_COUNT);
-      printf("  %-18s %12s %12s %12s\n", "Component", "Cumulative", "Wall-Clock", "Avg/Lookup");
-      printf("  %-18s %12s %12s %12s\n", "-----------------", "----------", "----------", "----------");
-      printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "File Open/Close",
-             total_timing.open_close_ms, open_close_wall_ms, open_close_avg_wall);
-      printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "Disk Seek",
-             total_timing.seek_ms, seek_wall_ms, seek_avg_wall);
-      printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "Disk Read",
-             total_timing.read_ms, read_wall_ms, read_avg_wall);
-      printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "Record Hashing",
-             total_timing.hash_ms, hash_wall_ms, hash_avg_wall);
-      printf("  %-18s %12s %12s %12s\n", "-----------------", "----------", "----------", "----------");
-      printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "TOTAL",
-             cumulative_total_ms, total_wall_time_ms, avg_wall_time_ms);
-      printf("------------------------------------------------\n\n");
+      if (BENCHMARK) {
+        // Write benchmark results to CSV file
+        write_search_benchmark_csv(
+            "batch",
+            SEARCH_FILES_COUNT,
+            LOOKUP_COUNT,
+            search_length,
+            io_threads,
+            hash_threads,
+            keep_open ? 1 : 0,
+            open_close_avg_wall,
+            seek_avg_wall,
+            read_avg_wall,
+            hash_avg_wall,
+            total_wall_time_ms,
+            avg_wall_time_ms,
+            total_found,
+            total_not_found,
+            total_matches,
+            0,  // records_hashed not tracked in batch mode
+            DIR_TABLE2 ? DIR_TABLE2 : ""
+        );
+      } else {
+        printf("\n=== New batch search path ===\n");
+        printf("Files: %d | Lookups: %d\n", SEARCH_FILES_COUNT, LOOKUP_COUNT);
 
-      printf("Thread config: read(-t)=%d hash(-r)=%d keep_open=%d\n", io_threads,
-             hash_threads, keep_open ? 1 : 0);
-            printf("%-80s %15s %10s %10s %12s %15s %20s %18s\n", "Filename",
-              "Size (bytes)", "Lookups", "Found", "Not Found",
-              "All Matches", "Avg Time/Lookup (ms)", "Total Time (ms)");
-      printf("---------------------------------------------------------------------------------"
-             "----------------------------------------------------------------------------------------------\n");
-      for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
-         printf("%-70s %15ld %10d %10d %12d %15lld %20.4f %18.2f\n",
-           results[i].filename, results[i].filesize,
-           results[i].num_lookups, results[i].found_count,
-           results[i].not_found_count, results[i].match_count,
-           results[i].avg_time_per_lookup_ms,
-           results[i].search_time_ms);
+        printf("\n--- Timing Breakdown (Total for %d lookups on %d files) ---\n", 
+               LOOKUP_COUNT, SEARCH_FILES_COUNT);
+        printf("  %-18s %12s %12s %12s\n", "Component", "Cumulative", "Wall-Clock", "Avg/Lookup");
+        printf("  %-18s %12s %12s %12s\n", "-----------------", "----------", "----------", "----------");
+        printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "File Open/Close",
+               total_timing.open_close_ms, open_close_wall_ms, open_close_avg_wall);
+        printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "Disk Seek",
+               total_timing.seek_ms, seek_wall_ms, seek_avg_wall);
+        printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "Disk Read",
+               total_timing.read_ms, read_wall_ms, read_avg_wall);
+        printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "Record Hashing",
+               total_timing.hash_ms, hash_wall_ms, hash_avg_wall);
+        printf("  %-18s %12s %12s %12s\n", "-----------------", "----------", "----------", "----------");
+        printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "TOTAL",
+               cumulative_total_ms, total_wall_time_ms, avg_wall_time_ms);
+        printf("------------------------------------------------\n\n");
+
+        printf("Thread config: read(-t)=%d hash(-r)=%d keep_open=%d\n", io_threads,
+               hash_threads, keep_open ? 1 : 0);
+              printf("%-80s %15s %10s %10s %12s %15s %20s %18s\n", "Filename",
+                "Size (bytes)", "Lookups", "Found", "Not Found",
+                "All Matches", "Avg Time/Lookup (ms)", "Total Time (ms)");
+        printf("---------------------------------------------------------------------------------"
+               "----------------------------------------------------------------------------------------------\n");
+        for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
+           printf("%-70s %15ld %10d %10d %12d %15lld %20.4f %18.2f\n",
+             results[i].filename, results[i].filesize,
+             results[i].num_lookups, results[i].found_count,
+             results[i].not_found_count, results[i].match_count,
+             results[i].avg_time_per_lookup_ms,
+             results[i].search_time_ms);
+        }
+        printf("---------------------------------------------------------------------------------"
+               "----------------------------------------------------------------------------------------------\n");
+              printf("%-80s %15s %10d %10d %12d %15lld %20.4f %18.2f\n", 
+                "TOTAL (all lookups)", "",
+                LOOKUP_COUNT, total_found, total_not_found, total_matches,
+                avg_wall_time_ms, total_wall_time_ms);
+
+        // Print parseable TIMING line for benchmark scripts
+        // Format: TIMING open_close_ms seek_ms read_ms hash_ms wall_clock_ms avg_per_lookup_ms
+        printf("TIMING %.4f %.4f %.4f %.4f %.4f %.4f\n",
+               open_close_avg_wall, seek_avg_wall, read_avg_wall, hash_avg_wall,
+               total_wall_time_ms, avg_wall_time_ms);
       }
-      printf("---------------------------------------------------------------------------------"
-             "----------------------------------------------------------------------------------------------\n");
-            printf("%-80s %15s %10d %10d %12d %15lld %20.4f %18.2f\n", 
-              "TOTAL (all lookups)", "",
-              LOOKUP_COUNT, total_found, total_not_found, total_matches,
-              avg_wall_time_ms, total_wall_time_ms);
-
-      // Print parseable TIMING line for benchmark scripts
-      // Format: TIMING open_close_ms seek_ms read_ms hash_ms wall_clock_ms avg_per_lookup_ms
-      printf("TIMING %.4f %.4f %.4f %.4f %.4f %.4f\n",
-             open_close_avg_wall, seek_avg_wall, read_avg_wall, hash_avg_wall,
-             total_wall_time_ms, avg_wall_time_ms);
 
       free(matches_by_file);
       free(ctx_list);
