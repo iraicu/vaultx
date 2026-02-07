@@ -3143,6 +3143,7 @@ int main(int argc, char *argv[]) {
 
       srand((unsigned int)time(NULL));
       double total_wall_time_ms = 0.0;
+      size_t total_records_hashed = 0;
 
       // Aggregate timing breakdown across all lookups
       SearchTimingBreakdown total_timing = {0.0, 0.0, 0.0, 0.0, 0.0};
@@ -3191,6 +3192,7 @@ int main(int argc, char *argv[]) {
           total_timing.hash_ms += timing.hash_ms;
           total_timing.total_ms += timing.total_ms;
           total_wall_time_ms += timing.total_ms;
+          total_records_hashed += records_hashed;
 
           for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
             results[i].num_lookups += 1;
@@ -3214,9 +3216,10 @@ int main(int argc, char *argv[]) {
           double lookup_seek_ms = 0.0;
           double lookup_read_ms = 0.0;
           double lookup_hash_ms = 0.0;
+          size_t lookup_records_hashed = 0;
 
           omp_set_num_threads(io_threads);
-#pragma omp parallel for schedule(dynamic) reduction(+:lookup_open_close_ms, lookup_seek_ms, lookup_read_ms, lookup_hash_ms)
+#pragma omp parallel for schedule(dynamic) reduction(+:lookup_open_close_ms, lookup_seek_ms, lookup_read_ms, lookup_hash_ms, lookup_records_hashed)
           for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
             SearchFileCtx ctx_temp;
             SearchTimingBreakdown file_timing = {0};
@@ -3256,6 +3259,7 @@ int main(int argc, char *argv[]) {
             lookup_seek_ms += file_timing.seek_ms;
             lookup_read_ms += file_timing.read_ms;
             lookup_hash_ms += file_timing.hash_ms;
+            lookup_records_hashed += file_records_hashed;
 
             // Update per-file results (thread-safe via atomic or critical)
 #pragma omp critical
@@ -3281,6 +3285,7 @@ int main(int argc, char *argv[]) {
 
           double lookup_wall_ms = (omp_get_wtime() - lookup_start) * 1000.0;
           total_wall_time_ms += lookup_wall_ms;
+          total_records_hashed += lookup_records_hashed;
 
           // Accumulate timing breakdown (cumulative across threads)
           total_timing.open_close_ms += lookup_open_close_ms;
@@ -3362,7 +3367,7 @@ int main(int argc, char *argv[]) {
             total_found,
             total_not_found,
             total_matches,
-            0,  // records_hashed not tracked in batch mode
+            total_records_hashed,
             DIR_TABLE2 ? DIR_TABLE2 : ""
         );
       } else {

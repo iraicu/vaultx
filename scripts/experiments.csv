@@ -1,6 +1,8 @@
-hostname,exp_name,enabled,exp_type,storage_targets,temp_target,n,P,A_list,B_list,k_list,t_list,i_list
-MacBook-Pro-189,mac_small_merge,true,merge,"NVME","NVME",2,true,"pipelined","128","27","12","1"
-MacBook-Pro-189,mac_small_single,true,single,"NVME",,,,,,"28","12","1"
-eightsocket,s8_small_single,true,single,"NVME SSD NFS_NVME NFS_HDD CEPH_HDD",,,,,,"27 28 29 30 31 32","24 48 96 192 384 768","1"
-torusnode01,torus_small_single,true,single,"NVME SSD HDD NFS_NVME NFS_HDD CEPH_HDD",,,,,,"27 28 29 30 31 32","1 2 4 8 16 32","1"
-Sam,Sam-run-test,true,merge,"NVME","NVME",8,"merge","pipelined",4096,"27","4","4"
+hostname,exp_name,enabled,exp_type,storage_targets,temp_target,n,P,A_list,B_list,k_list,t_list,i_list,s_string,S_count,D_difficulty,r_list,O_list
+MacBook-Pro-189,mac_small_merge,true,merge,"NVME","NVME",2,true,"pipelined","128","27","12","1",,,,,
+MacBook-Pro-189,mac_small_single,true,single,"NVME",,,,,,"28","12","1",,,,,
+eightsocket,s8_small_single,true,single,"NVME SSD NFS_NVME NFS_HDD CEPH_HDD",,,,,,"27 28 29 30 31 32","24 48 96 192 384 768","1",,,,,
+torusnode01,torus_small_single,true,single,"NVME SSD HDD NFS_NVME NFS_HDD CEPH_HDD",,,,,,"27 28 29 30 31 32","1 2 4 8 16 32","1",,,,,
+Sam,Sam-run-test,false,merge,"NVME","NVME",8,"merge","pipelined",4096,"27","4","4",,,,,
+Sam,Sam-search-batch,false,search,"NVME",,,,,,,"4 8 16","3",,10,4,"4 8","true false"
+Sam,Sam-search-single,false,search,"NVME",,,,,,,"4 8 16","3","abcd1234",,4,"4 8","false"
