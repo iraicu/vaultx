@@ -1,3 +1,4 @@
 hostname,exp_name,enabled,exp_type,storage_targets,temp_target,n,P,A_list,B_list,k_list,t_list,i_list
 MacBook-Pro-189,mac_small_merge,true,merge,"NVME","NVME",2,true,"pipelined","128","27","12","1"
 MacBook-Pro-189,mac_small_single,true,single,"NVME",,,,,,"28","12","1"
+eightsocket,s8_small_single,true,single,"NVME SSD NFS_NVME NFS_HDD CEPH_HDD",,,,,,"27 28 29 30 31 32","24 48 96 192 384 768","1"
