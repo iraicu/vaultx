@@ -2,3 +2,4 @@ hostname,system_name,cores,memory_gb,vaultx_path,NVME,SSD,HDD,NFS_NVME,NFS_HDD,C
 MacBook-Pro-189,laptop,12,32,/Users/iraicu/source-code/vaultx/integration/vaultx,/Users/iraicu/source-code/vaultx/integration/tmp,/Users/iraicu/source-code/vaultx/integration/tmp,/Users/iraicu/source-code/vaultx/integration/tmp,/nfs_nvme/iraicu/tmp,/nfs_hdd/iraicu/tmp,/ceph/iraicu/tmp
 eightsocket,Eight Socket Box,384,768,/home/iraicu/vaultx/vaultx,/stor/substor6/iraicu/tmp,/ssd-raid0/iraicu/tmp,,/nfs_nvme/iraicu/tmp,/nfs_hdd/iraicu/tmp,/ceph/iraicu/tmp
 torusnode01,Torus Node 01,32,64,/home/iraicu/vaultx/vaultx,/data-fast/iraicu/tmp,/ssd-raid0/iraicu/tmp,/data-c/iraicu/tmp,/nfs_nvme/iraicu/tmp,/nfs_hdd/iraicu/tmp,/ceph/iraicu/tmp
+Sam,Sam-Desktop,20,64,./vaultx,./tmp/,,,,,,

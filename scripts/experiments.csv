@@ -3,3 +3,4 @@ MacBook-Pro-189,mac_small_merge,true,merge,"NVME","NVME",2,true,"pipelined","128
 MacBook-Pro-189,mac_small_single,true,single,"NVME",,,,,,"28","12","1"
 eightsocket,s8_small_single,true,single,"NVME SSD NFS_NVME NFS_HDD CEPH_HDD",,,,,,"27 28 29 30 31 32","24 48 96 192 384 768","1"
 torusnode01,torus_small_single,true,single,"NVME SSD HDD NFS_NVME NFS_HDD CEPH_HDD",,,,,,"27 28 29 30 31 32","1 2 4 8 16 32","1"
+Sam,Sam-run-test,true,merge,"NVME","NVME",8,"merge","pipelined",4096,"27","4","4"

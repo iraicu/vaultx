@@ -173,6 +173,9 @@ while IFS= read -r line || [[ -n "${line:-}" ]]; do
           [[ "$b" =~ ^[0-9]+$ ]] || exp_error "merge exp '$exp_name' invalid B value '$b' (must be a number)"
         done
       fi
+      if [[ -n "$p_flag" ]]; then
+        [[ "$p_flag" == "true" || "$p_flag" == "both" || "$p_flag" == "gen" || "$p_flag" == "merge" ]] || exp_error "merge exp '$exp_name' invalid P value '$p_flag' (must be 'true', 'both', 'gen', or 'merge')"
+      fi
     fi
 
     for k in $k_list; do
@@ -203,7 +206,11 @@ while IFS= read -r line || [[ -n "${line:-}" ]]; do
             CMD+=( -f "$target_path" )
           elif [[ "$exp_type" == "merge" ]]; then
             CMD+=( -T "$target_path" -F "$temp_path" -n "$n_val" )
-            [[ "$p_flag" == "true" ]] && CMD+=( -P )
+            if [[ "$p_flag" == "true" || "$p_flag" == "both" ]]; then
+              CMD+=( -P )
+            elif [[ "$p_flag" == "gen" || "$p_flag" == "merge" ]]; then
+              CMD+=( -P "$p_flag" )
+            fi
             [[ -n "$a" ]] && CMD+=( -A "$a" )
             [[ -n "$b" ]] && CMD+=( -B "$b" )
           else
