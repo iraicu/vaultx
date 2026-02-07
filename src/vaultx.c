@@ -2737,6 +2737,7 @@ int main(int argc, char *argv[]) {
               records_hashed,
               DIR_TABLE2 ? DIR_TABLE2 : ""
           );
+          printf("Benchmark results written to ./search-b.csv\n");
         } else {
           printf("\n=== New search path ===\n");
           printf("Files: %d | Matches: %zu | Records hashed: %zu\n",
@@ -3370,6 +3371,7 @@ int main(int argc, char *argv[]) {
             total_records_hashed,
             DIR_TABLE2 ? DIR_TABLE2 : ""
         );
+        printf("Benchmark results written to ./search-b.csv\n");
       } else {
         printf("\n=== New batch search path ===\n");
         printf("Files: %d | Lookups: %d\n", SEARCH_FILES_COUNT, LOOKUP_COUNT);
