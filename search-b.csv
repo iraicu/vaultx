@@ -1,5 +1,0 @@
-type,files,lookups,difficulty,io_threads,hash_threads,keep_open,open_close_ms,seek_ms,read_ms,hash_ms,total_wall_ms,avg_per_lookup_ms,found,not_found,matches,records_hashed,path
-batch,8,1000,4,40,40,0,0.1439,0.5429,0.6584,0.0122,1357.4156,1.3574,259,7741,267,64000,./tmp/
-batch,8,10,4,40,40,0,1.3166,1.2905,1.5438,0.0265,41.7733,4.1773,0,80,0,640,./tmp/
-single,8,1,4,40,40,0,0.2355,6.7531,6.0474,2.1694,10.9987,10.9987,0,8,0,64,./tmp/
-batch,8,1000,4,40,40,0,0.1441,0.5530,0.6380,0.0121,1347.2671,1.3473,239,7761,246,63997,./tmp/
