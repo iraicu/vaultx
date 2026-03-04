@@ -37,11 +37,13 @@ EXPERIMENTS_DIR="${ROOT_DIR}/experiments"
 #   Any other count mismatch will abort with an error.
 
 FINAL_DRIVES=(
-  "/mnt/c/sfatunmbi"
+  "/data-c/sfatunmbi"
+  "/ssd-raid0/sfatunmbi"
 )
 
 TEMP_DRIVES=(
-  "/mnt/c/sfatunmbi"
+  "/data-c/sfatunmbi"
+  "/ssd-raid0/sfatunmbi"
 )
 
 
@@ -158,7 +160,8 @@ drop_caches() {
 }
 
 
-drive_id() { basename "$1"; }
+# Extract the drive name (first path component after /) from a path like /data-c/sfatunmbi
+drive_id() { echo "$1" | cut -d'/' -f2; }
 
 
 extract_field() {
@@ -312,6 +315,31 @@ for experiment in "${RUN_LIST[@]}"; do
     echo "" >&2
     echo "  Results written → ${csv_file}" >&2
   done
+
+  # Cleanup: delete plot and temp files from all drives after this experiment mode completes
+  echo "" >&2
+  echo "Cleaning up plots and temp directories for ${exp_mode}${exp_batch:+-${exp_batch}batch} mode..." >&2
+  for (( ci=0; ci<n_final; ci++ )); do
+    cleanup_final="${FINAL_DRIVES[$ci]}"
+    if [[ $n_temp -eq 1 ]]; then
+      cleanup_temp="${TEMP_DRIVES[0]}"
+    else
+      cleanup_temp="${TEMP_DRIVES[$ci]}"
+    fi
+
+    # Remove plot files from final drive
+    if [[ -d "${cleanup_final}/plots" ]]; then
+      rm -f "${cleanup_final}/plots"/*.plot 2>/dev/null || true
+      echo "  Cleaned ${cleanup_final}/plots" >&2
+    fi
+
+    # Remove temp files from temp drive
+    if [[ -d "${cleanup_temp}/temp" ]]; then
+      rm -f "${cleanup_temp}/temp"/* 2>/dev/null || true
+      echo "  Cleaned ${cleanup_temp}/temp" >&2
+    fi
+  done
+  echo "Cleanup complete for ${exp_mode}${exp_batch:+-${exp_batch}batch} mode." >&2
 done
 
 echo "" >&2
