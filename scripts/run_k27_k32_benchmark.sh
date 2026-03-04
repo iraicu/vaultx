@@ -1,149 +1,319 @@
 #!/usr/bin/env bash
+# run_k27_k32_benchmark.sh
+# Benchmarks vaultx plot generation from k27 to k32 across multiple drives.
+# Supports three experiment modes: IM (in-memory), OOM-2batch, OOM-4batch.
+# Results are saved as individual CSVs inside <repo>/experiments/.
+#
+# Usage:
+#   ./run_k27_k32_benchmark.sh                   # run all modes on all drives
+#   ./run_k27_k32_benchmark.sh -mode IM           # in-memory only, all drives
+#   ./run_k27_k32_benchmark.sh -mode OOM          # both OOM batch sizes, all drives
+#   ./run_k27_k32_benchmark.sh -mode OOM -batch 2 # OOM 2-batch only, all drives
+#   ./run_k27_k32_benchmark.sh -mode OOM -batch 4 # OOM 4-batch only, all drives
 set -euo pipefail
+
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN="${BIN:-${ROOT_DIR}/vaultx}"
-PLOTS_DIR="/data-m/sfatunmbi/plots"
-TMP_DIR="/data-m/sfatunmbi/tmp"
-DATA_DIR="/data-m/sfatunmbi/data"
-CSV_OUT="${DATA_DIR}/gen_k27_k32_$(date +%Y%m%d_%H%M%S).csv"
+EXPERIMENTS_DIR="${ROOT_DIR}/experiments"
+
+
+# Drive configuration
+#
+# FINAL_DRIVES  – destinations for finished .plot files.
+#                 Final plots are always written to ${FINAL_DRIVES[i]}/plots.
+#                 TEMP_DRIVES is not used at all for IM runs.
+#
+# TEMP_DRIVES   – fast storage for OOM intermediate files only.
+#                 Two valid configurations:
+#
+#   A) Same length as FINAL_DRIVES  →  strict 1-to-1 pairing:
+#        temp for FINAL_DRIVES[i] goes to TEMP_DRIVES[i]/temp
+#
+#   B) Exactly one entry  →  single shared temp drive:
+#        all OOM temp files go to TEMP_DRIVES[0]/temp
+#        final plots still go to each respective FINAL_DRIVES[i]/plots
+#
+#   Any other count mismatch will abort with an error.
+
+FINAL_DRIVES=(
+  "/mnt/c/sfatunmbi"
+)
+
+TEMP_DRIVES=(
+  "/mnt/c/sfatunmbi"
+)
+
+
+K_VALUES=(27 28 29 30 31 32)
+COMPUTE_THREADS=16
+IO_THREADS=1
+
+# Memory limits (GB) that force ~2 rounds per k  (OOM-2batch)
+declare -A OOM2_MEM=([27]=2.5 [28]=3 [29]=4.5 [30]=7.5 [31]=13.5 [32]=25.5)
+
+# Memory limits (GB) that force ~4 rounds per k  (OOM-4batch)
+# Values are roughly 1/4 of full in-memory requirement; floor at 2.0 (vaultx minimum)
+declare -A OOM4_MEM=([27]=2.0 [28]=2.0 [29]=2.5 [30]=4.0 [31]=7.0 [32]=13.0)
+
+
+CLI_MODE=""    # IM | OOM | empty → all modes
+CLI_BATCH=""   # 2  | 4   | empty → all batch sizes
 
 usage() {
   cat <<'EOF'
-Usage: run_k27_k32_benchmark.sh [-t TMP_DIR] [-f FINAL_DIR] [-mode IM|OOM]
+Usage: run_k27_k32_benchmark.sh [-mode IM|OOM] [-batch 2|4] [-h]
 
 Options:
-  -t TMP_DIR     Temporary directory for intermediate files (passed to -g)
-  -f FINAL_DIR   Final directory for plot outputs (passed to -f)
-  -mode IM|OOM   IM = in-memory (no -m); OOM = out-of-memory, set -m per-k
+  -mode IM|OOM    Run only the specified mode (default: all modes)
+  -batch 2|4      For OOM: run only the specified batch count (default: both 2 and 4)
+  -h              Show this help and exit
 
-Environment overrides: BIN, PLOTS_DIR, TMP_DIR, DATA_DIR, CSV_OUT
+Without arguments the script runs all three experiment types
+(IM, OOM-2batch, OOM-4batch) sequentially for every drive in
+FINAL_DRIVES. Each drive+mode combination produces its own CSV
+inside <repo>/experiments/.
+
+CSV naming convention:
+  k27-k32_<drive>_IM.csv
+  k27-k32_<drive>_OM_2batch.csv
+  k27-k32_<drive>_OM_4batch.csv
 EOF
 }
 
-MODE="IM"
-
-# Simple manual arg parser to allow -mode
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -t)
-      TMP_DIR="$2"
-      shift 2
-      ;;
-    -f)
-      PLOTS_DIR="$2"
-      shift 2
-      ;;
     -mode)
-      MODE="$2"
+      CLI_MODE="${2:-}"
       shift 2
       ;;
-    -h)
+    -batch)
+      CLI_BATCH="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
       usage
       exit 0
       ;;
-    --)
-      shift
-      break
-      ;;
     *)
+      echo "Unknown argument: $1" >&2
       usage >&2
       exit 1
       ;;
   esac
 done
 
-if [[ "$MODE" != "IM" && "$MODE" != "OOM" ]]; then
-  echo "Error: -mode must be IM or OOM" >&2
+if [[ -n "$CLI_MODE" && "$CLI_MODE" != "IM" && "$CLI_MODE" != "OOM" ]]; then
+  echo "Error: -mode must be IM or OOM (got: '${CLI_MODE}')" >&2
   usage >&2
   exit 1
 fi
 
-    mkdir -p "${PLOTS_DIR}" "${TMP_DIR}" "${DATA_DIR}"
+if [[ -n "$CLI_BATCH" && "$CLI_BATCH" != "2" && "$CLI_BATCH" != "4" ]]; then
+  echo "Error: -batch must be 2 or 4 (got: '${CLI_BATCH}')" >&2
+  usage >&2
+  exit 1
+fi
+
+if [[ -n "$CLI_BATCH" && "$CLI_MODE" != "OOM" ]]; then
+  echo "Error: -batch is only valid with -mode OOM" >&2
+  usage >&2
+  exit 1
+fi
+
 
 if [[ ! -x "${BIN}" ]]; then
   echo "Error: vaultx binary not found or not executable at ${BIN}" >&2
   exit 1
 fi
 
-# Drop caches to minimize cross-run noise; best-effort if sudo -n fails.
-drop_caches() {
-  if command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
-    sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'
-  else
-    echo "Warning: sudo not available (or needs password); skipping drop_caches" >&2
-    sync
+if [[ ${#FINAL_DRIVES[@]} -eq 0 ]]; then
+  echo "Error: FINAL_DRIVES array is empty" >&2
+  exit 1
+fi
+
+# Validate TEMP_DRIVES only when OOM experiments are going to run
+# (CLI_MODE empty means all modes, which includes OOM)
+if [[ -z "$CLI_MODE" || "$CLI_MODE" == "OOM" ]]; then
+  if [[ ${#TEMP_DRIVES[@]} -eq 0 ]]; then
+    echo "Error: TEMP_DRIVES array is empty (required for OOM runs)" >&2
+    exit 1
   fi
+  if [[ ${#TEMP_DRIVES[@]} -gt 1 && ${#TEMP_DRIVES[@]} -ne ${#FINAL_DRIVES[@]} ]]; then
+    echo "Error: TEMP_DRIVES must have either 1 entry (shared) or the same number of entries as FINAL_DRIVES (${#FINAL_DRIVES[@]}) for 1-to-1 pairing. Got ${#TEMP_DRIVES[@]}." >&2
+    exit 1
+  fi
+fi
+
+mkdir -p "${EXPERIMENTS_DIR}"
+
+
+# Flush page-cache for clean, reproducible timing.
+drop_caches() {
+  if echo "sfatunmbi" | sudo -S sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null; then
+    return 0
+  fi
+  echo "Warning: Failed to drop caches via sudo; falling back to sync only" >&2
+  sync
 }
 
-# Extract single numeric field with a sed pattern; empty if missing.
-extract_sed() {
+
+drive_id() { basename "$1"; }
+
+
+extract_field() {
   local pattern="$1" file="$2"
-  sed -n "${pattern}" "${file}" || true
+  sed -n "${pattern}" "${file}" 2>/dev/null | head -1 || true
 }
 
-# Parse a vaultx generation log into CSV fields.
 parse_log() {
   local log="$1"
   local k_value compute_threads io_threads file_size_gb write_batch_mb read_batch
-  local storage_eff overall_io_mb_s total_time_s peak_mem_mb total_throughput_mh_s
+  local storage_eff overall_io_mb_s total_time_s total_time_min peak_mem_mb total_throughput_mh_s
 
-  k_value=$(extract_sed 's/Exponent k[[:space:]]*:[[:space:]]*\([0-9]\+\)/\1/p' "${log}")
-  compute_threads=$(extract_sed 's/Threads (Hash\/Sort)[[:space:]]*:[[:space:]]*\([0-9]\+\)/\1/p' "${log}")
-  io_threads=$(extract_sed 's/Threads (I\/O)[[:space:]]*:[[:space:]]*\([0-9]\+\)/\1/p' "${log}")
-  file_size_gb=$(extract_sed 's/File Size (GB)[[:space:]]*:[[:space:]]*\([0-9.]*\)/\1/p' "${log}")
-  write_batch_mb=$(extract_sed 's/WRITE_BATCH_SIZE[[:space:]]*:[[:space:]]*\([0-9]\+\)/\1/p' "${log}")
-  read_batch=$(extract_sed 's/READ_BATCH_SIZE[[:space:]]*:[[:space:]]*\([0-9]\+\)/\1/p' "${log}")
-  storage_eff=$(extract_sed 's/.*storage_efficiency_table2=\([0-9.]*\).*/\1/p' "${log}")
-  overall_io_mb_s=$(extract_sed 's/Overall I\/O Throughput:[[:space:]]*\([0-9.]*\)[[:space:]]*MB\/s.*/\1/p' "${log}")
-  total_time_s=$(extract_sed 's/Total Time:[[:space:]]*\([0-9.]*\).*/\1/p' "${log}")
-  peak_mem_mb=$(extract_sed 's/Peak Memory Usage:[[:space:]]*\([0-9.]*\)[[:space:]]*MB.*/\1/p' "${log}")
-  total_throughput_mh_s=$(extract_sed 's/Total Throughput:[[:space:]]*\([0-9.]*\)[[:space:]]*MH\/s.*/\1/p' "${log}")
+  k_value=$(extract_field         's/.*Exponent k[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p' "${log}")
+  compute_threads=$(extract_field 's/.*Threads (Hash\/Sort)[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p' "${log}")
+  io_threads=$(extract_field      's/.*Threads (I\/O)[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p' "${log}")
+  file_size_gb=$(extract_field    's/.*File Size (GB)[[:space:]]*:[[:space:]]*\([0-9.]*\).*/\1/p' "${log}")
+  write_batch_mb=$(extract_field  's/.*WRITE_BATCH_SIZE[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p' "${log}")
+  read_batch=$(extract_field      's/.*READ_BATCH_SIZE[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p' "${log}")
+  storage_eff=$(extract_field     's/.*storage_efficiency_table2=\([0-9.]*\).*/\1/p' "${log}")
+  overall_io_mb_s=$(extract_field 's/.*Overall I\/O Throughput:[[:space:]]*\([0-9.]*\)[[:space:]]*MB\/s.*/\1/p' "${log}")
+  total_time_s=$(extract_field    's/.*Total Time:[[:space:]]*\([0-9.]*\).*/\1/p' "${log}")
+  peak_mem_mb=$(extract_field     's/.*Peak Memory Usage:[[:space:]]*\([0-9.]*\)[[:space:]]*MB.*/\1/p' "${log}")
+  total_throughput_mh_s=$(extract_field 's/.*Total Throughput:[[:space:]]*\([0-9.]*\)[[:space:]]*MH\/s.*/\1/p' "${log}")
 
-  echo "${k_value:-NA},${compute_threads:-NA},${io_threads:-NA},${file_size_gb:-NA},${write_batch_mb:-NA},${read_batch:-NA},${storage_eff:-NA},${overall_io_mb_s:-NA},${total_time_s:-NA},${peak_mem_mb:-NA},${total_throughput_mh_s:-NA}"
+  # Convert total time to minutes  (e.g. 122 s → 2.03 min)
+  if [[ -n "${total_time_s}" ]]; then
+    total_time_min="$(awk "BEGIN { printf \"%.2f\", ${total_time_s} / 60 }")"
+  else
+    total_time_s="NA"
+    total_time_min="NA"
+  fi
+
+  echo "${k_value:-NA},${compute_threads:-NA},${io_threads:-NA},${file_size_gb:-NA},${write_batch_mb:-NA},${read_batch:-NA},${storage_eff:-NA},${overall_io_mb_s:-NA},${total_time_s:-NA},${total_time_min},${peak_mem_mb:-NA},${total_throughput_mh_s:-NA}"
 }
 
-# Write CSV header
-printf "k,threads_compute,threads_io,file_size_gb,write_batch_mb,read_batch,storage_efficiency_pct,overall_io_throughput_mb_s,total_time_s,peak_memory_mb,total_throughput_mh_s\n" > "${CSV_OUT}"
+CSV_HEADER="k,threads_compute,threads_io,file_size_gb,write_batch_mb,read_batch,storage_efficiency_pct,overall_io_throughput_mb_s,total_time_s,total_time_min,peak_memory_mb,total_throughput_mh_s"
 
 run_once() {
-  local k="$1"
+  local k="$1" mode="$2" batch="$3" final_drive="$4" temp_drive="$5" csv_file="$6"
+
+  local plots_dir="${final_drive}/plots"
+  mkdir -p "${plots_dir}"
+
+  local temp_arg=()
+  if [[ "$mode" == "OOM" ]]; then
+    local temp_dir="${temp_drive}/temp"
+    mkdir -p "${temp_dir}"
+    temp_arg=(-g "${temp_dir}")
+  fi
+
   local log
-  log="$(mktemp)"
+  log="$(mktemp --suffix=".vaultx.log")"
+
+  local label="${mode}${batch:+-${batch}batch}  drive=$(drive_id "${final_drive}")"
+  echo "" >&2
+  echo "  → k=${k}  ${label}" >&2
+
+  drop_caches
 
   local mem_arg=()
-  if [[ "$MODE" == "OOM" ]]; then
-    # Per-k memory (GB) to force ~2 rounds: 27->2.5, 28->3, 29->4.5, 30->7.5, 31->13.5, 32->25.5
+  if [[ "$mode" == "OOM" ]]; then
     local mem_gb
-    case "$k" in
-      27) mem_gb=2.5 ;;
-      28) mem_gb=3 ;;
-      29) mem_gb=4.5 ;;
-      30) mem_gb=7.5 ;;
-      31) mem_gb=13.5 ;;
-      32) mem_gb=25.5 ;;
-      *) mem_gb=0 ;;
-    esac
-    # Pass GB directly to vaultx -m flag (it expects GB, not MB)
+    if [[ "$batch" == "2" ]]; then
+      mem_gb="${OOM2_MEM[$k]}"
+    else
+      mem_gb="${OOM4_MEM[$k]}"
+    fi
     mem_arg=(-m "${mem_gb}")
   fi
 
-  echo "=== Running k=${k} ===" >&2
-  drop_caches
-  # Use long form for I/O threads to avoid getopt issues with short -i parsing.
-  if ! "${BIN}" -k "${k}" -g "${TMP_DIR}" -f "${PLOTS_DIR}" -t 40 --threads_io 1 "${mem_arg[@]}" | tee "${log}"; then
-    echo "Error: vaultx run failed for k=${k}" >&2
+  if ! "${BIN}" \
+        -k "${k}" \
+        "${temp_arg[@]}" \
+        -f "${plots_dir}" \
+        -t "${COMPUTE_THREADS}" \
+        --threads_io "${IO_THREADS}" \
+        "${mem_arg[@]}" 2>&1 | tee "${log}"; then
+    echo "Error: vaultx failed for k=${k}" >&2
     rm -f "${log}"
     return 1
   fi
+
+  # Drop caches again after the run to neutralise any lingering cache effects
   drop_caches
 
-  parse_log "${log}" >> "${CSV_OUT}"
+  parse_log "${log}" >> "${csv_file}"
   rm -f "${log}"
 }
 
-for k in 27 28 29 30 31 32; do
-  run_once "${k}"
+RUN_LIST=()
+
+if [[ -z "$CLI_MODE" || "$CLI_MODE" == "IM" ]]; then
+  RUN_LIST+=("IM:")
+fi
+
+if [[ -z "$CLI_MODE" || "$CLI_MODE" == "OOM" ]]; then
+  if [[ -z "$CLI_BATCH" || "$CLI_BATCH" == "2" ]]; then
+    RUN_LIST+=("OOM:2")
+  fi
+  if [[ -z "$CLI_BATCH" || "$CLI_BATCH" == "4" ]]; then
+    RUN_LIST+=("OOM:4")
+  fi
+fi
+
+if [[ ${#RUN_LIST[@]} -eq 0 ]]; then
+  echo "Error: No experiments match the given -mode/-batch combination." >&2
+  exit 1
+fi
+
+n_final="${#FINAL_DRIVES[@]}"
+n_temp="${#TEMP_DRIVES[@]}"
+
+for experiment in "${RUN_LIST[@]}"; do
+  IFS=':' read -r exp_mode exp_batch <<< "${experiment}"
+
+  for (( di=0; di<n_final; di++ )); do
+    final_drive="${FINAL_DRIVES[$di]}"
+    # OOM temp drive: 1-to-1 when counts match, single shared drive otherwise
+    if [[ $n_temp -eq 1 ]]; then
+      temp_drive="${TEMP_DRIVES[0]}"
+    else
+      temp_drive="${TEMP_DRIVES[$di]}"
+    fi
+    did="$(drive_id "${final_drive}")"
+
+    if [[ "$exp_mode" == "IM" ]]; then
+      csv_label="IM"
+    else
+      csv_label="OM_${exp_batch}batch"
+    fi
+
+    csv_file="${EXPERIMENTS_DIR}/k27-k32_${did}_${csv_label}.csv"
+
+    echo "" >&2
+    echo "============================================================" >&2
+    echo " Experiment : ${csv_label}" >&2
+    echo " Drive      : ${final_drive}" >&2
+    if [[ "$exp_mode" == "OOM" ]]; then
+      echo " Temp drive : ${temp_drive}" >&2
+    fi
+    echo " CSV        : ${csv_file}" >&2
+    echo "============================================================" >&2
+
+    # Write CSV header (creates / overwrites the file for this run)
+    printf "%s\n" "${CSV_HEADER}" > "${csv_file}"
+
+    for k in "${K_VALUES[@]}"; do
+      run_once "${k}" "${exp_mode}" "${exp_batch}" "${final_drive}" "${temp_drive}" "${csv_file}"
+    done
+
+    echo "" >&2
+    echo "  Results written → ${csv_file}" >&2
+  done
 done
 
-echo "CSV written to ${CSV_OUT}" >&2
+echo "" >&2
+echo "All experiments complete." >&2
+echo "Results directory: ${EXPERIMENTS_DIR}" >&2
