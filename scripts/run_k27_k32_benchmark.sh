@@ -2,7 +2,7 @@
 # run_k27_k32_benchmark.sh
 # Benchmarks vaultx plot generation from k27 to k32 across multiple drives.
 # Supports three experiment modes: IM (in-memory), OOM-2batch, OOM-4batch.
-# Results are saved as individual CSVs inside <repo>/experiments/.
+# Results are saved as individual CSVs inside <repo>/experiments/<machine_name>.
 #
 # Usage:
 #   ./run_k27_k32_benchmark.sh                   # run all modes on all drives
@@ -54,11 +54,11 @@ COMPUTE_THREADS=16
 IO_THREADS=1
 
 # Memory limits (GB) that force ~2 rounds per k  (OOM-2batch)
-declare -A OOM2_MEM=([27]=2.5 [28]=3 [29]=4.5 [30]=7.5 [31]=13.5 [32]=25.5)
+declare -A OOM2_MEM=([27]=2.5 [28]=3 [29]=5 [30]=8 [31]=14 [32]=26)
 
 # Memory limits (GB) that force ~4 rounds per k  (OOM-4batch)
 # Values are roughly 1/4 of full in-memory requirement; floor at 2.0 (vaultx minimum)
-declare -A OOM4_MEM=([27]=2.0 [28]=2.0 [29]=2.5 [30]=4.0 [31]=7.0 [32]=13.0)
+declare -A OOM4_MEM=([27]=2.0 [28]=2.5 [29]=3 [30]=5 [31]=8 [32]=14)
 
 
 CLI_MODE=""    # IM | OOM | empty → all modes
@@ -76,7 +76,7 @@ Options:
 Without arguments the script runs all three experiment types
 (IM, OOM-2batch, OOM-4batch) sequentially for every drive in
 FINAL_DRIVES. Each drive+mode combination produces its own CSV
-inside <repo>/experiments/.
+inside <repo>/experiments/<machine_name>.
 
 CSV naming convention:
   k27-k32_<drive>_IM.csv
