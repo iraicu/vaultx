@@ -18,24 +18,6 @@ BIN="${BIN:-${ROOT_DIR}/vaultx}"
 EXPERIMENTS_DIR="${ROOT_DIR}/experiments"
 
 
-# Drive configuration
-#
-# FINAL_DRIVES  – destinations for finished .plot files.
-#                 Final plots are always written to ${FINAL_DRIVES[i]}/plots.
-#                 TEMP_DRIVES is not used at all for IM runs.
-#
-# TEMP_DRIVES   – fast storage for OOM intermediate files only.
-#                 Two valid configurations:
-#
-#   A) Same length as FINAL_DRIVES  →  strict 1-to-1 pairing:
-#        temp for FINAL_DRIVES[i] goes to TEMP_DRIVES[i]/temp
-#
-#   B) Exactly one entry  →  single shared temp drive:
-#        all OOM temp files go to TEMP_DRIVES[0]/temp
-#        final plots still go to each respective FINAL_DRIVES[i]/plots
-#
-#   Any other count mismatch will abort with an error.
-
 FINAL_DRIVES=(
   "/stor/auxiliary/sfatunmbi"
   "/ssd-raid0/sfatunmbi"
@@ -56,13 +38,11 @@ IO_THREADS=1
 # Memory limits (GB) that force ~2 rounds per k  (OOM-2batch)
 declare -A OOM2_MEM=([27]=2.5 [28]=3 [29]=5 [30]=8 [31]=14 [32]=26)
 
-# Memory limits (GB) that force ~4 rounds per k  (OOM-4batch)
-# Values are roughly 1/4 of full in-memory requirement; floor at 2.0 (vaultx minimum)
 declare -A OOM4_MEM=([27]=2.0 [28]=2.5 [29]=3 [30]=5 [31]=8 [32]=14)
 
 
-CLI_MODE=""    # IM | OOM | empty → all modes
-CLI_BATCH=""   # 2  | 4   | empty → all batch sizes
+CLI_MODE=""    # IM|OOM
+CLI_BATCH=""   # 2|4   
 
 usage() {
   cat <<'EOF'
@@ -307,7 +287,7 @@ for experiment in "${RUN_LIST[@]}"; do
     echo " CSV        : ${csv_file}" >&2
     echo "============================================================" >&2
 
-    # Write CSV header (creates / overwrites the file for this run)
+    # Write CSV header 
     printf "%s\n" "${CSV_HEADER}" > "${csv_file}"
 
     for k in "${K_VALUES[@]}"; do
@@ -329,13 +309,11 @@ for experiment in "${RUN_LIST[@]}"; do
       cleanup_temp="${TEMP_DRIVES[$ci]}"
     fi
 
-    # Remove plot files from final drive
     if [[ -d "${cleanup_final}/plots" ]]; then
       rm -f "${cleanup_final}/plots"/*.plot 2>/dev/null || true
       echo "  Cleaned ${cleanup_final}/plots" >&2
     fi
 
-    # Remove temp files from temp drive
     if [[ -d "${cleanup_temp}/temp" ]]; then
       rm -f "${cleanup_temp}/temp"/* 2>/dev/null || true
       echo "  Cleaned ${cleanup_temp}/temp" >&2
