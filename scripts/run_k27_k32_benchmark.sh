@@ -39,11 +39,13 @@ EXPERIMENTS_DIR="${ROOT_DIR}/experiments"
 FINAL_DRIVES=(
   "/stor/auxiliary/sfatunmbi"
   "/ssd-raid0/sfatunmbi"
+  "/data-fast/sfatunmbi"
 )
 
 TEMP_DRIVES=(
   "/stor/auxiliary/sfatunmbi"
   "/ssd-raid0/sfatunmbi"
+  "/data-fast/sfatunmbi"
 )
 
 
