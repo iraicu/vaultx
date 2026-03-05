@@ -37,12 +37,12 @@ EXPERIMENTS_DIR="${ROOT_DIR}/experiments"
 #   Any other count mismatch will abort with an error.
 
 FINAL_DRIVES=(
-  "/data-c/sfatunmbi"
+  "/stor/auxiliary/sfatunmbi"
   "/ssd-raid0/sfatunmbi"
 )
 
 TEMP_DRIVES=(
-  "/data-c/sfatunmbi"
+  "/stor/auxiliary/sfatunmbi"
   "/ssd-raid0/sfatunmbi"
 )
 
