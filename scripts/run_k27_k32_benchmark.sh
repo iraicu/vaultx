@@ -275,7 +275,7 @@ for experiment in "${RUN_LIST[@]}"; do
       csv_label="OM_${exp_batch}batch"
     fi
 
-    csv_file="${EXPERIMENTS_DIR}/k27-k32_${did}_${csv_label}.csv"
+    csv_file="${EXPERIMENTS_DIR}/k27-k32_${did}_CP${COMPUTE_THREADS}_${csv_label}.csv"
 
     echo "" >&2
     echo "============================================================" >&2
