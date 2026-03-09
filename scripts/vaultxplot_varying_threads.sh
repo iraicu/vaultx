@@ -9,6 +9,8 @@
 # threads are varied, IO threads are fixed at 1.
 #
 # Usage:
+#   # Run all experiments for both thread types and batches:
+#   ./vaultx_plot_varying_threads.sh -thread IO
 #   ./vaultx_plot_varying_threads.sh -mode IM  -thread IO
 #   ./vaultx_plot_varying_threads.sh -mode IM  -thread CP
 #   ./vaultx_plot_varying_threads.sh -mode OOM -thread IO -batch 2
@@ -98,18 +100,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# --- Validate required arguments -
-if [[ -z "$CLI_MODE" ]]; then
-  echo "Error: -mode is required" >&2
-  usage >&2
-  exit 1
-fi
-if [[ "$CLI_MODE" != "IM" && "$CLI_MODE" != "OOM" ]]; then
-  echo "Error: -mode must be IM or OOM (got: '${CLI_MODE}')" >&2
-  usage >&2
-  exit 1
-fi
-
+# --- Validate required arguments -------------------------------------------
 if [[ -z "$CLI_THREAD" ]]; then
   echo "Error: -thread is required" >&2
   usage >&2
@@ -119,6 +110,18 @@ if [[ "$CLI_THREAD" != "IO" && "$CLI_THREAD" != "CP" ]]; then
   echo "Error: -thread must be IO or CP (got: '${CLI_THREAD}')" >&2
   usage >&2
   exit 1
+fi
+
+# Default to running all modes and batches if only the thread type is specified
+if [[ -z "$CLI_MODE" && -z "$CLI_BATCH" ]]; then
+  RUN_LIST=("IM" "OOM:2" "OOM:4")
+else
+  if [[ -z "$CLI_MODE" ]]; then
+    echo "Error: -mode is required" >&2
+    usage >&2
+    exit 1
+  fi
+  RUN_LIST=("$CLI_MODE${CLI_BATCH:+:$CLI_BATCH}")
 fi
 
 if [[ "$CLI_MODE" == "OOM" && -z "$CLI_BATCH" ]]; then
@@ -345,52 +348,51 @@ run_once() {
 n_final="${#FINAL_DRIVES[@]}"
 n_temp="${#TEMP_DRIVES[@]}"
 
-for (( di=0; di<n_final; di++ )); do
-  final_drive="${FINAL_DRIVES[$di]}"
+for experiment in "${RUN_LIST[@]}"; do
+  IFS=':' read -r exp_mode exp_batch <<< "${experiment}"
 
-  # Determine matching temp drive (OOM only)
-  if [[ "$CLI_MODE" == "OOM" ]]; then
+  for (( di=0; di<n_final; di++ )); do
+    final_drive="${FINAL_DRIVES[$di]}"
+    # OOM temp drive: 1-to-1 when counts match, single shared drive otherwise
     if [[ $n_temp -eq 1 ]]; then
       temp_drive="${TEMP_DRIVES[0]}"
     else
       temp_drive="${TEMP_DRIVES[$di]}"
     fi
-  else
-    temp_drive=""
-  fi
+    did="$(drive_id "${final_drive}")"
 
-  did="$(drive_id "${final_drive}")"
+    for k in "${K_VALUES[@]}"; do
+      if [[ "$exp_mode" == "IM" ]]; then
+        csv_label="IM"
+      else
+        csv_label="OM_${exp_batch}batch"
+      fi
 
-  for k in "${K_VALUES[@]}"; do
-    # Build CSV filename: varying_<threadtype>_k<k>_<drive>_<mode>[_<batch>batch].csv
-    if [[ "$CLI_MODE" == "IM" ]]; then
-      csv_file="${EXPERIMENTS_DIR}/varying_${CLI_THREAD}_k${k}_${did}_IM.csv"
-    else
-      csv_file="${EXPERIMENTS_DIR}/varying_${CLI_THREAD}_k${k}_${did}_OOM_${CLI_BATCH}batch.csv"
-    fi
+      csv_file="${EXPERIMENTS_DIR}/varying_${CLI_THREAD}_k${k}_${did}_${csv_label}.csv"
 
-    echo "" >&2
-    echo "============================================================" >&2
-    echo " Experiment  : Varying ${CLI_THREAD} threads" >&2
-    echo " Mode        : ${CLI_MODE}${CLI_BATCH:+ (${CLI_BATCH}-batch)}" >&2
-    echo " k           : ${k}" >&2
-    echo " Drive       : ${final_drive}" >&2
-    if [[ "$CLI_MODE" == "OOM" ]]; then
-      echo " Temp drive  : ${temp_drive}" >&2
-    fi
-    echo " CSV         : ${csv_file}" >&2
-    echo " Thread sweep: ${THREAD_COUNTS[*]}" >&2
-    echo "============================================================" >&2
+      echo "" >&2
+      echo "============================================================" >&2
+      echo " Experiment  : Varying ${CLI_THREAD} threads" >&2
+      echo " Mode        : ${exp_mode}${exp_batch:+ (${exp_batch}-batch)}" >&2
+      echo " k           : ${k}" >&2
+      echo " Drive       : ${final_drive}" >&2
+      if [[ "$exp_mode" == "OOM" ]]; then
+        echo " Temp drive  : ${temp_drive}" >&2
+      fi
+      echo " CSV         : ${csv_file}" >&2
+      echo " Thread sweep: ${THREAD_COUNTS[*]}" >&2
+      echo "============================================================" >&2
 
-    # Write CSV header (creates / overwrites the file)
-    printf "%s\n" "${CSV_HEADER}" > "${csv_file}"
+      # Write CSV header (creates / overwrites the file)
+      printf "%s\n" "${CSV_HEADER}" > "${csv_file}"
 
-    for tc in "${THREAD_COUNTS[@]}"; do
-      run_once "${k}" "${tc}" "${final_drive}" "${temp_drive}" "${csv_file}"
+      for tc in "${THREAD_COUNTS[@]}"; do
+        run_once "${k}" "${tc}" "${final_drive}" "${temp_drive}" "${csv_file}"
+      done
+
+      echo "" >&2
+      echo "  ✓ Results written → ${csv_file}" >&2
     done
-
-    echo "" >&2
-    echo "  ✓ Results written → ${csv_file}" >&2
   done
 done
 
