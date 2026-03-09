@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # vaultx_plot_varying_threads.sh
 # Benchmarks vaultx plot generation by varying either IO or Compute threads
-# while holding the other thread type constant at 1.
+# while holding the other thread type constant (32 for IO, 1 for Compute).
 #
 # For each specified k-value and drive, the chosen thread type is swept from
 # 1 up to nproc in common increments (1,2,4,8,16,32,64,96,128,192,256,384,…,n).
+# When IO threads are varied, compute threads are fixed at 32; when compute
+# threads are varied, IO threads are fixed at 1.
 #
 # Usage:
 #   ./vaultx_plot_varying_threads.sh -mode IM  -thread IO
@@ -195,8 +197,10 @@ done < <(generate_thread_counts "$MAX_THREADS")
 
 if [[ "$CLI_THREAD" == "IO" ]]; then
   THREAD_COUNTS=("${IO_THREAD_COUNTS[@]}")
+  CONSTANT_THREADS=32
 else
   THREAD_COUNTS=("${COMPUTE_THREAD_COUNTS[@]}")
+  CONSTANT_THREADS=1
 fi
 
 echo "Thread counts to test: ${THREAD_COUNTS[*]}" >&2
@@ -280,11 +284,11 @@ run_once() {
   # Determine compute / IO thread counts based on which type is being varied
   local compute_threads io_threads
   if [[ "$CLI_THREAD" == "IO" ]]; then
-    compute_threads=1
+    compute_threads="$CONSTANT_THREADS"
     io_threads="${num_threads}"
   else
     compute_threads="${num_threads}"
-    io_threads=1
+    io_threads="$CONSTANT_THREADS"
   fi
 
   # OOM temp directory
