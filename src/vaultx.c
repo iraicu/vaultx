@@ -2313,11 +2313,24 @@ int main(int argc, char *argv[]) {
             perror("Error opening file");
             return EXIT_FAILURE;
           }
-
-          num_buckets_to_read =
-              ceil((MEMORY_SIZE_bytes /
-                    (num_records_in_bucket * sizeof(MemoTable2Record))) /
-                   2);
+          //  2 buffers of
+          //   num_buckets_to_read * num_records_in_bucket * rounds
+          //   * sizeof(MemoTable2Record) each must fit in memory.
+          {
+            unsigned long long shuffle_budget_bytes =
+                (unsigned long long)(memory_input_gb * 1024.0 * 1024.0 *
+                                     1024.0);
+            unsigned long long per_bucket_cost =
+                2ULL * num_records_in_bucket * rounds *
+                sizeof(MemoTable2Record);
+            num_buckets_to_read = shuffle_budget_bytes / per_bucket_cost;
+            num_buckets_to_read =
+                largest_power_of_two_le(num_buckets_to_read);
+            if (num_buckets_to_read > total_buckets)
+              num_buckets_to_read = total_buckets;
+            if (num_buckets_to_read == 0)
+              num_buckets_to_read = 1;
+          }
           if (DEBUG)
             printf("will read %llu buckets at one time, %llu bytes\n",
                    num_buckets_to_read,
