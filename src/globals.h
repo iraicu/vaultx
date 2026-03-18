@@ -148,18 +148,18 @@ typedef struct {
 
 typedef struct {
   MemoRecord *records;
-  size_t count;       // Number of records in the bucket
-  size_t count_waste; // Number of records generated but not stored
-  bool full;          // Number of records in the bucket
-  size_t flush;       // Number of flushes of bucket
+  size_t count;
+  size_t count_waste;
+  bool full;
+  size_t flush; 
 } Bucket;
 
 typedef struct {
   MemoTable2Record *records;
-  size_t count; // Number of records in the bucket
+  size_t count; 
   size_t count_waste;
   bool full;
-  size_t flush; // Number of flushes of bucket
+  size_t flush; 
 } BucketTable2;
 
 typedef struct {

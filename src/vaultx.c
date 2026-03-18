@@ -2318,7 +2318,7 @@ int main(int argc, char *argv[]) {
           //   * sizeof(MemoTable2Record) each must fit in memory.
           {
             unsigned long long shuffle_budget_bytes =
-                (unsigned long long)(memory_input_gb * 1024.0 * 1024.0 *
+                (unsigned long long)(expected_memory_gb * 1024.0 * 1024.0 *
                                      1024.0);
             unsigned long long per_bucket_cost =
                 2ULL * num_records_in_bucket * rounds *
