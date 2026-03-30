@@ -147,19 +147,19 @@ typedef struct {
 } MemoTable2Record;
 
 typedef struct {
-  MemoRecord *records;
-  size_t count;       // Number of records in the bucket
-  size_t count_waste; // Number of records generated but not stored
-  bool full;          // Number of records in the bucket
-  size_t flush;       // Number of flushes of bucket
+  MemoRecord *records;      // Pointer to records array
+  size_t count;             // Number of records stored
+  size_t count_waste;       // Records rejected (overflow)
+  bool full;                // Flag: bucket is full
+  size_t flush;             // Number of records flushed to disk
 } Bucket;
 
 typedef struct {
-  MemoTable2Record *records;
-  size_t count; // Number of records in the bucket
-  size_t count_waste;
-  bool full;
-  size_t flush; // Number of flushes of bucket
+  MemoTable2Record *records;      // 8-bytes
+  size_t count;                   // 8-bytes
+  size_t count_waste;             // 8-bytes
+  bool full;                      // 1-byte + 7-byte padding
+  size_t flush;                   // 8-bytes  
 } BucketTable2;
 
 typedef struct {

@@ -35,6 +35,8 @@ plots/
 *.tmp
 *.tmp2
 *.plot
+Paper
+paper_plots.py
 
 # Development
 memo.t
