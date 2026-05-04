@@ -1572,14 +1572,15 @@ int main(int argc, char *argv[]) {
 
           // Write table2 to disk
           for (unsigned long long i = 0; i < total_buckets; i += bucket_batch) {
+            unsigned long long actual_batch = (i + bucket_batch <= total_buckets) ? bucket_batch : (total_buckets - i);
             size_t elements_written =
                 fwrite(buckets2[i].records, sizeof(MemoTable2Record),
-                       num_records_in_bucket * bucket_batch, fd_tmp);
-            if (elements_written != num_records_in_bucket * bucket_batch) {
+                       num_records_in_bucket * actual_batch, fd_tmp);
+            if (elements_written != num_records_in_bucket * actual_batch) {
               fprintf(stderr,
                       "Error writing bucket to file; elements written %zu when "
                       "expected %llu\n",
-                      elements_written, num_records_in_bucket * bucket_batch);
+                      elements_written, num_records_in_bucket * actual_batch);
               free(buckets);
               free(buckets2);
               free(all_records_table2);
@@ -1703,14 +1704,15 @@ int main(int argc, char *argv[]) {
 
           // write table1 in batches
           for (unsigned long long i = 0; i < total_buckets; i += bucket_batch) {
+            unsigned long long actual_batch = (i + bucket_batch <= total_buckets) ? bucket_batch : (total_buckets - i);
             size_t elements_written =
                 fwrite(buckets[i].records, sizeof(MemoRecord),
-                       num_records_in_bucket * bucket_batch, fd_tmp);
-            if (elements_written != num_records_in_bucket * bucket_batch) {
+                       num_records_in_bucket * actual_batch, fd_tmp);
+            if (elements_written != num_records_in_bucket * actual_batch) {
               fprintf(stderr,
                       "Error writing bucket to file; elements written %zu when "
                       "expected %llu\n",
-                      elements_written, num_records_in_bucket * bucket_batch);
+                      elements_written, num_records_in_bucket * actual_batch);
               free(buckets);
               free(buckets2);
               free(all_records_table2);
@@ -2168,14 +2170,15 @@ int main(int argc, char *argv[]) {
           start_time_io = omp_get_wtime();
 
           for (unsigned long long b = 0; b < total_buckets; b += bucket_batch) {
+            unsigned long long actual_batch = (b + bucket_batch <= total_buckets) ? bucket_batch : (total_buckets - b);
             size_t elements_written =
                 fwrite(buckets2[b].records, sizeof(MemoTable2Record),
-                       num_records_in_bucket * bucket_batch, fd_table2_tmp);
-            if (elements_written != num_records_in_bucket * bucket_batch) {
+                       num_records_in_bucket * actual_batch, fd_table2_tmp);
+            if (elements_written != num_records_in_bucket * actual_batch) {
               fprintf(stderr,
                       "Error writing bucket to file; elements written %zu when "
                       "expected %llu\n",
-                      elements_written, num_records_in_bucket * bucket_batch);
+                      elements_written, num_records_in_bucket * actual_batch);
               fclose(fd_table2_tmp);
               free(buckets);
               free(buckets2);
