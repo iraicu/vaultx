@@ -398,7 +398,7 @@ int main(int argc, char *argv[]) {
           (unsigned long long)(memory_input_gb * 1024.0));
       MEMORY_SIZE_MB =
           (unsigned long long)(memory_input_gb * 1024); // Convert to MB
-      MEMORY_SIZE_MB = largest_power_of_two_le((MEMORY_SIZE_MB - 1300) / 3);
+      MEMORY_SIZE_MB = (unsigned long long)NONCE_SIZE * largest_power_of_two_le(((MEMORY_SIZE_MB - 1300) / 3) / NONCE_SIZE);
       if (MEMORY_SIZE_MB < 128) {
         fprintf(
             stderr,
@@ -927,7 +927,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
       }
 
-      MEMORY_SIZE_MB = largest_power_of_two_le((memory_input_mb - 1300) / 3);
+      MEMORY_SIZE_MB = (unsigned long long)NONCE_SIZE * largest_power_of_two_le(((memory_input_mb - 1300) / 3) / NONCE_SIZE);
       if (MEMORY_SIZE_MB < 128) {
         fprintf(
             stderr,

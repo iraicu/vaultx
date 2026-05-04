@@ -19,20 +19,16 @@ EXPERIMENTS_DIR="${ROOT_DIR}/experiments"
 
 
 FINAL_DRIVES=(
-  "/stor/auxiliary/sfatunmbi"
-  "/ssd-raid0/sfatunmbi"
-  "/data-fast/sfatunmbi"
+  "./"
 )
 
 TEMP_DRIVES=(
-  "/stor/auxiliary/sfatunmbi"
-  "/ssd-raid0/sfatunmbi"
-  "/data-fast/sfatunmbi"
+  "./"
 )
 
 
 K_VALUES=(27 28 29 30 31 32)
-COMPUTE_THREADS=16
+COMPUTE_THREADS=32
 IO_THREADS=1
 
 # Memory limits (GB) that force ~2 rounds per k  (OOM-2batch)
@@ -310,12 +306,12 @@ for experiment in "${RUN_LIST[@]}"; do
     fi
 
     if [[ -d "${cleanup_final}/plots" ]]; then
-      rm -f "${cleanup_final}/plots"/*.plot 2>/dev/null || true
+      # rm -f "${cleanup_final}/plots"/*.plot 2>/dev/null || true
       echo "  Cleaned ${cleanup_final}/plots" >&2
     fi
 
     if [[ -d "${cleanup_temp}/temp" ]]; then
-      rm -f "${cleanup_temp}/temp"/* 2>/dev/null || true
+      # rm -f "${cleanup_temp}/temp"/* 2>/dev/null || true
       echo "  Cleaned ${cleanup_temp}/temp" >&2
     fi
   done
