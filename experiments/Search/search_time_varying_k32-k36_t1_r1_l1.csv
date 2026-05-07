@@ -1,0 +1,6 @@
+timestamp,binary,k,filename,file_size_bytes,file_size_gb,n_files,t,r,keep_open,difficulty,n_lookups,found,not_found,all_matches,open_close_ms,seek_ms,read_ms,hash_ms,avg_ms_per_lookup,total_wall_ms,total_s
+2026-05-07T06:09:33Z,./vaultx,32,/ceph/sfatunmbi/plots/k32-8ff082b97808cff1bfe1ee3494fb48b859edcf805999f7e6c0c2bc2edccdce57.plot,34359738368,32.0,1,1,1,False,3,1,1,0,252,0.0893,42.4434,0.021,0.1353,42.689,42.689,0.042689
+2026-05-07T06:09:33Z,./vaultx,33,/ceph/sfatunmbi/plots/k33-f54abda576cf9ee4e756e5a79a42036ef03df445ee1cbf9320256305960a3620.plot,86973004800,80.999923,1,1,1,False,3,1,0,1,0,0.1768,71.2675,0.0202,0.047,71.5115,71.5115,0.071511
+2026-05-07T06:09:33Z,./vaultx,34,/ceph/sfatunmbi/plots/k34-e2839bf1e01fddb876e5de9657ebd09c864c778d93bea7d860a00cf998fcc846.plot,171798691840,160.0,1,1,1,False,3,1,0,1,0,0.1736,61.7051,0.045,0.1016,62.0254,62.0254,0.062025
+2026-05-07T06:09:33Z,./vaultx,35,/ceph/sfatunmbi/plots/k35-0a4037b83536518ee1932a7bcb25f2929f7b638cf72cfa2b414e42f54b6a3941.plot,343597383680,320.0,1,1,1,False,3,1,0,1,0,0.158,0.0013,77.6172,0.4754,78.2518,78.2518,0.078252
+2026-05-07T06:09:33Z,./vaultx,36,/ceph/sfatunmbi/plots/k36-849c4c68b5c32df3335a3945a85e6eea94c09676113b3dedf0e5af29fe3ba32f.plot,687194767360,640.0,1,1,1,False,3,1,0,1,0,0.1833,0.0013,145.8485,0.2231,146.2562,146.2562,0.146256
