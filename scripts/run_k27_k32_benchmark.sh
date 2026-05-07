@@ -306,12 +306,12 @@ for experiment in "${RUN_LIST[@]}"; do
     fi
 
     if [[ -d "${cleanup_final}/plots" ]]; then
-      rm -f "${cleanup_final}/plots"/*.plot 2>/dev/null || true
+      # rm -f "${cleanup_final}/plots"/*.plot 2>/dev/null || true
       echo "  Cleaned ${cleanup_final}/plots" >&2
     fi
 
     if [[ -d "${cleanup_temp}/temp" ]]; then
-      rm -f "${cleanup_temp}/temp"/* 2>/dev/null || true
+      # rm -f "${cleanup_temp}/temp"/* 2>/dev/null || true
       echo "  Cleaned ${cleanup_temp}/temp" >&2
     fi
   done
