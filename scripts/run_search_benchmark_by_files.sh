@@ -1,21 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-
-# -t and -r are used depending on how many plot files are searched:
-#  * Multiple files: vary -t in powers of two up to n_cores; fix -r=1
-#  * Single file:    fix -t=1; vary -r in powers of two up to n_cores
-# Also sweeps -O (keep-open) and writes a CSV to ./data/ by default.
-
-# Sweeps thread counts for -t (I/O) and -r (hash/record) plus -O keep-open flag
-# and writes a CSV of summary metrics to ./data/ by default.
-
-# How to run
-# chmod +x <script name>
-# Example # Run benchmarks (defaults: 1000 lookups, 3-byte difficulty, ./plots target)
-# ./scripts/run_search_benchmark_by_files.sh -l 1500 -d 4 -f ./plots/ -o ./data/my_run.csv -b ./vaultx
-# Plot results
-# ./scripts/plot_search_results_by_files.py ./data/my_run.csv --title "vaultx search benchmark"
+# General-purpose vaultx search benchmark: sweeps -t (multi-file) or -r
+# (single-file) in powers of two up to nproc, and sweeps -O (keep-open),
+# writing a CSV of timing metrics to ./data/.
+#
+# NOTE: do NOT pass -b true to vaultx here.  That flag suppresses the
+# TIMING/TOTAL stdout lines that this script parses; it also hardcodes
+# the output path to ./search-b.csv, bypassing --output.
+#
+# How to run:
+#   chmod +x scripts/run_search_benchmark_by_files.sh
+#
+#   # Defaults: 1000 lookups, 3-byte difficulty, ./plots/ target
+#   ./scripts/run_search_benchmark_by_files.sh
+#
+#   # Custom run
+#   ./scripts/run_search_benchmark_by_files.sh \
+#       -l 1500 -d 4 -f ./plots/ -o ./data/my_run.csv -b ./vaultx
+#
+#   # Plot results
+#   python3 ./scripts/plot_search_results_by_files.py \
+#       ./data/my_run.csv --title "vaultx search benchmark"
 
 
 usage() {
@@ -106,7 +112,7 @@ fi
 if [[ -f "$TARGET_PATH" ]]; then
   file_count=1
 elif [[ -d "$TARGET_PATH" ]]; then
-  file_count=$(find "$TARGET_PATH" -type f | wc -l | tr -d ' ')
+  file_count=$(find "$TARGET_PATH" -maxdepth 1 -name "*.plot" | wc -l | tr -d ' ')
 else
   echo "Error: target '$TARGET_PATH' is not a file or directory" >&2
   exit 1
@@ -115,6 +121,21 @@ fi
 if (( file_count < 1 )); then
   echo "Error: target '$TARGET_PATH' contains no files" >&2
   exit 1
+fi
+
+# K value: extracted from filename for a single file; "mixed" for a directory.
+k_value="mixed"
+if [[ -f "$TARGET_PATH" ]]; then
+  _bname=$(basename "$TARGET_PATH")
+  if [[ "$_bname" =~ ^k([0-9]+)- ]]; then
+    k_value="${BASH_REMATCH[1]}"
+  fi
+fi
+
+# File size in bytes: available for single file only.
+file_size_bytes="N/A"
+if [[ -f "$TARGET_PATH" ]]; then
+  file_size_bytes=$(stat -c '%s' "$TARGET_PATH" 2>/dev/null || echo "N/A")
 fi
 
 core_count=$(nproc --all 2>/dev/null || printf '1')
@@ -163,7 +184,7 @@ fi
 
 mkdir -p "$(dirname "$OUTPUT_PATH")"
 
-printf "timestamp,binary,file,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,open_close_ms,seek_ms,read_ms,hash_ms,avg_ms_per_lookup,total_ms,total_s\n" > "$OUTPUT_PATH"
+printf "timestamp,binary,file,k_value,file_size_bytes,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,open_close_ms,seek_ms,read_ms,hash_ms,avg_ms_per_lookup,total_ms,total_s\n" > "$OUTPUT_PATH"
 
 best_avg_ms=999999
 best_avg_cmd=""
@@ -186,7 +207,7 @@ for t in "${t_values[@]}"; do
       drop_caches
     fi
     for keep in "${keep_values[@]}"; do
-      cmd=("$BINARY_PATH" -S "$LOOKUPS_VAL" -D "$DIFFICULTY_VAL" -f "$TARGET_PATH" -t "$t" -r "$r" -O "$keep" -b true)
+      cmd=("$BINARY_PATH" -S "$LOOKUPS_VAL" -D "$DIFFICULTY_VAL" -f "$TARGET_PATH" -t "$t" -r "$r" -O "$keep")
       echo "--> ${cmd[*]}" >&2
 
       set +e
@@ -236,8 +257,9 @@ for t in "${t_values[@]}"; do
       timestamp=$(date -Iseconds)
       total_s=$(awk -v ms="$total_ms" 'BEGIN { printf "%.6f", ms/1000.0 }')
 
-      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
-        "$timestamp" "$BINARY_PATH" "$TARGET_PATH" "$file_count" "$sweep_mode" "$t" "$r" "$keep" \
+      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+        "$timestamp" "$BINARY_PATH" "$TARGET_PATH" "$k_value" "$file_size_bytes" \
+        "$file_count" "$sweep_mode" "$t" "$r" "$keep" \
         "$lookups_field" "$DIFFICULTY_VAL" "$found_field" "$not_found_field" \
         "$matches_field" "$open_close_ms" "$seek_ms" "$read_ms" "$hash_ms" \
         "$avg_ms" "$total_ms" "$total_s" >> "$OUTPUT_PATH"
