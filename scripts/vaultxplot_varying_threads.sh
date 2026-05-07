@@ -24,20 +24,26 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN="${BIN:-${ROOT_DIR}/vaultx}"
-EXPERIMENTS_DIR="${ROOT_DIR}/experiments"
-
+EXPERIMENTS_DIR="${ROOT_DIR}/experiments/epycbox"
 
 FINAL_DRIVES=(
-  "/stor/auxiliary/sfatunmbi"
+  "/data-l/sfatunmbi"
   "/ssd-raid0/sfatunmbi"
-  "/data-fast/sfatunmbi"
+  "/sfatunmbi"
+  "/nfs_hdd/sfatunmbi"
+  "/nfs_nvme/sfatunmbi"
+  "/ceph/sfatunmbi"
 )
 
 TEMP_DRIVES=(
-  "/stor/auxiliary/sfatunmbi"
+  "/data-l/sfatunmbi"
   "/ssd-raid0/sfatunmbi"
-  "/data-fast/sfatunmbi"
+  "/sfatunmbi"
+  "/nfs_hdd/sfatunmbi"
+  "/nfs_nvme/sfatunmbi"
+  "/ceph/sfatunmbi"
 )
+
 
 # (27 28 29 30 31 32) for the full range)
 

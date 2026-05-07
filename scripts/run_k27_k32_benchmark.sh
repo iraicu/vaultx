@@ -15,24 +15,20 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN="${BIN:-${ROOT_DIR}/vaultx}"
-EXPERIMENTS_DIR="${ROOT_DIR}/experiments"
+EXPERIMENTS_DIR="${ROOT_DIR}/experiments/epycbox"
 
 
 FINAL_DRIVES=(
-  "/stor/auxiliary/sfatunmbi"
-  "/ssd-raid0/sfatunmbi"
-  "/data-fast/sfatunmbi"
+  "/sfatunmbi"
 )
 
 TEMP_DRIVES=(
-  "/stor/auxiliary/sfatunmbi"
-  "/ssd-raid0/sfatunmbi"
-  "/data-fast/sfatunmbi"
+  "/sfatunmbi"
 )
 
 
 K_VALUES=(27 28 29 30 31 32)
-COMPUTE_THREADS=16
+COMPUTE_THREADS=32
 IO_THREADS=1
 
 # Memory limits (GB) that force ~2 rounds per k  (OOM-2batch)

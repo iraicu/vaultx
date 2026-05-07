@@ -1,0 +1,5 @@
+varying_threads,k,threads_compute,threads_io,file_size_gb,write_batch_mb,read_batch,storage_efficiency_pct,overall_io_throughput_mb_s,total_time_s,total_time_min,peak_memory_mb,total_throughput_mh_s
+1,32,32,1,32.0,1024,1,99.94,489.08,449.599790,7.49,50435.21,9.55
+2,32,32,2,32.0,1024,1,99.94,512.35,446.963614,7.45,50435.41,9.61
+4,32,32,4,32.0,1024,1,99.94,505.08,445.915725,7.43,50435.42,9.63
+8,32,32,8,32.0,1024,1,99.94,462.73,454.485504,7.57,50435.31,9.45
