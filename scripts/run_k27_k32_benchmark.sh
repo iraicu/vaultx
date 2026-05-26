@@ -15,7 +15,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN="${BIN:-${ROOT_DIR}/vaultx}"
-EXPERIMENTS_DIR="${ROOT_DIR}/experiments/epycbox"
+EXPERIMENTS_DIR="${ROOT_DIR}/newexperiments/$(hostname)"
 
 
 FINAL_DRIVES=(
@@ -28,7 +28,7 @@ TEMP_DRIVES=(
 
 
 K_VALUES=(27 28 29 30 31 32)
-COMPUTE_THREADS=32
+COMPUTE_THREADS=$(nproc)
 IO_THREADS=1
 
 # Memory limits (GB) that force ~2 rounds per k  (OOM-2batch)
@@ -287,7 +287,8 @@ for experiment in "${RUN_LIST[@]}"; do
     printf "%s\n" "${CSV_HEADER}" > "${csv_file}"
 
     for k in "${K_VALUES[@]}"; do
-      run_once "${k}" "${exp_mode}" "${exp_batch}" "${final_drive}" "${temp_drive}" "${csv_file}"
+      run_once "${k}" "${exp_mode}" "${exp_batch}" "${final_drive}" "${temp_drive}" "${csv_file}" || \
+        echo "Warning: experiment failed for k=${k} drive=${final_drive}, skipping." >&2
     done
 
     echo "" >&2

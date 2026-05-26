@@ -19,6 +19,11 @@
 # Usage: ./k27-k32merge.sh [-t <threads>]
 set -euo pipefail
 
+# Raise the open-file-descriptor limit. The merge phase opens all N subplot
+# files simultaneously (likely via mmap), so large N values exhaust the default
+# Ubuntu soft limit of 1024. Try to set to 1M; fall back to 65536.
+ulimit -n 1048576 2>/dev/null || ulimit -n 65536 2>/dev/null || true
+
 
 # USER CONFIGURATION
 

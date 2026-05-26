@@ -19,16 +19,16 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN="${BIN:-${ROOT_DIR}/vaultx}"
-EXPERIMENTS_DIR="${ROOT_DIR}/experiments"
+EXPERIMENTS_DIR="${ROOT_DIR}/newexperiments/$(hostname)"
 
 # Memory sizes to test (GB).
-MEMORY_SIZES=(2 4 8 16 24 32)
+MEMORY_SIZES=(2 2.5 3 5 8 14 26 50)
 
 # K values to test
 K_VALUES=(32)
 
 # Compute thread counts to test
-COMPUTE_THREAD_COUNTS=(16 32)
+COMPUTE_THREAD_COUNTS=($(nproc))
 
 # IO thread counts (array for extensibility)
 IO_THREAD_COUNTS=(1)
@@ -282,7 +282,8 @@ for (( di=0; di<n_final; di++ )); do
 
         for mem in "${FILTERED_MEMORY_SIZES[@]}"; do
           run_once "${k}" "${mem}" "${cp_threads}" "${io_threads}" \
-                   "${final_drive}" "${temp_drive}" "${csv_file}"
+                   "${final_drive}" "${temp_drive}" "${csv_file}" || \
+            echo "Warning: experiment failed for k=${k} memory=${mem}GB drive=${final_drive}, skipping." >&2
         done
 
         echo "" >&2
