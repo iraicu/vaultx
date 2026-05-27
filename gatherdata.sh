@@ -95,6 +95,13 @@ NETWORK_DRIVE_PATHS[ceph]="/ceph/sfatunmbi"
 # Ordered iteration for network drives (associative arrays have no stable order).
 NETWORK_DRIVE_KEYS=(nfs_hdd nfs_nvme ceph)
 
+# ---------------------------------------------------------------------------
+# PER-MACHINE NETWORK DRIVE EXCLUSIONS (space-separated drive keys)
+# List any network drives that are NOT mounted on a given machine.
+# ---------------------------------------------------------------------------
+declare -A MACHINE_EXCLUDED_NETWORK_DRIVES
+MACHINE_EXCLUDED_NETWORK_DRIVES[athena]="nfs_hdd nfs_nvme"
+
 # Orchestrator state directory on login1.
 STATE_DIR="${HOME}/vaultx_state"
 JOBS_FILE="${STATE_DIR}/jobs.tsv"
@@ -156,13 +163,23 @@ _set_job_status() {
     mv "$tmp" "$JOBS_FILE"
 }
 
+_drive_excluded() {
+    local machine="$1" drive_key="$2"
+    local excluded="${MACHINE_EXCLUDED_NETWORK_DRIVES[$machine]:-}"
+    [[ -n "$excluded" && " $excluded " == *" $drive_key "* ]]
+}
+
 _init_jobs() {
     : > "$JOBS_FILE"
     for machine in "${ORCH_MACHINES[@]}"; do
         for script in "${ORCH_SCRIPTS[@]}"; do
             printf '%s\tpending\t%s\n' "${machine}:${script}:local" "$(date +%Y-%m-%dT%H:%M:%S)" >> "$JOBS_FILE"
             for dk in "${NETWORK_DRIVE_KEYS[@]}"; do
-                printf '%s\tpending\t%s\n' "${machine}:${script}:${dk}" "$(date +%Y-%m-%dT%H:%M:%S)" >> "$JOBS_FILE"
+                if _drive_excluded "$machine" "$dk"; then
+                    printf '%s\tskipped\t%s\n' "${machine}:${script}:${dk}" "$(date +%Y-%m-%dT%H:%M:%S)" >> "$JOBS_FILE"
+                else
+                    printf '%s\tpending\t%s\n' "${machine}:${script}:${dk}" "$(date +%Y-%m-%dT%H:%M:%S)" >> "$JOBS_FILE"
+                fi
             done
         done
     done
@@ -475,6 +492,7 @@ screen -list 2>/dev/null | grep -q '\\.${SCREEN_NAME}[[:space:]]' && echo ALIVE 
         if [[ -z "$next_script" ]]; then
             for script in "${ORCH_SCRIPTS[@]}"; do
                 for dk in "${NETWORK_DRIVE_KEYS[@]}"; do
+                    _drive_excluded "$machine" "$dk" && continue
                     local st
                     st=$(_get_job_status "${machine}:${script}:${dk}")
                     if [[ "$st" == "pending" ]] && _claim_lock "$dk" "$machine"; then
@@ -586,11 +604,16 @@ cmd_add_machine() {
             local job_id="${machine}:${script}:${dk}"
             local existing
             existing=$(_get_job_status "$job_id")
-            if [[ -z "$existing" ]]; then
+            if [[ -n "$existing" ]]; then
+                echo "  SKIP — ${job_id} already in state (${existing})"
+                continue
+            fi
+            if [[ "$dk" != "local" ]] && _drive_excluded "$machine" "$dk"; then
+                printf '%s\tskipped\t%s\n' "$job_id" "$(date +%Y-%m-%dT%H:%M:%S)" >> "$JOBS_FILE"
+                echo "  SKIP — ${job_id} excluded for ${machine}"
+            else
                 printf '%s\tpending\t%s\n' "$job_id" "$(date +%Y-%m-%dT%H:%M:%S)" >> "$JOBS_FILE"
                 (( added++ )) || true
-            else
-                echo "  SKIP — ${job_id} already in state (${existing})"
             fi
         done
     done
