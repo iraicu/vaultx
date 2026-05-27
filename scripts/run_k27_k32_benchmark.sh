@@ -128,6 +128,17 @@ fi
 mkdir -p "${EXPERIMENTS_DIR}"
 
 
+cleanup_files() {
+  local final_drive="$1"
+  local temp_drive="$2"
+  if [[ -d "${final_drive}/plots" ]]; then
+    rm -f "${final_drive}/plots"/*.plot 2>/dev/null || true
+  fi
+  if [[ -n "${temp_drive}" && -d "${temp_drive}/temp" ]]; then
+    rm -rf "${temp_drive}/temp"/* 2>/dev/null || true
+  fi
+}
+
 # Flush page-cache for clean, reproducible timing.
 drop_caches() {
   if echo "sfatunmbi" | sudo -S sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null; then
@@ -219,6 +230,7 @@ run_once() {
         "${mem_arg[@]}" 2>&1 | tee "${log}"; then
     echo "Error: vaultx failed for k=${k}" >&2
     rm -f "${log}"
+    cleanup_files "${final_drive}" "${temp_drive}"
     return 1
   fi
 
@@ -227,6 +239,7 @@ run_once() {
 
   parse_log "${log}" >> "${csv_file}"
   rm -f "${log}"
+  cleanup_files "${final_drive}" "${temp_drive}"
 }
 
 RUN_LIST=()
@@ -294,29 +307,6 @@ for experiment in "${RUN_LIST[@]}"; do
     echo "" >&2
     echo "  Results written → ${csv_file}" >&2
   done
-
-  # Cleanup: delete plot and temp files from all drives after this experiment mode completes
-  echo "" >&2
-  echo "Cleaning up plots and temp directories for ${exp_mode}${exp_batch:+-${exp_batch}batch} mode..." >&2
-  for (( ci=0; ci<n_final; ci++ )); do
-    cleanup_final="${FINAL_DRIVES[$ci]}"
-    if [[ $n_temp -eq 1 ]]; then
-      cleanup_temp="${TEMP_DRIVES[0]}"
-    else
-      cleanup_temp="${TEMP_DRIVES[$ci]}"
-    fi
-
-    if [[ -d "${cleanup_final}/plots" ]]; then
-      # rm -f "${cleanup_final}/plots"/*.plot 2>/dev/null || true
-      echo "  Cleaned ${cleanup_final}/plots" >&2
-    fi
-
-    if [[ -d "${cleanup_temp}/temp" ]]; then
-      # rm -f "${cleanup_temp}/temp"/* 2>/dev/null || true
-      echo "  Cleaned ${cleanup_temp}/temp" >&2
-    fi
-  done
-  echo "Cleanup complete for ${exp_mode}${exp_batch:+-${exp_batch}batch} mode." >&2
 done
 
 echo "" >&2
