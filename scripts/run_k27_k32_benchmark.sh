@@ -26,6 +26,14 @@ TEMP_DRIVES=(
   "/sfatunmbi"
 )
 
+# Source machine-local drive config if present (gitignored, pushed by gatherdata.sh -setup).
+# Overrides the arrays above with the drives specific to this machine.
+_drives_local="${ROOT_DIR}/scripts/.drives.local"
+[[ -f "$_drives_local" ]] && source "$_drives_local"
+unset _drives_local
+# Allow the orchestrator to override drives at runtime via VAULTX_DRIVES=path1;path2
+[[ -n "${VAULTX_DRIVES:-}" ]] && IFS=';' read -ra FINAL_DRIVES <<< "$VAULTX_DRIVES" && TEMP_DRIVES=("${FINAL_DRIVES[@]}")
+
 
 K_VALUES=(27 28 29 30 31 32)
 COMPUTE_THREADS=$(nproc)

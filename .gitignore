@@ -51,3 +51,6 @@ blake3/*
 # Environment
 .env
 node_modules/
+
+# Per-machine drive configuration (pushed by gatherdata.sh -setup, never committed)
+scripts/.drives.local

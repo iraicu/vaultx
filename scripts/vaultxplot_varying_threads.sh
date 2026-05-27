@@ -23,14 +23,18 @@ FINAL_DRIVES=(
   "/data-l/sfatunmbi"
   "/ssd-raid0/sfatunmbi"
   "/sfatunmbi"
-  "/nfs_hdd/sfatunmbi"
-  "/nfs_nvme/sfatunmbi"
-  "/ceph/sfatunmbi"
 )
+
+# Source machine-local drive config if present (gitignored, pushed by gatherdata.sh -setup).
+_drives_local="${ROOT_DIR}/scripts/.drives.local"
+[[ -f "$_drives_local" ]] && source "$_drives_local"
+unset _drives_local
+# Allow the orchestrator to override drives at runtime via VAULTX_DRIVES=path1;path2
+[[ -n "${VAULTX_DRIVES:-}" ]] && IFS=';' read -ra FINAL_DRIVES <<< "$VAULTX_DRIVES"
 
 K_VALUES=(29 32)
 
-CLI_THREAD=""    # IO | CP
+CLI_THREAD="CP"   # IO support removed — only compute threads are varied
 
 usage() {
   cat <<'EOF'
@@ -70,13 +74,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$CLI_THREAD" ]]; then
-  echo "Error: -thread is required" >&2
-  usage >&2
-  exit 1
-fi
-if [[ "$CLI_THREAD" != "IO" && "$CLI_THREAD" != "CP" ]]; then
-  echo "Error: -thread must be IO or CP (got: '${CLI_THREAD}')" >&2
+if [[ "$CLI_THREAD" != "CP" ]]; then
+  echo "Error: only -thread CP is supported" >&2
   usage >&2
   exit 1
 fi
@@ -108,20 +107,15 @@ generate_thread_counts() {
   printf '%s\n' "${raw[@]}" | sort -n -u
 }
 
-IO_THREAD_COUNTS=(1 2 4 8)
+# IO_THREAD_COUNTS removed — IO thread variation is not used.
 
 COMPUTE_THREAD_COUNTS=()
 while IFS= read -r t; do
   COMPUTE_THREAD_COUNTS+=("$t")
 done < <(generate_thread_counts "$MAX_THREADS")
 
-if [[ "$CLI_THREAD" == "IO" ]]; then
-  THREAD_COUNTS=("${IO_THREAD_COUNTS[@]}")
-  CONSTANT_THREADS="$MAX_THREADS"
-else
-  THREAD_COUNTS=("${COMPUTE_THREAD_COUNTS[@]}")
-  CONSTANT_THREADS=1
-fi
+THREAD_COUNTS=("${COMPUTE_THREAD_COUNTS[@]}")
+CONSTANT_THREADS=1
 
 echo "Max threads (nproc): ${MAX_THREADS}" >&2
 echo "Thread counts to test: ${THREAD_COUNTS[*]}" >&2

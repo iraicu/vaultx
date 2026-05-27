@@ -45,6 +45,13 @@ TEMP_DRIVES=(
   "/data-fast/sfatunmbi"
 )
 
+# Source machine-local drive config if present (gitignored, pushed by gatherdata.sh -setup).
+_drives_local="${ROOT_DIR}/scripts/.drives.local"
+[[ -f "$_drives_local" ]] && source "$_drives_local"
+unset _drives_local
+# Allow the orchestrator to override drives at runtime via VAULTX_DRIVES=path1;path2
+[[ -n "${VAULTX_DRIVES:-}" ]] && IFS=';' read -ra FINAL_DRIVES <<< "$VAULTX_DRIVES" && TEMP_DRIVES=("${FINAL_DRIVES[@]}")
+
 
 if [[ ! -x "${BIN}" ]]; then
   echo "Error: vaultx binary not found or not executable at ${BIN}" >&2
