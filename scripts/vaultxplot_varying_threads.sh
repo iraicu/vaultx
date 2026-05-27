@@ -32,7 +32,7 @@ unset _drives_local
 # Allow the orchestrator to override drives at runtime via VAULTX_DRIVES=path1;path2
 [[ -n "${VAULTX_DRIVES:-}" ]] && IFS=';' read -ra FINAL_DRIVES <<< "$VAULTX_DRIVES"
 
-K_VALUES=(29 32)
+K_VALUES=(32)
 
 CLI_THREAD="CP"   # IO support removed — only compute threads are varied
 
