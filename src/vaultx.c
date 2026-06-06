@@ -241,6 +241,7 @@ int main(int argc, char *argv[]) {
   int SEARCH_FILES_COUNT = 0;
   bool source_provided = false;
   bool total_files_specified = false;
+  bool batch_memory_specified = false;
   char *ps_alias = NULL; // holds rewritten -ps flag if provided
   char *mt_alias = NULL; // holds rewritten -mt flag if provided
 
@@ -441,6 +442,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
       }
       BATCH_MEMORY_MB = (int)batch_mb;
+      batch_memory_specified = true;
       break;
     }
     case 1001: {
@@ -681,6 +683,20 @@ int main(int argc, char *argv[]) {
   /* Ensure total_nonces reflects the parsed exponent K (2^K). Move this
     here so parsers that set K take effect for downstream calculations. */
   total_nonces = 1ULL << K;
+
+  /* Auto-compute a sensible -B default when running merge and the user did
+     not explicitly pass -B.  Target 128 MB of sequential read per source file
+     per batch; cap at MEMORY_LIMIT_MB/4 so peak RAM (2×B) stays within half
+     the declared memory budget.  Minimum is the hardcoded 256 MB default. */
+  if (!batch_memory_specified && MERGE) {
+    unsigned long long target = (unsigned long long)TOTAL_FILES * 128ULL;
+    unsigned long long cap    = (unsigned long long)MEMORY_LIMIT_MB / 4ULL;
+    if (cap < 256) cap = 256;
+    unsigned long long smart  = (target < cap) ? target : cap;
+    if (smart < 256) smart = 256;
+    if (smart > (unsigned long long)INT_MAX) smart = (unsigned long long)INT_MAX;
+    BATCH_MEMORY_MB = (int)smart;
+  }
 
   /* Auto-detect logic was removed — defaults for -m/-t come from earlier
      initialization or explicit command-line arguments. */

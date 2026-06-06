@@ -390,23 +390,57 @@ int merge() {
       ceil((double)total_buckets / total_global_buckets);
     int total_batches_int = (int)total_batches;
 
-  BPRINTF("Memory Size per Batch: %dMB\n", BATCH_MEMORY_MB);
-  BPRINTF("Buckets processed from each file per batch: %llu\n",
-    total_global_buckets);
-  BPRINTF("Bucket size: %llu bytes\n",
-    num_records_in_bucket * sizeof(MemoTable2Record));
-  BPRINTF("Data read from each file per batch: %.2fMB\n\n",
-    (double)total_global_buckets * num_records_in_bucket *
-        sizeof(MemoTable2Record) / (1024 * 1024));
-  BPRINTF("Total Batches: %llu\n", total_batches);
+  {
+    const char *aname = (MERGE_APPROACH == 0) ? "Pipelined"
+                      : (MERGE_APPROACH == 1) ? "Serial"
+                      :                         "Tasks";
 
-  BPRINTF("Merge Approach [%d]: %s\n", MERGE_APPROACH,
-    MERGE_APPROACH == 1 ? "Serial" : "Pipelined");
-  BPRINTF("Source: %s\n", SOURCE);
-  BPRINTF("Destination: %s\n", DESTINATION);
-  BPRINTF("Threads: %d\n", num_threads);
-  BPRINTF("Files: %d, K%d\n", TOTAL_FILES, K);
-  BPRINTF("Memory Limit: %dMB\n\n\n", MEMORY_LIMIT_MB);
+    double per_file_batch_mb = (double)total_global_buckets
+                                * num_records_in_bucket
+                                * sizeof(MemoTable2Record)
+                                / (1024.0 * 1024.0);
+    double file_size_mb  = (double)(1ULL << K) * sizeof(MemoTable2Record)
+                            / (1024.0 * 1024.0);
+    double total_data_gb = (double)TOTAL_FILES * file_size_mb / 1024.0;
+
+    int ma = (int)floor((double)MEMORY_LIMIT_MB / BATCH_MEMORY_MB) - 1;
+    if (ma < 1) ma = 1;
+    double peak_mem_mb = (MERGE_APPROACH == 2)
+                         ? (double)ma * 2.0 * BATCH_MEMORY_MB
+                         : 2.0 * BATCH_MEMORY_MB;
+
+    BPRINTF("=== Merge Configuration ===\n");
+    BPRINTF("Approach          : %s (%d)\n", aname, MERGE_APPROACH);
+    BPRINTF("Files             : %d x K%d\n", TOTAL_FILES, K);
+    BPRINTF("File size         : %.2f MB (%.2f GB)\n",
+            file_size_mb, file_size_mb / 1024.0);
+    BPRINTF("Total data        : %.2f GB\n", total_data_gb);
+    BPRINTF("Source            : %s\n", SOURCE);
+    BPRINTF("Destination       : %s\n", DESTINATION);
+    BPRINTF("\n=== Batch Memory (-B) ===\n");
+    BPRINTF("Batch size        : %d MB\n", BATCH_MEMORY_MB);
+    BPRINTF("Per-file / batch  : %.2f MB\n", per_file_batch_mb);
+    BPRINTF("Expected peak RAM : %.0f MB (%.2f GB)  [2 x B%s]\n",
+            peak_mem_mb, peak_mem_mb / 1024.0,
+            MERGE_APPROACH == 2 ? " x max_active_batches" : "");
+    BPRINTF("Total batches     : %llu\n", total_batches);
+    BPRINTF("Buckets / batch   : %llu\n", total_global_buckets);
+    if (MERGE_APPROACH == 2) {
+      int raw_ma = (int)floor((double)MEMORY_LIMIT_MB / BATCH_MEMORY_MB) - 1;
+      BPRINTF("Max active batches: %d  (MEMORY_LIMIT %d MB / B %d MB - 1)\n",
+              raw_ma, MEMORY_LIMIT_MB, BATCH_MEMORY_MB);
+      if (raw_ma <= 0) {
+        BPRINTF("WARNING: max_active_batches=%d — B (%d MB) >= MEMORY_LIMIT (%d MB)."
+                " Increase -m to avoid deadlock with -A tasks.\n",
+                raw_ma, BATCH_MEMORY_MB, MEMORY_LIMIT_MB);
+      }
+    }
+    BPRINTF("\n=== Threads ===\n");
+    BPRINTF("Compute (-t)      : %d\n", num_threads);
+    BPRINTF("I/O (-mt)         : %d\n", MERGE_IO_THREADS);
+    BPRINTF("Memory limit (-m) : %d MB  (tasks pipeline budget)\n", MEMORY_LIMIT_MB);
+    BPRINTF("\n");
+  }
 
   double t_start = omp_get_wtime();
 #if defined(__APPLE__)
@@ -848,15 +882,31 @@ int merge() {
   merge_compute_time = merge_total_time;
   merge_total_time = process_time;
 
-  BPRINTF("\n\n");
-  BPRINTF("[%.2fs] Completed merging %d K%d-files of total size %.2fGB\n",
-    process_time, TOTAL_FILES, K, (double)size / (1024 * 1024 * 1024));
-  BPRINTF("Merge Approach: %s\n", MERGE_APPROACH == 1 ? "Serial" : "Pipelined");
-  BPRINTF("Source: %s\n", SOURCE);
-  BPRINTF("Destination: %s\n", DESTINATION);
-  BPRINTF("Read Time: %.2fs\n", read_total_time);
-  BPRINTF("Write Time: %.2fs\n", write_total_time);
-  BPRINTF("Merge Time: %.2fs\n\n\n", merge_total_time);
+  {
+    const char *aname = (MERGE_APPROACH == 0) ? "Pipelined"
+                      : (MERGE_APPROACH == 1) ? "Serial"
+                      :                         "Tasks";
+    double total_size_gb  = (double)size / (1024.0 * 1024.0 * 1024.0);
+    double avg_throughput = (process_time > 0)
+                            ? ((double)size / (1024.0 * 1024.0)) / process_time
+                            : 0.0;
+    double peak_mem_mb    = (MERGE_APPROACH == 2)
+                            ? (double)(MEMORY_LIMIT_MB / BATCH_MEMORY_MB - 1) * 2.0 * BATCH_MEMORY_MB
+                            : 2.0 * BATCH_MEMORY_MB;
+    if (peak_mem_mb < 0) peak_mem_mb = 2.0 * BATCH_MEMORY_MB;
+
+    BPRINTF("\n\n");
+    BPRINTF("[%.2fs] Completed merging %d K%d-files of total size %.2fGB\n",
+            process_time, TOTAL_FILES, K, total_size_gb);
+    BPRINTF("Merge Approach: %s\n", aname);
+    BPRINTF("Source: %s\n", SOURCE);
+    BPRINTF("Destination: %s\n", DESTINATION);
+    BPRINTF("Read Time: %.2fs\n", read_total_time);
+    BPRINTF("Write Time: %.2fs\n", write_total_time);
+    BPRINTF("Merge Time: %.2fs\n", merge_total_time);
+    BPRINTF("Avg Throughput: %.2f MB/s\n", avg_throughput);
+    BPRINTF("Peak Memory Usage: %.0f MB\n\n\n", peak_mem_mb);
+  }
 
   if (MERGE_APPROACH != 2) {
     free(mergedBuckets);
