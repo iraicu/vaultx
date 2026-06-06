@@ -88,11 +88,11 @@ filter_memory_sizes() {
   
   local -a filtered=()
   for mem in "${MEMORY_SIZES[@]}"; do
-    if (( mem <= max_mem_int )); then
+    if awk "BEGIN { exit !(${mem} <= ${max_mem_int}) }"; then
       filtered+=("$mem")
     fi
   done
-  
+
   # If max_mem_int is not in MEMORY_SIZES but is > min(MEMORY_SIZES), add it
   # This handles cases like 7.5 GB -> add 7 if not present
   local found=false
@@ -102,12 +102,12 @@ filter_memory_sizes() {
       break
     fi
   done
-  
+
   if ! $found && (( max_mem_int >= 2 )); then
     # Only add if it's larger than the largest filtered value
     local largest_filtered=0
     for mem in "${filtered[@]:-}"; do
-      if (( mem > largest_filtered )); then
+      if awk "BEGIN { exit !(${mem} > ${largest_filtered}) }"; then
         largest_filtered=$mem
       fi
     done
