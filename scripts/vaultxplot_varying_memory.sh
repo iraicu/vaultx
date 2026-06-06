@@ -20,6 +20,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN="${BIN:-${ROOT_DIR}/vaultx}"
 EXPERIMENTS_DIR="${ROOT_DIR}/newexperiments/$(hostname)"
+SUDO_PASS=sfatunmbi
 
 # Memory sizes to test (GB).
 MEMORY_SIZES=(2 2.5 3 5 8 14 26 50)
@@ -63,7 +64,7 @@ if [[ ${#FINAL_DRIVES[@]} -eq 0 ]]; then
   exit 1
 fi
 
-mkdir -p "${EXPERIMENTS_DIR}"
+safe_mkdir "${EXPERIMENTS_DIR}"
 
 get_available_memory_gb() {
   # Get available memory in GB from /proc/meminfo
@@ -139,11 +140,19 @@ echo "Total memory configurations: ${#FILTERED_MEMORY_SIZES[@]}" >&2
 
 # Flush page-cache for clean, reproducible timing
 drop_caches() {
-  if echo "sfatunmbi" | sudo -S sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null; then
+  if echo "$SUDO_PASS" | sudo -S sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null; then
     return 0
   fi
   echo "Warning: Failed to drop caches via sudo; falling back to sync only" >&2
   sync
+}
+
+safe_mkdir() {
+  mkdir -p "$@" 2>/dev/null || echo "$SUDO_PASS" | sudo -S mkdir -p "$@"
+}
+
+safe_rm() {
+  rm -f "$@" 2>/dev/null || echo "$SUDO_PASS" | sudo -S rm -f "$@" 2>/dev/null || true
 }
 
 # Extract the drive name (first path component after /)
@@ -191,10 +200,10 @@ cleanup_files() {
   local temp_drive="$2"
 
   if [[ -d "${final_drive}/plots" ]]; then
-    rm -f "${final_drive}/plots"/*.plot 2>/dev/null || true
+    safe_rm "${final_drive}/plots"/*.plot
   fi
   if [[ -n "${temp_drive}" && -d "${temp_drive}/temp" ]]; then
-    rm -f "${temp_drive}/temp"/* 2>/dev/null || true
+    safe_rm "${temp_drive}/temp"/*
   fi
 }
 
@@ -213,11 +222,11 @@ run_once() {
   local csv_file="$7"
 
   local plots_dir="${final_drive}/plots"
-  mkdir -p "${plots_dir}"
+  safe_mkdir "${plots_dir}"
 
   # Temp directory for OOM runs
   local temp_dir="${temp_drive}/temp"
-  mkdir -p "${temp_dir}"
+  safe_mkdir "${temp_dir}"
 
   # Memory argument
   local mem_arg=(-m "${memory_gb}")

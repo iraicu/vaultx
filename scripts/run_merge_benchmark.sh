@@ -64,7 +64,7 @@ if [[ ${#K_VALUES[@]} -eq 0 || ${#N_VALUES[@]} -eq 0 || ${#B_VALUES[@]} -eq 0 ]]
   exit 1
 fi
 
-mkdir -p "$CEPH_DIR" "$EXPERIMENTS_DIR"
+safe_mkdir "$CEPH_DIR" "$EXPERIMENTS_DIR"
 
 # Check for /usr/bin/time -v support
 HAS_TIME_V=false
@@ -77,6 +77,18 @@ fi
 drop_caches() {
   echo "$SUDO_PASS" | sudo -S sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null \
     || { echo "  Warning: cache drop failed, falling back to sync." >&2; sync; }
+}
+
+safe_mkdir() {
+  mkdir -p "$@" 2>/dev/null || echo "$SUDO_PASS" | sudo -S mkdir -p "$@"
+}
+
+safe_rm() {
+  rm -f "$@" 2>/dev/null || echo "$SUDO_PASS" | sudo -S rm -f "$@" 2>/dev/null || true
+}
+
+safe_mv() {
+  mv "$@" 2>/dev/null || echo "$SUDO_PASS" | sudo -S mv "$@"
 }
 
 drive_id() {
@@ -218,7 +230,7 @@ for k in "${K_VALUES[@]}"; do
           continue
         fi
 
-        mkdir -p "$final_drive"
+        safe_mkdir "$final_drive"
         log=$(mktemp --suffix=".merge.log")
         time_log=$(mktemp --suffix=".time.log")
 
@@ -287,10 +299,10 @@ for k in "${K_VALUES[@]}"; do
           merged_name=$(basename "$merged_file")
           if [[ -f "${CEPH_DIR}/${merged_name}" ]]; then
             echo "  '$merged_name' already in Ceph — deleting local copy."
-            rm -f "$merged_file"
+            safe_rm "$merged_file"
           else
             echo "  Moving '$merged_name' → $CEPH_DIR/"
-            mv "$merged_file" "$CEPH_DIR/"
+            safe_mv "$merged_file" "$CEPH_DIR/"
           fi
         else
           echo "  Warning: no merged file found in $final_drive" >&2

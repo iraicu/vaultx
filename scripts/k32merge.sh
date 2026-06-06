@@ -52,7 +52,7 @@ if [[ ${#TEMP_DRIVES[@]} -ne ${#FINAL_DRIVES[@]} ]]; then
   exit 1
 fi
 
-mkdir -p "$CEPH_DIR" "$CSV_DIR"
+safe_mkdir "$CEPH_DIR" "$CSV_DIR"
 
 echo "=== k32merge configuration ==="
 echo "  K              : $K"
@@ -76,11 +76,24 @@ drop_caches() {
     || { echo "  Warning: sudo cache drop failed, falling back to sync." >&2; sync; }
 }
 
+safe_mkdir() {
+  mkdir -p "$@" 2>/dev/null || echo "$SUDO_PASS" | sudo -S mkdir -p "$@"
+}
+
+safe_rm() {
+  rm -f "$@" 2>/dev/null || echo "$SUDO_PASS" | sudo -S rm -f "$@" 2>/dev/null || true
+}
+
+safe_mv() {
+  mv "$@" 2>/dev/null || echo "$SUDO_PASS" | sudo -S mv "$@"
+}
+
 # Remove all plot/tmp files
 clean_dir() {
   local dir="$1"
   if [[ -d "$dir" ]]; then
-    find "$dir" -maxdepth 1 -type f \( -name "*.plot" -o -name "*.tmp" -o -name "*.tmp2" \) -delete 2>/dev/null || true
+    find "$dir" -maxdepth 1 -type f \( -name "*.plot" -o -name "*.tmp" -o -name "*.tmp2" \) -delete 2>/dev/null || \
+      echo "$SUDO_PASS" | sudo -S find "$dir" -maxdepth 1 -type f \( -name "*.plot" -o -name "*.tmp" -o -name "*.tmp2" \) -delete 2>/dev/null || true
   fi
 }
 
@@ -120,7 +133,7 @@ for n in "${N_VALUES[@]}"; do
     echo ""
     echo "  [Pair $(( di+1 ))/${#TEMP_DRIVES[@]}]  temp=$temp_drive  final=$final_drive"
 
-    mkdir -p "$temp_drive" "$final_drive"
+    safe_mkdir "$temp_drive" "$final_drive"
     clean_dir "$temp_drive"
     clean_dir "$final_drive"
 
@@ -194,10 +207,10 @@ for n in "${N_VALUES[@]}"; do
       merged_name=$(basename "$merged_file")
       if [[ -f "$CEPH_DIR/$merged_name" ]]; then
         echo "  '$merged_name' already in Ceph — deleting local copy."
-        rm -f "$merged_file"
+        safe_rm "$merged_file"
       else
         echo "  Moving '$merged_name' → $CEPH_DIR/"
-        mv "$merged_file" "$CEPH_DIR/"
+        safe_mv "$merged_file" "$CEPH_DIR/"
       fi
     else
       echo "  Warning: merged file not found in $final_drive" >&2
