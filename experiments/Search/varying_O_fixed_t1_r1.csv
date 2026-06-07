@@ -1,3 +1,0 @@
-timestamp,binary,target_dir,k_values,n_files,total_file_size_bytes,total_file_size_gb,t,r,keep_open,difficulty,n_lookups,found,not_found,all_matches,open_close_ms,seek_ms,read_ms,hash_ms,avg_ms_per_lookup,total_wall_ms,total_s
-2026-05-07T06:33:52Z,./vaultx,/data-n/iraicu/tmp/,32,438,15049565405184,14016.0,1,1,False,3,10,4380,0,1120830,27.2428,2595.798,2724.0677,44.7684,5391.8768,53918.7684,53.918768
-2026-05-07T06:34:46Z,./vaultx,/data-n/iraicu/tmp/,32,438,15049565405184,14016.0,1,1,True,3,10,4380,0,1120126,1.3765,3162.4612,2110.571,86.8156,5361.2243,53612.2431,53.612243
