@@ -1,0 +1,8 @@
+N,K,temp_drive,final_drive,total_plot_time_s,read_time_s,write_time_s,merge_time_s,total_time_s,total_time_min,peak_memory_mb
+2,32,/nfs_hdd/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,484.510,16.380,221.630,359.280,843.790,14.0632,50445.23
+4,32,/nfs_hdd/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,1046.959,22.330,406.330,716.000,1762.959,29.3827,50445.28
+8,32,/nfs_hdd/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,1924.299,1109.000,31.270,1608.110,3532.409,58.8735,50445.24
+16,32,/nfs_hdd/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,3767.663,3469.060,4.380,4387.130,8154.793,135.9132,50445.41
+32,32,/nfs_hdd/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,8387.382,11907.770,7.460,13714.120,22101.502,368.3584,50445.44
+64,32,/nfs_hdd/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,15887.272,30889.620,1.620,34488.540,50375.812,839.5969,50445.58
+128,32,/nfs_hdd/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,31664.474,84806.850,10.000,92864.570,124529.044,2075.4841,50446.18

@@ -1,0 +1,4 @@
+thread_count_r,k,buckets_u,buckets_v,temp_dir,final_dir,total_plot_time(s),total_plot_time(min),min_power,max_power,avg_power,total_energy(W),total_energy(kW),peak_memory(MB)
+8,32,128,128,/nfs_nvme/sfatunmbi/temp,/nfs_nvme/sfatunmbi/plots,9718,161.9667,N/A,N/A,N/A,N/A,N/A,6236.47
+8,32,128,128,/nfs_hdd/sfatunmbi/temp,/nfs_hdd/sfatunmbi/plots,20059,334.3167,N/A,N/A,N/A,N/A,N/A,7235.41
+16,32,128,128,/nfs_nvme/sfatunmbi/temp,/nfs_nvme/sfatunmbi/plots,7278,121.3000,N/A,N/A,N/A,N/A,N/A,13011.61

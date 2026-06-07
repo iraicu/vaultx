@@ -1,0 +1,6 @@
+K,N,temp_drive,final_drive,total_plot_time_s,read_time_s,write_time_s,merge_time_s,total_time_s,total_time_min,peak_memory_mb
+27,32,/data-fast/sfatunmbi/temp/,/data-a/sfatunmbi/plots/,2105.711,17.670,21.870,138.150,2243.861,37.3977,2818.00
+28,16,/data-fast/sfatunmbi/temp/,/data-a/sfatunmbi/plots/,1972.820,17.380,23.140,138.640,2111.460,35.1910,4353.92
+29,8,/data-fast/sfatunmbi/temp/,/data-a/sfatunmbi/plots/,1856.808,16.580,23.010,138.590,1995.398,33.2566,7425.96
+30,4,/data-fast/sfatunmbi/temp/,/data-a/sfatunmbi/plots/,1763.924,18.730,26.660,140.120,1904.044,31.7341,13569.90
+31,2,/data-fast/sfatunmbi/temp/,/data-a/sfatunmbi/plots/,1713.428,24.370,24.400,146.620,1860.048,31.0008,25857.65

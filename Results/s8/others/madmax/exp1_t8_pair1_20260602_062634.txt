@@ -1,0 +1,81 @@
+==============================
+EXPERIMENT 1 / 14
+Date/Time   : Tue Jun  2 06:26:34 AM UTC 2026
+Threads (-r): 8
+Temp dir    : /nvme-raid0/sfatunmbi/temp
+Final dir   : /nvme-raid0/sfatunmbi/plots
+Buckets (-u): 128
+Buckets (-v): 128
+==============================
+
+Multi-threaded pipelined Chia k32 plotter - 5b5bd68
+Network Port: 8444 [chia]
+Final Directory: /nvme-raid0/sfatunmbi/plots/
+Stage Directory: /nvme-raid0/sfatunmbi/temp/
+Number of Plots: 1
+Crafting plot 1 out of 1 (2026/06/02 06:26:34)
+Process ID: 2549051
+Number of Threads: 8
+Number of Buckets P1:    2^7 (128)
+Number of Buckets P3+P4: 2^7 (128)
+Pool Puzzle Hash:  5f54c1140d6b3f79ea1dbf5b97fa69c95893ea423b1f6886b3d294f38ff1f7b3
+Farmer Public Key: 96854d93efe790622d1a872ae3055eee65b2908bc3a55c203e1b81021179d797dfa219303a173808d76f15ce38efc1fa
+Working Directory:   /nvme-raid0/sfatunmbi/temp/
+Working Directory 2: /nvme-raid0/sfatunmbi/temp/
+Plot Name: plot-k32-2026-06-02-06-26-0cadc213209f114fcb6e3b99bd6cacbfe4454f57fe24f74aa8a9166998ad5a04
+[P1] Table 1 took 19.9027 sec
+[P1] Table 2 took 199.815 sec, found 4295002095 matches
+[P1] Table 3 took 290.471 sec, found 4294954016 matches
+[P1] Table 4 took 395.268 sec, found 4294912624 matches
+[P1] Table 5 took 363.835 sec, found 4294852148 matches
+[P1] Table 6 took 345.12 sec, found 4294728539 matches
+[P1] Table 7 took 325.093 sec, found 4294368129 matches
+Phase 1 took 1939.53 sec
+[P2] max_table_size = 4295002095
+[P2] Table 7 scan took 12.7858 sec
+[P2] Table 7 rewrite took 58.3744 sec, dropped 0 entries (0 %)
+[P2] Table 6 scan took 68.0453 sec
+[P2] Table 6 rewrite took 79.698 sec, dropped 581364403 entries (13.5367 %)
+[P2] Table 5 scan took 65.2695 sec
+[P2] Table 5 rewrite took 76.9405 sec, dropped 762002584 entries (17.7422 %)
+[P2] Table 4 scan took 59.3426 sec
+[P2] Table 4 rewrite took 69.5729 sec, dropped 828848461 entries (19.2984 %)
+[P2] Table 3 scan took 60.8421 sec
+[P2] Table 3 rewrite took 68.5966 sec, dropped 855077056 entries (19.9089 %)
+[P2] Table 2 scan took 64.078 sec
+[P2] Table 2 rewrite took 71.5215 sec, dropped 865597468 entries (20.1536 %)
+Phase 2 took 797.88 sec
+Wrote plot header with 252 bytes
+[P3-1] Table 2 took 43.1796 sec, wrote 3429404627 right entries
+[P3-2] Table 2 took 54.8901 sec, wrote 3429404627 left entries, 3429404627 final
+[P3-1] Table 3 took 88.0346 sec, wrote 3439876960 right entries
+[P3-2] Table 3 took 56.2472 sec, wrote 3439876960 left entries, 3439876960 final
+[P3-1] Table 4 took 80.8776 sec, wrote 3466064163 right entries
+[P3-2] Table 4 took 54.1044 sec, wrote 3466064163 left entries, 3466064163 final
+[P3-1] Table 5 took 84.6275 sec, wrote 3532849564 right entries
+[P3-2] Table 5 took 55.247 sec, wrote 3532849564 left entries, 3532849564 final
+[P3-1] Table 6 took 92.9908 sec, wrote 3713364136 right entries
+[P3-2] Table 6 took 54.8599 sec, wrote 3713364136 left entries, 3713364136 final
+[P3-1] Table 7 took 46.7071 sec, wrote 4294368129 right entries
+[P3-2] Table 7 took 64.8839 sec, wrote 4294368129 left entries, 4294368129 final
+Phase 3 took 786.775 sec, wrote 21875927579 entries to final plot
+[P4] Starting to write C1 and C3 tables
+[P4] Finished writing C1 and C3 tables
+[P4] Writing C2 table
+[P4] Finished writing C2 table
+Phase 4 took 59.5018 sec, final plot size is 108827911403 bytes
+Total plot creation time was 3583.77 sec (59.7295 min)
+Started copy to /nvme-raid0/sfatunmbi/plots/plot-k32-2026-06-02-06-26-0cadc213209f114fcb6e3b99bd6cacbfe4454f57fe24f74aa8a9166998ad5a04.plot
+Renamed final plot to /nvme-raid0/sfatunmbi/plots/plot-k32-2026-06-02-06-26-0cadc213209f114fcb6e3b99bd6cacbfe4454f57fe24f74aa8a9166998ad5a04.plot
+
+==============================
+POWER CONSUMPTION SUMMARY
+==============================
+Experiment duration : 3584s (59m 44s)
+Readings collected  : 3269
+Min power           : 1014 W
+Max power           : 1511 W
+Avg power           : 1350 W
+Total energy used   : 1344.0000 Wh  /  1.344000 kWh
+Plot exit code      : 0
+==============================

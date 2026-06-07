@@ -1,0 +1,7 @@
+K,N,temp_drive,final_drive,total_plot_time_s,read_time_s,write_time_s,merge_time_s,total_time_s,total_time_min,peak_memory_mb
+27,512,/ssd-raid0/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,7879.249,224.060,636.790,2767.320,10646.569,177.4428,2821.41
+28,256,/ssd-raid0/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,6457.163,168.800,684.940,2858.980,9316.143,155.2690,4356.08
+29,128,/ssd-raid0/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,5525.684,151.850,687.600,2927.370,8453.054,140.8842,7427.72
+30,64,/ssd-raid0/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,5129.323,128.870,639.520,2617.730,7747.053,129.1175,13571.55
+31,32,/ssd-raid0/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,4964.918,120.800,674.280,2889.250,7854.168,130.9028,25859.34
+32,16,/ssd-raid0/sfatunmbi/temp/,/nfs_hdd/sfatunmbi/plots/,4963.065,131.120,710.460,3048.450,8011.515,133.5252,50435.43

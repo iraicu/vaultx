@@ -1,0 +1,81 @@
+==============================
+EXPERIMENT 6 / 14
+Date/Time   : Tue Jun  2 12:44:30 PM UTC 2026
+Threads (-r): 32
+Temp dir    : /ceph/sfatunmbi/temp
+Final dir   : /ceph/sfatunmbi/plots
+Buckets (-u): 128
+Buckets (-v): 128
+==============================
+
+Multi-threaded pipelined Chia k32 plotter - 5b5bd68
+Network Port: 8444 [chia]
+Final Directory: /ceph/sfatunmbi/plots/
+Stage Directory: /ceph/sfatunmbi/temp/
+Number of Plots: 1
+Crafting plot 1 out of 1 (2026/06/02 12:44:30)
+Process ID: 2741518
+Number of Threads: 32
+Number of Buckets P1:    2^7 (128)
+Number of Buckets P3+P4: 2^7 (128)
+Pool Puzzle Hash:  5f54c1140d6b3f79ea1dbf5b97fa69c95893ea423b1f6886b3d294f38ff1f7b3
+Farmer Public Key: 96854d93efe790622d1a872ae3055eee65b2908bc3a55c203e1b81021179d797dfa219303a173808d76f15ce38efc1fa
+Working Directory:   /ceph/sfatunmbi/temp/
+Working Directory 2: /ceph/sfatunmbi/temp/
+Plot Name: plot-k32-2026-06-02-12-44-58cf9bd4dd0eb4dbc162280552e58af0cc1edfdf502f38f783dd15825cddef38
+[P1] Table 1 took 7.32902 sec
+[P1] Table 2 took 99.4473 sec, found 4294844555 matches
+[P1] Table 3 took 173.231 sec, found 4294654716 matches
+[P1] Table 4 took 210.741 sec, found 4294334135 matches
+[P1] Table 5 took 156.035 sec, found 4293666973 matches
+[P1] Table 6 took 169.249 sec, found 4292319982 matches
+[P1] Table 7 took 118.26 sec, found 4289725878 matches
+Phase 1 took 934.623 sec
+[P2] max_table_size = 4294967296
+[P2] Table 7 scan took 10.5742 sec
+[P2] Table 7 rewrite took 60.1629 sec, dropped 0 entries (0 %)
+[P2] Table 6 scan took 22.426 sec
+[P2] Table 6 rewrite took 31.7738 sec, dropped 581587892 entries (13.5495 %)
+[P2] Table 5 scan took 20.8632 sec
+[P2] Table 5 rewrite took 35.0129 sec, dropped 762350033 entries (17.7552 %)
+[P2] Table 4 scan took 20.8602 sec
+[P2] Table 4 rewrite took 44.5005 sec, dropped 829149530 entries (19.308 %)
+[P2] Table 3 scan took 437.093 sec
+[P2] Table 3 rewrite took 193.18 sec, dropped 855288452 entries (19.9152 %)
+[P2] Table 2 scan took 175.226 sec
+[P2] Table 2 rewrite took 213.858 sec, dropped 865699863 entries (20.1567 %)
+Phase 2 took 1267.21 sec
+Wrote plot header with 252 bytes
+[P3-1] Table 2 took 181.972 sec, wrote 3429144692 right entries
+[P3-2] Table 2 took 34.9766 sec, wrote 3429144692 left entries, 3429144692 final
+[P3-1] Table 3 took 173.697 sec, wrote 3439366264 right entries
+[P3-2] Table 3 took 32.9509 sec, wrote 3439366264 left entries, 3439366264 final
+[P3-1] Table 4 took 174.7 sec, wrote 3465184605 right entries
+[P3-2] Table 4 took 102.382 sec, wrote 3465184605 left entries, 3465184605 final
+[P3-1] Table 5 took 137.948 sec, wrote 3531316940 right entries
+[P3-2] Table 5 took 96.8968 sec, wrote 3531316940 left entries, 3531316940 final
+[P3-1] Table 6 took 149.708 sec, wrote 3710732090 right entries
+[P3-2] Table 6 took 106.256 sec, wrote 3710732090 left entries, 3710732090 final
+[P3-1] Table 7 took 357.483 sec, wrote 4289725878 right entries
+[P3-2] Table 7 took 116.545 sec, wrote 4289725878 left entries, 4289725878 final
+Phase 3 took 1666.68 sec, wrote 21865470469 entries to final plot
+[P4] Starting to write C1 and C3 tables
+[P4] Finished writing C1 and C3 tables
+[P4] Writing C2 table
+[P4] Finished writing C2 table
+Phase 4 took 122.189 sec, final plot size is 108764782494 bytes
+Total plot creation time was 3991.03 sec (66.5171 min)
+Started copy to /ceph/sfatunmbi/plots/plot-k32-2026-06-02-12-44-58cf9bd4dd0eb4dbc162280552e58af0cc1edfdf502f38f783dd15825cddef38.plot
+Renamed final plot to /ceph/sfatunmbi/plots/plot-k32-2026-06-02-12-44-58cf9bd4dd0eb4dbc162280552e58af0cc1edfdf502f38f783dd15825cddef38.plot
+
+==============================
+POWER CONSUMPTION SUMMARY
+==============================
+Experiment duration : 3992s (66m 32s)
+Readings collected  : 3677
+Min power           : 918 W
+Max power           : 1638 W
+Avg power           : 1337 W
+Total energy used   : 1482.5844 Wh  /  1.482584 kWh
+Plot exit code      : 0
+==============================
