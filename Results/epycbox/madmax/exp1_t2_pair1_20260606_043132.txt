@@ -1,0 +1,24 @@
+==============================
+EXPERIMENT 1 / 14
+Date/Time   : Sat Jun  6 04:31:32 UTC 2026
+Threads (-r): 2
+Temp dir    : /nvme-raid0/sfatunmbi/temp
+Final dir   : /nvme-raid0/sfatunmbi/plots
+Buckets (-u): 128
+Buckets (-v): 128
+==============================
+
+Failed to write to tmpdir directory: '/nvme-raid0/sfatunmbi/temp/'
+
+==============================
+POWER CONSUMPTION SUMMARY
+==============================
+Experiment duration : 0s (0m 0s)
+Readings collected  : 0
+Min power           : N/A W
+Max power           : N/A W
+Avg power           : N/A W
+Total energy used   : N/A Wh  /  N/A kWh
+Peak memory (RSS)   : 3.05 MB
+Plot exit code      : 254
+==============================

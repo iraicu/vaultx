@@ -1,0 +1,11 @@
+==============================
+EXPERIMENT 2 / 14
+Date/Time   : Sat Jun  6 04:31:34 UTC 2026
+Threads (-r): 2
+Temp dir    : /ceph/sfatunmbi/temp
+Final dir   : /ceph/sfatunmbi/plots
+Buckets (-u): 128
+Buckets (-v): 128
+==============================
+
+Failed to write to tmpdir directory: '/ceph/sfatunmbi/temp/'

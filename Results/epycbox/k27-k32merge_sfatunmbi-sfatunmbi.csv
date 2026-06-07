@@ -1,0 +1,6 @@
+K,N,temp_drive,final_drive,total_plot_time_s,read_time_s,write_time_s,merge_time_s,total_time_s,total_time_min,peak_memory_mb
+27,32,/sfatunmbi,/sfatunmbi,349.049,1.600,6.280,54.690,403.739,6.7290,2820.65
+28,16,/sfatunmbi,/sfatunmbi,293.623,1.880,4.930,53.840,347.463,5.7911,4356.77
+29,8,/sfatunmbi,/sfatunmbi,258.170,3.000,3.470,55.190,313.360,5.2227,7428.76
+30,4,/sfatunmbi,/sfatunmbi,224.800,4.170,2.440,49.950,274.750,4.5792,13573.19
+31,2,/sfatunmbi,/sfatunmbi,234.658,7.060,2.000,56.240,290.898,4.8483,25861.68
