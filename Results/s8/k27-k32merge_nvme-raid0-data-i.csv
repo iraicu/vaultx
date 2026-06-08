@@ -1,2 +1,6 @@
 K,N,temp_drive,final_drive,total_plot_time_s,read_time_s,write_time_s,merge_time_s,total_time_s,total_time_min,peak_memory_mb
 27,32,/nvme-raid0/sfatunmbi/temp/,/data-i/sfatunmbi/plots/,259.464,2.130,247.220,293.560,553.024,9.2171,2824.99
+28,16,/nvme-raid0/sfatunmbi/temp/,/data-i/sfatunmbi/plots/,163.049,2.380,244.900,298.270,461.319,7.6886,4360.84
+29,8,/nvme-raid0/sfatunmbi/temp/,/data-i/sfatunmbi/plots/,126.600,3.170,245.590,298.240,424.840,7.0807,7432.95
+30,4,/nvme-raid0/sfatunmbi/temp/,/data-i/sfatunmbi/plots/,117.937,5.150,245.900,304.980,422.917,7.0486,13578.29
+31,2,/nvme-raid0/sfatunmbi/temp/,/data-i/sfatunmbi/plots/,109.675,9.210,246.610,305.100,414.775,6.9129,25867.89
