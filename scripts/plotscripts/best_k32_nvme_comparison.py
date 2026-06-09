@@ -26,18 +26,18 @@ CHIA_DATA = [
     ("Bladebit\n(epycbox)", 17.92, "epycbox", 128, 192),
 ]
 
-# VaultX – best k32 time on NVME (minutes), from task description
+# VaultX – best k32 time on NVME (minutes), sorted by thread count descending
 VAULTX_DATA = [
     # (machine_display, time_min, cores, mem_gb, is_arm)
     ("s8",        1.83,  384, 770,  False),
+    ("thunderx2", 5.18,  224, 118,  True),
     ("epycbox",   3.54,  128, 192,  False),
     ("gpubox",    2.87,   96, 384,  False),
-    ("nvmebox",   3.27,   64, 187,  False),
-    ("torus",     6.39,   32,  62,  False),
-    ("athena",    5.82,   48,  64,  False),
-    ("fpganode2", 14.22,  16,  32,  False),
     ("thunderx1", 6.19,   96,  64,  True),
-    ("thunderx2", 5.18,  224, 118,  True),
+    ("nvmebox",   3.27,   64, 187,  False),
+    ("athena",    5.82,   48,  64,  False),
+    ("torus",     6.39,   32,  64,  False),
+    ("fpganode2", 14.22,  16,  32,  False),
     ("opi5",     33.3,    8,  32,  True),
     ("rpi5",     41.32,   4,   8,  True),
 ]
@@ -100,18 +100,24 @@ def main():
                     ha="right", va="center", fontsize=8, color="black",
                     fontweight="bold", rotation=90, zorder=6)
         else:
-            # Time label just above bar
             offset = Y_CAP * 0.012
-            ax.text(x[i], t + offset, f"{t:.2f}m",
-                    ha="center", va="bottom", fontsize=7, color="black", zorder=6)
+            if t < 10:
+                # Bar too short for inside labels — show all info above
+                ax.text(x[i], t + offset, f"{t:.2f}m\n{cores}T / {mem}GB",
+                        ha="center", va="bottom", fontsize=7, color="black",
+                        zorder=6, linespacing=1.4)
+            else:
+                # Time label just above bar
+                ax.text(x[i], t + offset, f"{t:.2f}m",
+                        ha="center", va="bottom", fontsize=7, color="black", zorder=6)
 
-            # Machine/spec annotation inside the bar if tall enough
-            inside_thresh = Y_CAP * 0.12
-            if t >= inside_thresh:
-                ann_text = f"{mach}\n{mem}GB/{cores}T"
-                ax.text(x[i], t * 0.5, ann_text,
-                        ha="center", va="center", fontsize=7.5,
-                        color="white", fontweight="bold", zorder=5)
+                # Machine/spec annotation inside the bar if tall enough
+                inside_thresh = Y_CAP * 0.12
+                if t >= inside_thresh:
+                    ann_text = f"{mach}\n{mem}GB/{cores}T"
+                    ax.text(x[i], t * 0.5, ann_text,
+                            ha="center", va="center", fontsize=7.5,
+                            color="white", fontweight="bold", zorder=5)
 
     # Dotted separator between Chia and VaultX
     sep_x = sep_after + 0.5
