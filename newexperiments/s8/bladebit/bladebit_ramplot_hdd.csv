@@ -1,3 +1,4 @@
 run,threads,plot_out_dir,total_plot_time(s),total_plot_time(min),min_power(W),max_power(W),avg_power(W),total_energy(Wh),total_energy(kWh),peak_memory(MB),exit_code
 1,64,/data-i/sfatunmbi/plots,1482,24.7000,894,1634,1285,528.9917,0.528992,426024.75,0
 2,128,/data-i/sfatunmbi/plots,1459,24.3167,829,1795,1288,521.9978,0.521998,426030.11,0
+3,256,/data-i/sfatunmbi/plots,2517.83,41.96,919,2071,1642,1172.6617,1.1726617,426028.14,0

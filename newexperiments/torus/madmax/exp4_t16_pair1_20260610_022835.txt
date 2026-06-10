@@ -1,0 +1,43 @@
+==============================
+EXPERIMENT 4 / 5
+Date/Time   : Wed Jun 10 02:28:35 UTC 2026
+Threads (-r): 16
+Temp dir    : /nfs_hdd/sfatunmbi/temp
+Final dir   : /nfs_hdd/sfatunmbi/plots
+Buckets (-u): 128
+Buckets (-v): 128
+==============================
+
+Multi-threaded pipelined Chia k32 plotter - 5b5bd68
+Network Port: 8444 [chia]
+Final Directory: /nfs_hdd/sfatunmbi/plots/
+Stage Directory: /nfs_hdd/sfatunmbi/temp/
+Number of Plots: 1
+Crafting plot 1 out of 1 (2026/06/10 02:28:42)
+Process ID: 3679027
+Number of Threads: 16
+Number of Buckets P1:    2^7 (128)
+Number of Buckets P3+P4: 2^7 (128)
+Pool Puzzle Hash:  5f54c1140d6b3f79ea1dbf5b97fa69c95893ea423b1f6886b3d294f38ff1f7b3
+Farmer Public Key: 96854d93efe790622d1a872ae3055eee65b2908bc3a55c203e1b81021179d797dfa219303a173808d76f15ce38efc1fa
+Working Directory:   /nfs_hdd/sfatunmbi/temp/
+Working Directory 2: /nfs_hdd/sfatunmbi/temp/
+Plot Name: plot-k32-2026-06-10-02-28-62cce41c2ad0faa320e26e4d2b75632415a674a0a124d755f93b243db38563b4
+[P1] Table 1 took 253.118 sec
+[P1] Table 2 took 753.288 sec, found 4294991752 matches
+[P1] Table 3 took 1394.51 sec, found 4294921702 matches
+[P1] Table 4 took 1810.28 sec, found 4294858032 matches
+[P1] Table 5 took 1704.82 sec, found 4294656662 matches
+
+==============================
+POWER CONSUMPTION SUMMARY
+==============================
+Experiment duration : 16701s (278m 21s)
+Readings collected  : 15399
+Min power           : 78 W
+Max power           : 191 W
+Avg power           : 105 W
+Total energy used   : 487.1125 Wh  /  0.487113 kWh
+Peak memory (RSS)   : 13628.84 MB
+Plot exit code      : 0
+==============================

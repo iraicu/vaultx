@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-Task 3: Best k32 plotting time on NVME for each machine.
+Best k32 plotting time on NVME (or fastest local drive) for each machine.
 Wide bar chart: Chia plotters (red, left) | VaultX x86 (blue) | VaultX ARM (steel-blue, right).
-Labels inside each bar: machine name, core count, available RAM.
+
+Bar annotations show: machine name, peak memory used for that plot, threads used.
+Bars exceeding Y_CAP are capped, hatched, and the real time is written vertically.
 """
 
 import os
@@ -12,126 +14,112 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 
-SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
-IMAGES_DIR  = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+IMAGES_DIR = os.path.join(SCRIPT_DIR, "..", "..", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
-# ── Static data (update values here if measurements change) ──────────────────
-# Chia plotters – best k32 time on NVME (minutes)
-# ChiaPOS on s8 is missing.
+# ── Data ─────────────────────────────────────────────────────────────────────
+# Chia plotters – best k32 time on NVME / fastest drive
+# Format: (label, time_min, machine_display, threads_used, peak_mem_mb)
 CHIA_DATA = [
-    # (label, time_min, machine_display, cores, mem_gb)
-    ("ChiaPOS\n(s8)",       506.0, "s8",      384, 770),
-    ("Madmax\n(s8)",         27.85, "s8",      384, 770),
-    ("Bladebit\n(epycbox)", 17.92, "epycbox", 128, 192),
+    # ChiaPOS ──────────────────────────────────────────────────────────────
+    ("ChiaPOS\n(s8)",       379.57, "s8",      192,   4288.0),  # nvme-raid0, -r 192
+    ("ChiaPOS\n(opi5)",     630.00, "opi5",      8,   3500.0),  # data-fast,  -r 8
+    # Madmax ───────────────────────────────────────────────────────────────
+    ("Madmax\n(s8)",         27.85, "s8",       64,  42329.0),  # nvme-raid0, 64T
+    ("Madmax\n(torus)",      97.33, "torus",    32,  25231.0),  # ssd-raid0,  32T
+    ("Madmax\n(epycbox)",    54.45, "epycbox",  64,  42329.0),  # nfs_nvme,   64T
+    # Bladebit ─────────────────────────────────────────────────────────────
+    ("Bladebit\n(s8)",        9.42, "s8",      128, 426031.0),  # nvme-raid0 ramplot, 128T
 ]
 
-# VaultX – best k32 time on NVME (minutes), sorted by thread count descending
+# VaultX – best k32 time on NVME / fastest drive
+# Format: (machine_display, time_min, threads_used, peak_mem_mb, is_arm)
 VAULTX_DATA = [
-    # (machine_display, time_min, cores, mem_gb, is_arm)
-    ("s8",        1.83,  384, 770,  False),
-    ("thunderx2", 5.18,  224, 118,  True),
-    ("epycbox",   3.54,  128, 192,  False),
-    ("gpubox",    2.87,   96, 384,  False),
-    ("thunderx1", 6.19,   96,  64,  True),
-    ("nvmebox",   3.27,   64, 187,  False),
-    ("athena",    5.82,   48,  64,  False),
-    ("torus",     6.39,   32,  64,  False),
-    ("fpganode2", 14.22,  16,  32,  False),
-    ("opi5",     33.3,    8,  32,  True),
-    ("rpi5",     41.32,   4,   8,  True),
+    ("s8",        1.77,  384, 50445.2, False),   # nvme-raid0
+    ("thunderx2", 5.12,  224, 50240.8, True),    # nfs_nvme
+    ("epycbox",   3.54,  128, 50438.1, False),   # nfs_nvme
+    ("gpubox",    2.88,   96, 50404.5, False),   # nfs_nvme
+    ("thunderx1", 6.35,   96, 50424.0, True),    # nfs_nvme
+    ("nvmebox",   2.86,   64, 50436.4, False),   # data-fast
+    ("athena",    5.76,   48, 50427.8, False),   # nvme-raid0
+    ("torus",     6.36,   32, 50435.3, False),   # nfs_nvme
+    ("fpganode2", 11.28,  16, 25536.7, False),   # ssd-raid0
+    ("opi5",     34.25,   8,  25537.7, True),    # data-fast
+    ("rpi5",     41.32,   4,   6865.9, True),    # data-fast (k27-k32 CP4)
 ]
 
-# ── Colors ───────────────────────────────────────────────────────────────────
-CHIA_COLOR   = "#D62728"       # red
-VAULTX_COLOR = "#1F77B4"       # blue
-ARM_COLOR    = "#5A9EC9"       # medium blue for ARM machines (visible labels)
+# ── Colours ──────────────────────────────────────────────────────────────────
+CHIA_COLOR   = "#D62728"
+VAULTX_COLOR = "#1F77B4"
+ARM_COLOR    = "#5A9EC9"
 SEP_COLOR    = "#888888"
 
 ARM_MACHINES = {"thunderx1", "thunderx2", "opi5", "rpi5"}
 
-
-def bar_label(machine: str, cores: int, mem_gb: int, time_min: float,
-              max_time: float, ax_height: float) -> tuple[str, float, str]:
-    """Return (text, y_position, va) for the annotation inside/outside the bar."""
-    label_text = f"{machine}\n{cores}T / {mem_gb}GB"
-    inside_threshold = max_time * 0.12  # bars shorter than this get label above
-    if time_min >= inside_threshold:
-        return label_text, time_min * 0.5, "center"
-    else:
-        return label_text, time_min + max_time * 0.01, "bottom"
-
-
-Y_CAP = 100   # y-axis maximum; bars exceeding this are drawn at cap with bold label
+Y_CAP = 100  # bars exceeding this are capped/hatched
 
 
 def main():
     entries = []
-    for lbl, t, mach, cores, mem in CHIA_DATA:
-        entries.append(("chia", lbl, t, CHIA_COLOR, mach, cores, mem))
+    for lbl, t, mach, threads, mem_mb in CHIA_DATA:
+        entries.append(("chia", lbl, t, CHIA_COLOR, mach, threads, mem_mb))
 
-    sep_after = len(entries) - 1   # separator goes after last chia bar
+    sep_after = len(entries) - 1   # separator after last chia bar
 
-    for mach, t, cores, mem, is_arm in VAULTX_DATA:
+    for mach, t, threads, mem_mb, is_arm in VAULTX_DATA:
         color = ARM_COLOR if is_arm else VAULTX_COLOR
-        entries.append(("vaultx", mach, t, color, mach, cores, mem))
+        entries.append(("vaultx", mach, t, color, mach, threads, mem_mb))
 
     n = len(entries)
     x = np.arange(n)
 
-    fig, ax = plt.subplots(figsize=(18, 7))
+    fig, ax = plt.subplots(figsize=(20, 7))
 
-    for i, (kind, lbl, t, color, mach, cores, mem) in enumerate(entries):
-        capped  = t > Y_CAP
-        bar_h   = Y_CAP if capped else t
+    for i, (kind, lbl, t, color, mach, threads, mem_mb) in enumerate(entries):
+        capped = t > Y_CAP
+        bar_h  = Y_CAP if capped else t
         ax.bar(x[i], bar_h, color=color, width=0.7, zorder=3,
                edgecolor="white", linewidth=0.5)
 
         if capped:
-            # Hatching to signal "bar continues beyond"
             ax.bar(x[i], bar_h, color="none", width=0.7, zorder=4,
                    edgecolor="white", linewidth=0.5, hatch="////")
-            # White time label centred inside the bar
             ax.text(x[i], bar_h * 0.5, f"{t:.0f} mins",
                     ha="center", va="center", fontsize=9, color="white",
                     fontweight="bold", zorder=5)
-            # Vertical label on the left side of the bar (written upwards)
             ax.text(x[i] - 0.40, bar_h * 0.5, f"{t:.0f} mins (capped)",
                     ha="right", va="center", fontsize=8, color="black",
                     fontweight="bold", rotation=90, zorder=6)
         else:
             offset = Y_CAP * 0.012
+            mem_gb = mem_mb / 1024.0
             if t < 10:
-                # Bar too short for inside labels — show all info above
-                ax.text(x[i], t + offset, f"{t:.2f}m\n{cores}T / {mem}GB",
+                ax.text(x[i], t + offset, f"{t:.2f}m\n{threads}T / {mem_gb:.0f}GB",
                         ha="center", va="bottom", fontsize=7, color="black",
                         zorder=6, linespacing=1.4)
             else:
-                # Time label just above bar
                 ax.text(x[i], t + offset, f"{t:.2f}m",
                         ha="center", va="bottom", fontsize=7, color="black", zorder=6)
 
-                # Machine/spec annotation inside the bar if tall enough
                 inside_thresh = Y_CAP * 0.12
                 if t >= inside_thresh:
-                    ann_text = f"{mach}\n{mem}GB/{cores}T"
+                    ann_text = f"{mach}\n{mem_gb:.0f}GB/{threads}T"
                     ax.text(x[i], t * 0.5, ann_text,
                             ha="center", va="center", fontsize=7.5,
                             color="white", fontweight="bold", zorder=5)
 
-    # Dotted separator between Chia and VaultX
+    # Separator between Chia and VaultX sections
     sep_x = sep_after + 0.5
     ax.axvline(sep_x, color=SEP_COLOR, linestyle=":", linewidth=1.5, zorder=4)
     ax.text(sep_x, Y_CAP * 0.97, "  Chia  ←|→  VaultX  ",
             ha="center", va="top", fontsize=8, color=SEP_COLOR, style="italic")
 
-    # x-tick labels
     xtick_labels = [lbl if kind == "chia" else mach
-                    for kind, lbl, t, color, mach, cores, mem in entries]
+                    for kind, lbl, t, color, mach, threads, mem_mb in entries]
     ax.set_xticks(x)
     ax.set_xticklabels(xtick_labels, fontsize=8, rotation=15, ha="right")
 
-    # Fixed y-axis 0–100
     yticks = np.arange(0, Y_CAP + 10, 10)
     ax.set_yticks(yticks)
     ax.set_ylim(0, Y_CAP)

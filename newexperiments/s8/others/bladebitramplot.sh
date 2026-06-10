@@ -132,7 +132,7 @@ for N_THREADS in "${THREAD_COUNTS[@]}"; do
     # --- Pre-run cache clear ---
     echo "  [pre] Dropping caches before run..."
     sync
-    echo "$SUDO_PASS" | sudo -S sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+    echo "$SUDO_PASS" | sudo -S sh -c 'echo 1 > /proc/sys/vm/drop_caches'
     echo "  [pre] Cache cleared."
 
     # --- Start power monitor ---
@@ -250,7 +250,7 @@ for N_THREADS in "${THREAD_COUNTS[@]}"; do
     # --- Post-run cache clear ---
     echo "  [post] Dropping caches after run..."
     sync
-    echo "$SUDO_PASS" | sudo -S sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+    echo "$SUDO_PASS" | sudo -S sh -c 'echo 1 > /proc/sys/vm/drop_caches'
     echo "  [post] Cache cleared."
 
     echo "  [done] Run $RUN_NUM complete. Log: $LOG_FILE"

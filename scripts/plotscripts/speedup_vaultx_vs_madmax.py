@@ -19,8 +19,8 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
-RESULTS_DIR = os.path.join(SCRIPT_DIR, "..", "..", "Results")
-IMAGES_DIR  = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
+RESULTS_DIR = os.path.join(SCRIPT_DIR, "..", "..", "newexperiments")
+IMAGES_DIR  = os.path.join(SCRIPT_DIR, "..", "..", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
 VAULTX_NVME_CSV = "s8/varying_CP_k32_nvme-raid0_IM.csv"

@@ -1,0 +1,6 @@
+thread_count_r,k,buckets_u,buckets_v,temp_dir,final_dir,total_plot_time(s),total_plot_time(min),min_power,max_power,avg_power,total_energy(W),total_energy(kW),peak_memory(MB)
+2,32,128,128,/ssd-raid0/sfatunmbi/temp,/ssd-raid0/sfatunmbi/plots,7740,129.0000,79,169,145,311.7500,0.311750,5122.32
+4,32,128,128,/ssd-raid0/sfatunmbi/temp,/ssd-raid0/sfatunmbi/plots,6578,109.6333,97,180,148,270.4289,0.270429,5516.28
+8,32,128,128,/ssd-raid0/sfatunmbi/temp,/ssd-raid0/sfatunmbi/plots,6295,104.9167,99,192,147,257.0458,0.257046,6303.53
+16,32,128,128,/ssd-raid0/sfatunmbi/temp,/ssd-raid0/sfatunmbi/plots,6032,100.5333,104,205,148,247.9822,0.247982,13840.45
+32,32,128,128,/ssd-raid0/sfatunmbi/temp,/ssd-raid0/sfatunmbi/plots,5840,97.3333,94,205,149,241.7111,0.241711,25231.00

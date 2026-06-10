@@ -166,3 +166,4 @@ Finished Phase 2 in 1542.42 seconds ( 25.7 minutes ).
 Running Phase 3
 Compressing tables 1 and 2.
 Step 1 Allocated 2961.44 / 3447.82 MiB
+Step 2 using 1.68 / 3.37 GiB.
