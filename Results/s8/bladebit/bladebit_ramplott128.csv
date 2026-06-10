@@ -1,0 +1,2 @@
+threads,plot_out_dir,total_plot_time(s),total_plot_time(min),min_power(W),max_power(W),avg_power(W),total_energy(Wh),total_energy(kWh),peak_memory(MB)
+128,/nvme-raid0/sfatunmbi/plots,560,9.3333,1082,1763,1584,246.4000,0.246400,426028.28

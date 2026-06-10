@@ -1,0 +1,168 @@
+==============================
+EXPERIMENT 1 / 10
+Date/Time      : Tue Jun  9 04:03:46 UTC 2026
+Cache size     : 4G
+Threads (f1/fp): 128
+Temp dir       : /data-m/sfatunmbi/temp
+Final dir      : /data-m/sfatunmbi/plots
+K              : 32
+==============================
+
+
+Bladebit Chia Plotter
+Version      : 3.1.1-dev
+Git Commit   : 4a8566fdd4151f7823a27750fd6de1b34235c512
+Compiled With: gcc 11.4.0
+
+[Global Plotting Config]
+ Will create 1 plots.
+ Thread count          : 128
+ Warm start enabled    : false
+ NUMA disabled         : false
+ CPU affinity disabled : false
+ Farmer public key     : 96854d93efe790622d1a872ae3055eee65b2908bc3a55c203e1b81021179d797dfa219303a173808d76f15ce38efc1fa
+ Pool contract address : xch1ta2vz9qddvlhn6sahade07nfe9vf86jz8v0k3p4n62208rl377esytyjx3
+ Benchmark mode        : disabled
+
+[Bladebit Disk Plotter]
+ Heap size      : 3.37 GiB ( 3447.82 MiB )
+ Cache size     : 4.00 GiB ( 4096.00 MiB )
+ Bucket count   : 256
+ Alternating I/O: true
+ F1  threads    : 128
+ FP  threads    : 128
+ C   threads    : 128
+ P2  threads    : 128
+ P3  threads    : 128
+ I/O threads    : 1
+ Temp1 block sz : 4096
+ Temp2 block sz : 4096
+ Temp1 path     : /data-m/sfatunmbi/temp
+ Temp2 path     : /data-m/sfatunmbi/temp
+ I/O metrices enabled.
+ Allocating memory
+
+Generating plot 1 / 1: e1bdd53f4e894e37066b40a28e542ac5b3829ef3942ac4f1457d596f04eef3ed
+Plot temporary file: /data-m/sfatunmbi/plots/plot-k32-2026-06-09-04-03-e1bdd53f4e894e37066b40a28e542ac5b3829ef3942ac4f1457d596f04eef3ed.plot.tmp
+
+Started plot.
+Running Phase 1
+Table 1: F1 generation
+Generating f1...
+Finished f1 generation in 5201.85 seconds. 
+Table 1 I/O wait time: 5201.85 seconds.
+ Table 1 Disk Write Metrics:
+  Average write throughput 6.40 MiB ( 6.71 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 33278.48 MiB ( 34895.01 MB ) or 32.50 GiB ( 34.90 GB ).
+  Total write commands: 131072.
+
+Table 2
+ Sorting      : Completed in 12.38 seconds.
+ Distribution : Completed in 8210.45 seconds.
+ Matching     : Completed in 6.77 seconds.
+ Fx           : Completed in 9.05 seconds.
+Completed table 2 in 9410.60 seconds with 4294843102 entries.
+Table 2 I/O wait time: 8728.31 seconds.
+ Table 2 I/O Metrics:
+  Average read throughput 33.74 MiB ( 35.37 MB ) or 0.03 GiB ( 0.04 GB ).
+  Total size read: 33278.48 MiB ( 34895.01 MB ) or 32.50 GiB ( 34.90 GB ).
+  Total read commands: 131072.
+  Average write throughput 11.89 MiB ( 12.46 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 100091.01 MiB ( 104953.03 MB ) or 97.75 GiB ( 104.95 GB ).
+  Total write commands: 197121.
+
+Table 3
+ Sorting      : Completed in 18.16 seconds.
+ Distribution : Completed in 8300.16 seconds.
+ Matching     : Completed in 6.60 seconds.
+ Fx           : Completed in 7.96 seconds.
+Completed table 3 in 12067.90 seconds with 4294696442 entries.
+Table 3 I/O wait time: 8606.29 seconds.
+ Table 3 I/O Metrics:
+  Average read throughput 89.45 MiB ( 93.79 MB ) or 0.09 GiB ( 0.09 GB ).
+  Total size read: 66299.51 MiB ( 69520.08 MB ) or 64.75 GiB ( 69.52 GB ).
+  Total read commands: 196608.
+  Average write throughput 12.82 MiB ( 13.44 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 145141.21 MiB ( 152191.59 MB ) or 141.74 GiB ( 152.19 GB ).
+  Total write commands: 262402.
+
+Table 4
+ Sorting      : Completed in 18.52 seconds.
+ Distribution : Completed in 8356.67 seconds.
+ Matching     : Completed in 6.87 seconds.
+ Fx           : Completed in 8.65 seconds.
+Completed table 4 in 13187.45 seconds with 4294359306 entries.
+Table 4 I/O wait time: 9322.06 seconds.
+ Table 4 I/O Metrics:
+  Average read throughput 54.31 MiB ( 56.94 MB ) or 0.05 GiB ( 0.06 GB ).
+  Total size read: 99063.13 MiB ( 103875.22 MB ) or 96.74 GiB ( 103.88 GB ).
+  Total read commands: 196608.
+  Average write throughput 12.78 MiB ( 13.40 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 145130.77 MiB ( 152180.65 MB ) or 141.73 GiB ( 152.18 GB ).
+  Total write commands: 262402.
+
+Table 5
+ Sorting      : Completed in 19.16 seconds.
+ Distribution : Completed in 8261.23 seconds.
+ Matching     : Completed in 6.89 seconds.
+ Fx           : Completed in 8.41 seconds.
+Completed table 5 in 12028.30 seconds with 4293692726 entries.
+Table 5 I/O wait time: 8571.03 seconds.
+ Table 5 I/O Metrics:
+  Average read throughput 133.18 MiB ( 139.65 MB ) or 0.13 GiB ( 0.14 GB ).
+  Total size read: 99055.04 MiB ( 103866.74 MB ) or 96.73 GiB ( 103.87 GB ).
+  Total read commands: 196608.
+  Average write throughput 12.87 MiB ( 13.49 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 145110.62 MiB ( 152159.52 MB ) or 141.71 GiB ( 152.16 GB ).
+  Total write commands: 262402.
+
+Table 6
+ Sorting      : Completed in 18.49 seconds.
+ Distribution : Completed in 7962.63 seconds.
+ Matching     : Completed in 6.88 seconds.
+ Fx           : Completed in 8.42 seconds.
+Completed table 6 in 12795.20 seconds with 4292331147 entries.
+Table 6 I/O wait time: 8927.96 seconds.
+ Table 6 I/O Metrics:
+  Average read throughput 54.81 MiB ( 57.48 MB ) or 0.05 GiB ( 0.06 GB ).
+  Total size read: 99039.85 MiB ( 103850.81 MB ) or 96.72 GiB ( 103.85 GB ).
+  Total read commands: 196608.
+  Average write throughput 10.23 MiB ( 10.72 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 112321.97 MiB ( 117778.12 MB ) or 109.69 GiB ( 117.78 GB ).
+  Total write commands: 262402.
+
+Table 7
+ Sorting      : Completed in 18.08 seconds.
+ Distribution : Completed in 5183.91 seconds.
+ Matching     : Completed in 6.65 seconds.
+ Fx           : Completed in 7.61 seconds.
+Completed table 7 in 8893.00 seconds with 4289673338 entries.
+Table 7 I/O wait time: 5482.40 seconds.
+ Table 7 I/O Metrics:
+  Average read throughput 89.73 MiB ( 94.08 MB ) or 0.09 GiB ( 0.09 GB ).
+  Total size read: 66261.16 MiB ( 69479.87 MB ) or 64.71 GiB ( 69.48 GB ).
+  Total read commands: 196608.
+  Average write throughput 9.73 MiB ( 10.20 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 79279.18 MiB ( 83130.24 MB ) or 77.42 GiB ( 83.13 GB ).
+  Total write commands: 196866.
+
+Sorting F7 & Writing C Tables
+Completed F7 tables in 3804.37 seconds.
+F7/C Tables I/O wait time: 3767.24 seconds.
+Finished Phase 1 in 77388.88 seconds ( 1289.8 minutes ).
+Running Phase 2
+Finished marking table 6 in 117.25 seconds.
+Table 6 I/O wait time: 0.00 seconds.
+Finished marking table 5 in 353.16 seconds.
+Table 5 I/O wait time: 0.00 seconds.
+Finished marking table 4 in 357.19 seconds.
+Table 4 I/O wait time: 0.00 seconds.
+Finished marking table 3 in 357.78 seconds.
+Table 3 I/O wait time: 0.00 seconds.
+Finished marking table 2 in 353.42 seconds.
+Table 2 I/O wait time: 0.00 seconds.
+ Phase 2 Total I/O wait time: 0.00 seconds.
+Finished Phase 2 in 1542.42 seconds ( 25.7 minutes ).
+Running Phase 3
+Compressing tables 1 and 2.
+Step 1 Allocated 2961.44 / 3447.82 MiB

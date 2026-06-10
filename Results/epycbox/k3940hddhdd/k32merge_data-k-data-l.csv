@@ -1,3 +1,0 @@
-N,K,temp_drive,final_drive,total_plot_time_s,read_time_s,write_time_s,merge_time_s,total_time_s,total_time_min,peak_memory_mb
-128,32,/data-k/sfatunmbi/temp/,/data-l/sfatunmbi/plots/,60601.380,126217.480,6.440,133391.620,193993.000,3233.2167,50438.46
-256,32,/data-k/sfatunmbi/temp/,/data-l/sfatunmbi/plots/,119043.035,293976.210,3.110,308043.290,427086.325,7118.1054,50438.34

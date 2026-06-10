@@ -1,0 +1,171 @@
+==============================
+BLADEBIT RAMPLOT RUN 1 / 3
+Date/Time   : Tue Jun  9 04:34:13 PM UTC 2026
+Threads     : 64
+Output dir  : /nvme-raid0/sfatunmbi/plots
+==============================
+
+
+Bladebit Chia Plotter
+Version      : 3.1.1-dev
+Git Commit   : 4a8566fdd4151f7823a27750fd6de1b34235c512
+Compiled With: gcc 11.4.0
+
+[Global Plotting Config]
+ Will create 1 plots.
+ Thread count          : 64
+ Warm start enabled    : false
+ NUMA disabled         : false
+ CPU affinity disabled : false
+ Farmer public key     : 96854d93efe790622d1a872ae3055eee65b2908bc3a55c203e1b81021179d797dfa219303a173808d76f15ce38efc1fa
+ Pool contract address : xch1ta2vz9qddvlhn6sahade07nfe9vf86jz8v0k3p4n62208rl377esytyjx3
+ Benchmark mode        : disabled
+
+System Memory: 517/754 GiB.
+Memory required: 416 GiB.
+Allocating buffers.
+
+Generating plot 1 / 1: 903e20a0f685c025438fcba528a0db3719125bfac4d7f61e9118dae8f80aaa25
+Plot temporary file: /nvme-raid0/sfatunmbi/plots/plot-k32-2026-06-09-16-34-903e20a0f685c025438fcba528a0db3719125bfac4d7f61e9118dae8f80aaa25.plot.tmp
+
+Running Phase 1
+Generating F1...
+Finished F1 generation in 4.83 seconds.
+Sorting F1...
+Finished F1 sort in 11.82 seconds.
+Forward propagating to table 2...
+  Pairing L/R groups...
+  Finished pairing L/R groups in 16.7760 seconds. Created 4294967296 pairs.
+  Average of 236.1406 pairs per group.
+  Computing Fx...
+  Finished computing Fx in 12.7010 seconds.
+  Sorting entries...
+  Finished sorting in 26.96 seconds.
+Finished forward propagating table 2 in 57.13 seconds.
+Forward propagating to table 3...
+  Pairing L/R groups...
+  Finished pairing L/R groups in 15.2090 seconds. Created 4294967296 pairs.
+  Average of 236.1406 pairs per group.
+  Computing Fx...
+  Finished computing Fx in 12.1300 seconds.
+  Sorting entries...
+  Finished sorting in 28.31 seconds.
+Finished forward propagating table 3 in 56.35 seconds.
+Forward propagating to table 4...
+  Pairing L/R groups...
+  Finished pairing L/R groups in 15.1890 seconds. Created 4294967296 pairs.
+  Average of 236.1406 pairs per group.
+  Computing Fx...
+  Finished computing Fx in 12.8540 seconds.
+  Sorting entries...
+  Finished sorting in 27.13 seconds.
+Finished forward propagating table 4 in 55.88 seconds.
+Forward propagating to table 5...
+  Pairing L/R groups...
+  Finished pairing L/R groups in 15.2060 seconds. Created 4294933199 pairs.
+  Average of 236.1388 pairs per group.
+  Computing Fx...
+  Finished computing Fx in 12.9070 seconds.
+  Sorting entries...
+  Finished sorting in 27.16 seconds.
+Finished forward propagating table 5 in 55.98 seconds.
+Forward propagating to table 6...
+  Pairing L/R groups...
+  Finished pairing L/R groups in 15.2010 seconds. Created 4294924316 pairs.
+  Average of 236.1383 pairs per group.
+  Computing Fx...
+  Finished computing Fx in 12.5050 seconds.
+  Sorting entries...
+  Finished sorting in 25.50 seconds.
+Finished forward propagating table 6 in 53.91 seconds.
+Forward propagating to table 7...
+  Pairing L/R groups...
+  Finished pairing L/R groups in 15.1990 seconds. Created 4294884015 pairs.
+  Average of 236.1360 pairs per group.
+  Computing Fx...
+  Finished computing Fx in 11.7520 seconds.
+Finished forward propagating table 7 in 27.65 seconds.
+Finished Phase 1 in 323.55 seconds.
+Running Phase 2
+  Prunning table 6...
+  Finished prunning table 6 in 0.81 seconds.
+  Prunning table 5...
+  Finished prunning table 5 in 9.44 seconds.
+  Prunning table 4...
+  Finished prunning table 4 in 8.98 seconds.
+  Prunning table 3...
+  Finished prunning table 3 in 8.83 seconds.
+  Prunning table 2...
+  Finished prunning table 2 in 8.75 seconds.
+Finished Phase 2 in 37.25 seconds.
+Running Phase 3
+  Compressing tables 1 and 2...
+  Finished compressing tables 1 and 2 in 41.71 seconds
+  Table 1 now has 3429338574 / 4294967296 entries ( 79.85% ).
+  Compressing tables 2 and 3...
+  Finished compressing tables 2 and 3 in 42.01 seconds
+  Table 2 now has 3439870465 / 4294967296 entries ( 80.09% ).
+  Compressing tables 3 and 4...
+  Finished compressing tables 3 and 4 in 42.32 seconds
+  Table 3 now has 3466134006 / 4294967296 entries ( 80.70% ).
+  Compressing tables 4 and 5...
+  Finished compressing tables 4 and 5 in 43.10 seconds
+  Table 4 now has 3532976962 / 4294933199 entries ( 82.26% ).
+  Compressing tables 5 and 6...
+  Finished compressing tables 5 and 6 in 45.26 seconds
+  Table 5 now has 3713667097 / 4294924316 entries ( 86.47% ).
+  Compressing tables 6 and 7...
+  Finished compressing tables 6 and 7 in 45.07 seconds
+  Table 6 now has 4294884015 / 4294884015 entries ( 100.00% ).
+Finished Phase 3 in 259.48 seconds.
+Running Phase 4
+  Writing P7.
+  Finished writing P7 in 0.72 seconds.
+  Writing C1 table.
+  Finished writing C1 table in 0.00 seconds.
+  Writing C2 table.
+  Finished writing C2 table in 0.00 seconds.
+  Writing C3 table.
+  Finished writing C3 table in 0.46 seconds.
+Finished Phase 4 in 1.18 seconds.
+Writing final plot tables to disk
+/nvme-raid0/sfatunmbi/plots/plot-k32-2026-06-09-16-34-903e20a0f685c025438fcba528a0db3719125bfac4d7f61e9118dae8f80aaa25.plot.tmp -> /nvme-raid0/sfatunmbi/plots/plot-k32-2026-06-09-16-34-903e20a0f685c025438fcba528a0db3719125bfac4d7f61e9118dae8f80aaa25.plot
+Final plot table pointers: 
+ Table 1:             4096 ( 0x0000000000001000 )
+ Table 2:      14839263580 ( 0x00000003747d315c )
+ Table 3:      28822141705 ( 0x00000006b5eefb09 )
+ Table 4:      42911779630 ( 0x00000009fdbdcb2e )
+ Table 5:      57273128905 ( 0x0000000d55be97c9 )
+ Table 6:      72368976280 ( 0x00000010d986f198 )
+ Table 7:      89827433680 ( 0x00000014ea21dcd0 )
+ C 1    :     107543835856 ( 0x000000190a1cb4d0 )
+ C 2    :     107545553816 ( 0x000000190a36eb98 )
+ C 3    :     107545553992 ( 0x000000190a36ec48 )
+
+Final plot table sizes: 
+ Table 1: 14151.82 MiB
+ Table 2: 13335.11 MiB
+ Table 3: 13436.93 MiB
+ Table 4: 13696.05 MiB
+ Table 5: 14396.52 MiB
+ Table 6: 16649.68 MiB
+ Table 7: 16895.68 MiB
+ C 1    : 1.64 MiB
+ C 2    : 0.00 MiB
+ C 3    : 1228.78 MiB
+
+Finished writing tables to disk in 13.61 seconds.
+Finished plotting in 635.06 seconds (10.58 minutes).
+
+==============================
+RUN 1 SUMMARY
+==============================
+Duration            : 687s (11m 27s)
+Power readings      : 599
+Min power           : 974 W
+Max power           : 1623 W
+Avg power           : 1518 W
+Total energy        : 289.6850 Wh  /  0.289685 kWh
+Peak memory (RSS)   : 426028.70 MB
+Plot exit code      : 0
+==============================
