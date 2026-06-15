@@ -2254,8 +2254,10 @@ int main(int argc, char *argv[]) {
                  "record_counts_waste=%llu "
                  "hash_efficiency=%.2f\n",
                  record_counts,
+                 // NEW (record fill %% with shuffled capacity): 
                  record_counts * 100.0 /
-                     (total_buckets * num_records_in_bucket),
+                     (total_buckets * num_records_in_shuffled_bucket),
+                 // OLD (bucket saturation %%): full_buckets * 100.0 / total_buckets,
                  full_buckets, full_buckets * 100.0 / total_buckets,
                  record_counts_waste,
                  total_buckets * num_records_in_bucket * 100.0 /
@@ -2527,6 +2529,13 @@ int main(int argc, char *argv[]) {
       peak_memory_mb = get_peak_memory_mb();
 
       if (!BENCHMARK) {
+        if (rounds == 1) {
+          unsigned long long zero_nonces_found =
+              (total_buckets * num_records_in_bucket) - record_counts;
+          printf("Zero nonces found: %llu out of %llu total records processed.\n",
+                 zero_nonces_found,
+                 total_buckets * num_records_in_bucket);
+        }
         printf("Total Throughput: %.2f MH/s  %.2f MB/s\n", total_throughput,
                (rounds > 1) ? total_throughput * sizeof(MemoRecord)
                             : total_throughput * sizeof(MemoTable2Record));
@@ -2570,8 +2579,9 @@ int main(int argc, char *argv[]) {
               elapsed_time,
               total_matches * 100.0 /
                   (num_records_in_shuffled_bucket * total_buckets),
-              record_counts * 100.0 /
-                  (total_buckets * num_records_in_shuffled_bucket),
+              // NEW (record fill %% with shuffled capacity):
+              record_counts * 100.0 / (total_buckets * num_records_in_shuffled_bucket),
+              // OLD (bucket saturation %%): full_buckets * 100.0 / total_buckets,
               peak_memory_mb,
               DIR_TABLE2 ? DIR_TABLE2 : (SOURCE ? SOURCE : ""));
         }
