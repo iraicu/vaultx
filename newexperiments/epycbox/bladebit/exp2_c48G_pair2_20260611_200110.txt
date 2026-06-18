@@ -1,0 +1,88 @@
+==============================
+EXPERIMENT 2 / 10
+Date/Time      : Thu Jun 11 20:01:10 UTC 2026
+Cache size     : 48G
+Threads (f1/fp): 128
+Temp dir       : /nfs_nvme/sfatunmbi/temp
+Final dir      : /nfs_nvme/sfatunmbi/plots
+K              : 32
+==============================
+
+
+Bladebit Chia Plotter
+Version      : 3.1.1-dev
+Git Commit   : 4a8566fdd4151f7823a27750fd6de1b34235c512
+Compiled With: gcc 11.4.0
+
+[Global Plotting Config]
+ Will create 1 plots.
+ Thread count          : 128
+ Warm start enabled    : false
+ NUMA disabled         : false
+ CPU affinity disabled : false
+ Farmer public key     : 96854d93efe790622d1a872ae3055eee65b2908bc3a55c203e1b81021179d797dfa219303a173808d76f15ce38efc1fa
+ Pool contract address : xch1ta2vz9qddvlhn6sahade07nfe9vf86jz8v0k3p4n62208rl377esytyjx3
+ Benchmark mode        : disabled
+
+[Bladebit Disk Plotter]
+ Heap size      : 5.43 GiB ( 5558.00 MiB )
+ Cache size     : 48.00 GiB ( 49152.00 MiB )
+ Bucket count   : 256
+ Alternating I/O: true
+ F1  threads    : 128
+ FP  threads    : 128
+ C   threads    : 128
+ P2  threads    : 128
+ P3  threads    : 128
+ I/O threads    : 1
+ Temp1 block sz : 1048576
+ Temp2 block sz : 1048576
+ Temp1 path     : /nfs_nvme/sfatunmbi/temp
+ Temp2 path     : /nfs_nvme/sfatunmbi/temp
+ I/O metrices enabled.
+ Allocating memory
+
+Generating plot 1 / 1: 953e8d7664878af161b3a7b57839ca35f9b433dca5ed13fa72bc98ac22b34e27
+Plot temporary file: /nfs_nvme/sfatunmbi/plots/plot-k32-2026-06-11-20-01-953e8d7664878af161b3a7b57839ca35f9b433dca5ed13fa72bc98ac22b34e27.plot.tmp
+
+Started plot.
+Running Phase 1
+Table 1: F1 generation
+Generating f1...
+Finished f1 generation in 1851.84 seconds. 
+Table 1 I/O wait time: 1851.84 seconds.
+ Table 1 Disk Write Metrics:
+  Average write throughput 88.38 MiB ( 92.68 MB ) or 0.09 GiB ( 0.09 GB ).
+  Total size written: 163582.00 MiB ( 171528.16 MB ) or 159.75 GiB ( 171.53 GB ).
+  Total write commands: 131072.
+
+Table 2
+ Sorting      : Completed in 13.44 seconds.
+ Distribution : Completed in 2088.92 seconds.
+ Matching     : Completed in 10.18 seconds.
+ Fx           : Completed in 10.10 seconds.
+Completed table 2 in 2543.47 seconds with 4289039883 entries.
+Table 2 I/O wait time: 2272.58 seconds.
+ Table 2 I/O Metrics:
+  Average read throughput 431.12 MiB ( 452.06 MB ) or 0.42 GiB ( 0.45 GB ).
+  Total size read: 163582.00 MiB ( 171528.16 MB ) or 159.75 GiB ( 171.53 GB ).
+  Total read commands: 131072.
+  Average write throughput 137.62 MiB ( 144.31 MB ) or 0.13 GiB ( 0.14 GB ).
+  Total size written: 295144.00 MiB ( 309480.91 MB ) or 288.23 GiB ( 309.48 GB ).
+  Total write commands: 197121.
+
+Table 3
+*** Crashed! ***
+
+==============================
+POWER CONSUMPTION SUMMARY
+==============================
+Experiment duration : 4415s (73m 35s)
+Readings collected  : 0
+Min power           : N/A W
+Max power           : N/A W
+Avg power           : N/A W
+Total energy used   : N/A Wh  /  N/A kWh
+Peak memory (RSS)   : 44116.46 MB
+Plot exit code      : 139
+==============================

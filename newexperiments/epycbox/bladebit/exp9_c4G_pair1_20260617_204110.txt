@@ -1,0 +1,89 @@
+==============================
+EXPERIMENT 9 / 10
+Date/Time      : Wed Jun 17 20:41:10 UTC 2026
+Cache size     : 4G
+Threads (f1/fp): 128
+Temp dir       : /data-m/sfatunmbi/temp
+Final dir      : /data-m/sfatunmbi/plots
+K              : 32
+==============================
+
+
+Bladebit Chia Plotter
+Version      : 3.1.1-dev
+Git Commit   : 4a8566fdd4151f7823a27750fd6de1b34235c512
+Compiled With: gcc 11.4.0
+
+[Global Plotting Config]
+ Will create 1 plots.
+ Thread count          : 128
+ Warm start enabled    : false
+ NUMA disabled         : false
+ CPU affinity disabled : false
+ Farmer public key     : 96854d93efe790622d1a872ae3055eee65b2908bc3a55c203e1b81021179d797dfa219303a173808d76f15ce38efc1fa
+ Pool contract address : xch1ta2vz9qddvlhn6sahade07nfe9vf86jz8v0k3p4n62208rl377esytyjx3
+ Benchmark mode        : disabled
+
+[Bladebit Disk Plotter]
+ Heap size      : 3.37 GiB ( 3447.82 MiB )
+ Cache size     : 4.00 GiB ( 4096.00 MiB )
+ Bucket count   : 256
+ Alternating I/O: true
+ F1  threads    : 128
+ FP  threads    : 128
+ C   threads    : 128
+ P2  threads    : 128
+ P3  threads    : 128
+ I/O threads    : 1
+ Temp1 block sz : 4096
+ Temp2 block sz : 4096
+ Temp1 path     : /data-m/sfatunmbi/temp
+ Temp2 path     : /data-m/sfatunmbi/temp
+ I/O metrices enabled.
+ Allocating memory
+
+Generating plot 1 / 1: 1726b9b12ee5d7e0c108732f10d89e7486ed2ed5462572e1551eca59caa342fe
+Plot temporary file: /data-m/sfatunmbi/plots/plot-k32-2026-06-17-20-41-1726b9b12ee5d7e0c108732f10d89e7486ed2ed5462572e1551eca59caa342fe.plot.tmp
+
+Started plot.
+Running Phase 1
+Table 1: F1 generation
+Generating f1...
+Finished f1 generation in 4698.99 seconds. 
+Table 1 I/O wait time: 4698.99 seconds.
+ Table 1 Disk Write Metrics:
+  Average write throughput 7.08 MiB ( 7.43 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 33278.54 MiB ( 34895.08 MB ) or 32.50 GiB ( 34.90 GB ).
+  Total write commands: 131072.
+
+Table 2
+ Sorting      : Completed in 12.29 seconds.
+ Distribution : Completed in 7193.66 seconds.
+ Matching     : Completed in 7.00 seconds.
+ Fx           : Completed in 8.60 seconds.
+Completed table 2 in 8271.88 seconds with 4294936680 entries.
+Table 2 I/O wait time: 7685.75 seconds.
+ Table 2 I/O Metrics:
+  Average read throughput 35.52 MiB ( 37.25 MB ) or 0.03 GiB ( 0.04 GB ).
+  Total size read: 33278.54 MiB ( 34895.08 MB ) or 32.50 GiB ( 34.90 GB ).
+  Total read commands: 131072.
+  Average write throughput 13.65 MiB ( 14.31 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 100092.96 MiB ( 104955.08 MB ) or 97.75 GiB ( 104.96 GB ).
+  Total write commands: 197121.
+
+Table 3
+ Sorting      : Completed in 17.00 seconds.
+ Distribution : Completed in 7380.69 seconds.
+ Matching     : Completed in 7.33 seconds.
+ Fx           : Completed in 7.97 seconds.
+Completed table 3 in 10514.55 seconds with 4294887805 entries.
+Table 3 I/O wait time: 7574.65 seconds.
+ Table 3 I/O Metrics:
+  Average read throughput 153.85 MiB ( 161.33 MB ) or 0.15 GiB ( 0.16 GB ).
+  Total size read: 66301.09 MiB ( 69521.73 MB ) or 64.75 GiB ( 69.52 GB ).
+  Total read commands: 196608.
+  Average write throughput 14.40 MiB ( 15.10 MB ) or 0.01 GiB ( 0.02 GB ).
+  Total size written: 145146.62 MiB ( 152197.27 MB ) or 141.74 GiB ( 152.20 GB ).
+  Total write commands: 262402.
+
+Table 4
