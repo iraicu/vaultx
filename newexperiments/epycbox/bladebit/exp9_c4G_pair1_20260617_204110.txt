@@ -87,3 +87,48 @@ Table 3 I/O wait time: 7574.65 seconds.
   Total write commands: 262402.
 
 Table 4
+ Sorting      : Completed in 18.73 seconds.
+ Distribution : Completed in 7451.17 seconds.
+ Matching     : Completed in 7.30 seconds.
+ Fx           : Completed in 8.60 seconds.
+Completed table 4 in 11625.03 seconds with 4294718626 entries.
+Table 4 I/O wait time: 8332.75 seconds.
+ Table 4 I/O Metrics:
+  Average read throughput 67.31 MiB ( 70.58 MB ) or 0.07 GiB ( 0.07 GB ).
+  Total size read: 99067.15 MiB ( 103879.43 MB ) or 96.75 GiB ( 103.88 GB ).
+  Total read commands: 196608.
+  Average write throughput 14.30 MiB ( 14.99 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 145141.76 MiB ( 152192.16 MB ) or 141.74 GiB ( 152.19 GB ).
+  Total write commands: 262404.
+
+Table 5
+ Sorting      : Completed in 18.87 seconds.
+ Distribution : Completed in 7348.51 seconds.
+ Matching     : Completed in 8.52 seconds.
+ Fx           : Completed in 9.19 seconds.
+Completed table 5 in 10460.23 seconds with 4294340756 entries.
+Table 5 I/O wait time: 7544.13 seconds.
+ Table 5 I/O Metrics:
+  Average read throughput 229.15 MiB ( 240.28 MB ) or 0.22 GiB ( 0.24 GB ).
+  Total size read: 99063.29 MiB ( 103875.39 MB ) or 96.74 GiB ( 103.88 GB ).
+  Total read commands: 196608.
+  Average write throughput 14.48 MiB ( 15.18 MB ) or 0.01 GiB ( 0.02 GB ).
+  Total size written: 145130.58 MiB ( 152180.45 MB ) or 141.73 GiB ( 152.18 GB ).
+  Total write commands: 262402.
+
+Table 6
+ Sorting      : Completed in 18.83 seconds.
+ Distribution : Completed in 7080.95 seconds.
+ Matching     : Completed in 7.26 seconds.
+ Fx           : Completed in 8.38 seconds.
+Completed table 6 in 11228.59 seconds with 4293585391 entries.
+Table 6 I/O wait time: 7963.27 seconds.
+ Table 6 I/O Metrics:
+  Average read throughput 67.50 MiB ( 70.78 MB ) or 0.07 GiB ( 0.07 GB ).
+  Total size read: 99054.78 MiB ( 103866.46 MB ) or 96.73 GiB ( 103.87 GB ).
+  Total read commands: 196608.
+  Average write throughput 11.51 MiB ( 12.07 MB ) or 0.01 GiB ( 0.01 GB ).
+  Total size written: 112350.86 MiB ( 117808.41 MB ) or 109.72 GiB ( 117.81 GB ).
+  Total write commands: 262402.
+
+Table 7

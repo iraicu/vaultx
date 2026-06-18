@@ -15,9 +15,9 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import numpy as np
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULTS_DIR = os.path.join(SCRIPT_DIR, "..", "..", "Results")
-IMAGES_DIR  = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
+SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
+RESULTS_DIR = os.path.join(SCRIPT_DIR, "..", "..", "newexperiments")
+IMAGES_DIR  = os.path.join(SCRIPT_DIR, "..", "..", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
 # Notes:
@@ -187,7 +187,7 @@ def plot_drive(drive: str, ax: plt.Axes, show_legend: bool = True):
     ax.set_xticks(xticks)
     ax.set_xticklabels([str(t) for t in xticks], fontsize=7, rotation=45, ha="right")
     ax.set_xlabel("Compute threads", fontsize=9)
-    ax.set_ylabel("Time", fontsize=9)
+    ax.set_ylabel("Time (mins)", fontsize=9)
     ax.set_title(DRIVE_TITLES.get(drive, drive), fontsize=11, fontweight="bold")
     ax.grid(True, which="both", linestyle="--", alpha=0.3, zorder=0)
     ax.text(0.99, 0.97, "↓ lower is better",
@@ -211,8 +211,11 @@ def save_individual_drive(drive: str):
 
 
 def save_combined():
-    fig, axes = plt.subplots(1, 4, figsize=(26, 6))
-    for ax, drive in zip(axes, DRIVE_ORDER):
+    # 2×2 square layout: NVME (top-left), SSD (top-right), HDD (bottom-left), CEPH (bottom-right)
+    COMBINED_ORDER = ["NVME", "SSD", "HDD", "CEPH"]
+    fig, axes = plt.subplots(2, 2, figsize=(14, 14))
+    axes_flat = axes.flatten()
+    for ax, drive in zip(axes_flat, COMBINED_ORDER):
         plot_drive(drive, ax, show_legend=False)
 
     legend_handles = []
@@ -226,10 +229,8 @@ def save_combined():
     legend_handles.append(ideal_entry)
 
     fig.legend(handles=legend_handles, loc="lower center",
-               ncol=6, fontsize=9, frameon=True, bbox_to_anchor=(0.5, -0.14))
-    fig.suptitle("K32 Plotting Time vs Compute Threads (all machines, per drive type)",
-                 fontsize=13, fontweight="bold")
-    fig.tight_layout()
+               ncol=6, fontsize=9, frameon=True, bbox_to_anchor=(0.5, -0.06))
+    fig.tight_layout(rect=[0, 0.06, 1, 1])
     out = os.path.join(IMAGES_DIR, "thread_scaling_combined.svg")
     fig.savefig(out, bbox_inches="tight")
     plt.close(fig)

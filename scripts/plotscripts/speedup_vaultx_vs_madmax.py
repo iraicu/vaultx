@@ -167,17 +167,20 @@ def main():
         plt.close(fig)
         print(f"  saved {out}")
 
-    # Combined: NVME on top, HDD on bottom
-    fig_c = plt.figure(figsize=(12, 20))
-    gs_c  = gridspec.GridSpec(4, 1, figure=fig_c,
-                               height_ratios=[3.0, 1.4, 3.0, 1.4],
-                               hspace=0.5)
+    # Combined: NVME left, HDD right; same y-scale on time panels and on memory panels
+    fig_c = plt.figure(figsize=(18, 9))
+    gs_c  = gridspec.GridSpec(2, 2, figure=fig_c,
+                               height_ratios=[3.0, 1.4],
+                               hspace=0.32, wspace=0.22)
 
     configs = [
-        ("NVME", vx_nvme, mm_nvme, 0),
-        ("HDD", vx_hdd, mm_ceph, 2),
+        ("NVME", vx_nvme, mm_nvme, 0),  # left column
+        ("HDD",  vx_hdd,  mm_ceph, 1),  # right column
     ]
-    for dlabel, vx_df, mm_df, r0 in configs:
+
+    ax_times = []
+    ax_mems  = []
+    for dlabel, vx_df, mm_df, col in configs:
         vx_threads = vx_df["varying_threads"].values
         vx_times   = vx_df["total_time_min"].values
         vx_mem_gb  = vx_df["peak_memory_mb"].values / 1024.0
@@ -185,18 +188,30 @@ def main():
         mm_times   = mm_df["total_plot_time(min)"].values
         mm_mem_gb  = mm_df["peak_memory"].values / 1024.0
 
-        ax_time = fig_c.add_subplot(gs_c[r0])
-        ax_mem  = fig_c.add_subplot(gs_c[r0 + 1])
+        ax_time = fig_c.add_subplot(gs_c[0, col])
+        ax_mem  = fig_c.add_subplot(gs_c[1, col])
 
         plot_merged_time_panel(ax_time, vx_threads, vx_times,
                                mm_threads, mm_times, dlabel)
         plot_memory_panel(ax_mem, vx_threads, vx_mem_gb,
                           mm_threads, mm_mem_gb, dlabel)
 
-    fig_c.suptitle("k32 VaultX vs Madmax (thread scaling)", fontsize=13, fontweight="bold", y=0.98)
-    fig_c.subplots_adjust(top=0.96)
-    out_c = os.path.join(IMAGES_DIR, "speedup_vaultx_vs_madmax.png")
-    fig_c.savefig(out_c, dpi=150, bbox_inches="tight")
+        ax_times.append(ax_time)
+        ax_mems.append(ax_mem)
+
+    # Synchronise y-axis limits so both columns share the same scale
+    t_ylims = [ax.get_ylim() for ax in ax_times]
+    shared_t = (min(y[0] for y in t_ylims), max(y[1] for y in t_ylims))
+    for ax in ax_times:
+        ax.set_ylim(*shared_t)
+
+    m_ylims = [ax.get_ylim() for ax in ax_mems]
+    shared_m = (min(y[0] for y in m_ylims), max(y[1] for y in m_ylims))
+    for ax in ax_mems:
+        ax.set_ylim(*shared_m)
+
+    out_c = os.path.join(IMAGES_DIR, "speedup_vaultx_vs_madmax.svg")
+    fig_c.savefig(out_c, bbox_inches="tight")
     plt.close(fig_c)
     print(f"  saved {out_c}")
 
