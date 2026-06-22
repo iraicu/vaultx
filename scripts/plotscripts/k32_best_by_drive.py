@@ -16,8 +16,10 @@ import numpy as np
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "..", "..", "newexperiments")
-IMAGES_DIR  = os.path.join(SCRIPT_DIR, "..", "..", "images")
+IMAGES_DIR       = os.path.join(SCRIPT_DIR, "..", "..", "images")
+PAPER_IMAGES_DIR = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
+os.makedirs(PAPER_IMAGES_DIR, exist_ok=True)
 
 # Drive CSV paths relative to RESULTS_DIR.
 # Rules from context.md / k_times_by_drive.py:
@@ -172,8 +174,14 @@ def main():
     fig.tight_layout()
     out = os.path.join(IMAGES_DIR, "k32_best_by_drive.svg")
     fig.savefig(out, bbox_inches="tight")
+    out_png = os.path.join(IMAGES_DIR, "k32_best_by_drive.png")
+    fig.savefig(out_png, dpi=300, bbox_inches="tight")
+    out_paper = os.path.join(PAPER_IMAGES_DIR, "k32_best_by_drive.png")
+    fig.savefig(out_paper, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"  saved {out}")
+    print(f"  saved {out_png}")
+    print(f"  saved {out_paper}")
 
 
 if __name__ == "__main__":

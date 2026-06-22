@@ -20,8 +20,10 @@ import numpy as np
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "..", "..", "newexperiments")
-IMAGES_DIR  = os.path.join(SCRIPT_DIR, "..", "..", "images")
+IMAGES_DIR       = os.path.join(SCRIPT_DIR, "..", "..", "images")
+PAPER_IMAGES_DIR = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
+os.makedirs(PAPER_IMAGES_DIR, exist_ok=True)
 
 VAULTX_NVME_CSV = "s8/varying_CP_k32_nvme-raid0_IM.csv"
 VAULTX_HDD_CSV  = "s8/varying_CP_k32_data-i_IM.csv"
@@ -212,8 +214,14 @@ def main():
 
     out_c = os.path.join(IMAGES_DIR, "speedup_vaultx_vs_madmax.svg")
     fig_c.savefig(out_c, bbox_inches="tight")
+    out_c_png = os.path.join(IMAGES_DIR, "speedup_vaultx_vs_madmax.png")
+    fig_c.savefig(out_c_png, dpi=300, bbox_inches="tight")
+    out_c_paper = os.path.join(PAPER_IMAGES_DIR, "speedup_vaultx_vs_madmax.png")
+    fig_c.savefig(out_c_paper, dpi=300, bbox_inches="tight")
     plt.close(fig_c)
     print(f"  saved {out_c}")
+    print(f"  saved {out_c_png}")
+    print(f"  saved {out_c_paper}")
 
 
 if __name__ == "__main__":

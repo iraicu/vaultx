@@ -16,8 +16,10 @@ import numpy as np
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "..", "..", "newexperiments")
-IMAGES_DIR  = os.path.join(SCRIPT_DIR, "..", "..", "images")
+IMAGES_DIR       = os.path.join(SCRIPT_DIR, "..", "..", "images")
+PAPER_IMAGES_DIR = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
+os.makedirs(PAPER_IMAGES_DIR, exist_ok=True)
 
 # {drive: {machine: csv_path_relative_to_RESULTS_DIR}}
 # fpganode2: HDD = nfs_hdd, SSD = ssd-raid0, NVME = nfs_nvme, CEPH = ceph
@@ -191,8 +193,14 @@ def save_combined():
     out = os.path.join(IMAGES_DIR,
                        "memory_rounds_combined_fpganode2_opi5_rpi5.svg")
     fig.savefig(out, bbox_inches="tight")
+    out_png = os.path.join(IMAGES_DIR, "memory_rounds_combined_fpganode2_opi5_rpi5.png")
+    fig.savefig(out_png, dpi=300, bbox_inches="tight")
+    out_paper = os.path.join(PAPER_IMAGES_DIR, "memory_rounds_combined_fpganode2_opi5_rpi5.png")
+    fig.savefig(out_paper, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"  saved {out}")
+    print(f"  saved {out_png}")
+    print(f"  saved {out_paper}")
 
 
 if __name__ == "__main__":

@@ -24,8 +24,10 @@ import numpy as np
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "..", "..", "Results")
-IMAGES_DIR  = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
+IMAGES_DIR      = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
+BASE_IMAGES_DIR = os.path.join(SCRIPT_DIR, "..", "..", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
+os.makedirs(BASE_IMAGES_DIR, exist_ok=True)
 
 # {drive_type: {machine: (memory_csv, merge_csv)}}
 DRIVE_CSVS = {
@@ -192,8 +194,14 @@ def save_combined():
     fig.tight_layout()
     out = os.path.join(IMAGES_DIR, "oom_vs_merge_combined.svg")
     fig.savefig(out, bbox_inches="tight")
+    out_png = os.path.join(IMAGES_DIR, "oom_vs_merge_combined.png")
+    fig.savefig(out_png, dpi=300, bbox_inches="tight")
+    out_base = os.path.join(BASE_IMAGES_DIR, "oom_vs_merge_combined.png")
+    fig.savefig(out_base, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"  saved {out}")
+    print(f"  saved {out_png}")
+    print(f"  saved {out_base}")
 
 
 if __name__ == "__main__":

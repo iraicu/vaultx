@@ -17,8 +17,10 @@ import numpy as np
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "..", "..", "newexperiments")
-IMAGES_DIR  = os.path.join(SCRIPT_DIR, "..", "..", "images")
+IMAGES_DIR       = os.path.join(SCRIPT_DIR, "..", "..", "images")
+PAPER_IMAGES_DIR = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
+os.makedirs(PAPER_IMAGES_DIR, exist_ok=True)
 
 # Notes:
 #  - torus ssd-raid0 = NVMe (context.md)
@@ -233,8 +235,14 @@ def save_combined():
     fig.tight_layout(rect=[0, 0.06, 1, 1])
     out = os.path.join(IMAGES_DIR, "thread_scaling_combined.svg")
     fig.savefig(out, bbox_inches="tight")
+    out_png = os.path.join(IMAGES_DIR, "thread_scaling_combined.png")
+    fig.savefig(out_png, dpi=300, bbox_inches="tight")
+    out_paper = os.path.join(PAPER_IMAGES_DIR, "thread_scaling_combined.png")
+    fig.savefig(out_paper, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"  saved {out}")
+    print(f"  saved {out_png}")
+    print(f"  saved {out_paper}")
 
 
 if __name__ == "__main__":

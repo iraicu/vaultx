@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Best k32 times for Chia plotters only (ChiaPOS, Madmax, Bladebit).
-Bars sorted from lowest to highest time. No title.
-Y-axis in 60-minute intervals to span from ~9 min to ~11 hrs.
-Annotated with plotter, threads, peak memory.
+Best k32 times for Chia plotters (ChiaPOS, Madmax, Bladebit).
+Bars grouped by plotter across 4 machines. All runs on NVMe. No title.
+Y-axis in 60-minute intervals. Annotated with thread count and peak memory.
 """
 
 import os
@@ -11,79 +10,128 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.transforms as mtransforms
 import numpy as np
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-IMAGES_DIR = os.path.join(SCRIPT_DIR, "..", "..", "images")
+SCRIPT_DIR       = os.path.dirname(os.path.abspath(__file__))
+IMAGES_DIR       = os.path.join(SCRIPT_DIR, "..", "..", "images")
+PAPER_IMAGES_DIR = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
+os.makedirs(PAPER_IMAGES_DIR, exist_ok=True)
 
-# (x_label, time_min, machine, threads, peak_mem_mb, plotter_type, drive_label)
-# Sources:
-#   s8 Bladebit ramplot:       bladebit_ramplot_nvme.csv t128 → 9.42 min, 426031 MB
-#   s8 Madmax nvme-raid0:      varying_threads_k32_madmax_s8.csv t32 → 25.72 min, 25577 MB
-#   epycbox Madmax nfs_nvme:   varying_threads_k32_madmax.csv t64 → 54.45 min, 42329 MB
-#   epycbox Bladebit diskplot: bladebit_varying_memory_k32.csv 48G nfs_nvme → 73.58 min, 44116 MB
-#   torus Madmax ssd-raid0:    varying_threads_k32_madmax_nvme.csv t32 → 97.33 min, 25231 MB
-#   thunderx1 Madmax nfs_nvme: varying_threads_k32_madmax.csv t16 → 121.30 min, 13012 MB
-#   s8 ChiaPOS nvme-raid0:     chiaposresults_nvme.txt → 6h19m45s = 379.75 min, 4288 MB, 192T
-#   opi5 ChiaPOS data-fast:    posresults1.txt → 10h30m01s = 630.02 min, 3625 MB, 8T
-# Drive labels per context.md (ssd-raid0 on torus = NVMe; data-fast on opi5 = NVME)
-DATA = [
-    ("Bladebit ramplot\n(s8)",        9.42,   "s8",        128, 426031, "Bladebit", "NVME"),
-    ("Madmax\n(s8)",                 25.72,   "s8",         32,  25577, "Madmax",   "NVME"),
-    ("Madmax\n(epycbox)",            54.45,   "epycbox",    64,  42329, "Madmax",   "NVME"),
-    ("Bladebit diskplot\n(epycbox)", 73.58,   "epycbox",   128,  44116, "Bladebit", "NVME"),
-    ("Madmax\n(torus)",              97.33,   "torus",      32,  25231, "Madmax",   "NVME"),
-    ("Madmax\n(thunderx1)",         121.30,   "thunderx1",  16,  13012, "Madmax",   "NVME"),
-    ("ChiaPOS\n(s8)",               379.75,   "s8",        192,   4288, "ChiaPOS",  "NVME"),
-    ("ChiaPOS\n(opi5)",             630.02,   "opi5",        8,   3625, "ChiaPOS",  "NVME"),
+# (machine_label, time_min, threads, mem_gb)
+# All runs on NVMe drives.
+# Threads: full core count of the machine, or the count that gave the best time.
+# Memory: configurable for Bladebit; reflects thread-count-dependent usage for Madmax/ChiaPOS.
+GROUPS = [
+    {
+        "plotter": "Bladebit",
+        "data": [
+            ("8Socket",   9.42,  128, 416),
+            ("Epycbox",  73.58,  128,  48),
+            ("Torus",   104.8,    32,  48),
+            ("OPI5",    201.2,     8,  30),
+        ],
+    },
+    {
+        "plotter": "Madmax",
+        "data": [
+            ("8Socket",  25.72,  32, 25.0),
+            ("Epycbox",  54.45,  64, 41.0),
+            ("Torus",    97.33,  32, 25.0),
+            ("OPI5",    154.45,   4,  5.36),
+        ],
+    },
+    {
+        "plotter": "ChiaPOS",
+        "data": [
+            ("8Socket",  379.45, 192, 4.19),
+            ("Epycbox",  448.45, 128, 3.92),
+            ("Torus",    393.28,  32, 3.62),
+            ("OPI5",     630.01,   8, 3.54),
+        ],
+    },
 ]
 
 COLORS = {
-    "ChiaPOS":  "#D62728",   # red
-    "Madmax":   "#FF7F0E",   # orange
-    "Bladebit": "#2CA02C",   # green
+    "ChiaPOS":  "#D62728",
+    "Madmax":   "#FF7F0E",
+    "Bladebit": "#2CA02C",
 }
 
-Y_MAX  = 660   # 11 hrs in minutes
-Y_STEP = 60
+Y_MAX     = 660
+Y_STEP    = 60
+BAR_W     = 0.8
+N_BARS    = 4
+GROUP_GAP = 2   # empty x-units between groups
+
+
+def fmt_mem(mem_gb):
+    if mem_gb >= 10:
+        return f"{round(mem_gb):d}GB"
+    return f"{mem_gb:.1f}GB"
 
 
 def main():
-    n = len(DATA)
-    x = np.arange(n)
+    # Build x positions per group
+    positions     = []
+    group_centers = []
+    offset        = 0
+    for _ in GROUPS:
+        xs = list(range(offset, offset + N_BARS))
+        positions.append(xs)
+        group_centers.append(float(np.mean(xs)))
+        offset += N_BARS + GROUP_GAP
 
-    fig, ax = plt.subplots(figsize=(14, 6))
+    fig, ax = plt.subplots(figsize=(15, 6))
 
-    for i, (lbl, t, machine, threads, mem_mb, plotter, drive) in enumerate(DATA):
-        color  = COLORS[plotter]
-        mem_gb = mem_mb / 1024.0
-        ann    = f"{threads}T / {mem_gb:.0f}GB / {drive}"
+    for g_idx, group in enumerate(GROUPS):
+        plotter = group["plotter"]
+        color   = COLORS[plotter]
+        xs      = positions[g_idx]
 
-        ax.bar(x[i], t, color=color, width=0.7, zorder=3,
-               edgecolor="white", linewidth=0.5)
+        for i, (machine, t, threads, mem_gb) in enumerate(group["data"]):
+            xi  = xs[i]
+            ann = f"{threads}T / {fmt_mem(mem_gb)}"
+            time_str = f"{t:.2f}m" if t < 100 else f"{t:.1f}m"
 
-        if t < 30:
-            # Very small bar: annotations above
-            ax.text(x[i], t + Y_MAX * 0.013,
-                    f"{t:.2f}m\n{ann}",
-                    ha="center", va="bottom", fontsize=7, color="black",
-                    zorder=6, linespacing=1.4)
-        elif t < 150:
-            # Medium bar: time above, specs inside
-            ax.text(x[i], t + Y_MAX * 0.013, f"{t:.2f}m",
-                    ha="center", va="bottom", fontsize=7, color="black", zorder=6)
-            ax.text(x[i], t * 0.48, ann,
-                    ha="center", va="center", fontsize=7,
-                    color="white", fontweight="bold", zorder=5)
-        else:
-            # Tall bar: all inside
-            ax.text(x[i], t * 0.5, f"{t:.1f}m\n{ann}",
-                    ha="center", va="center", fontsize=7.5,
-                    color="white", fontweight="bold", zorder=5)
+            ax.bar(xi, t, color=color, width=BAR_W, zorder=3,
+                   edgecolor="white", linewidth=0.5)
 
-    ax.set_xticks(x)
-    ax.set_xticklabels([d[0] for d in DATA], fontsize=8.5, rotation=10, ha="right")
+            if t < 50:
+                # Small bar: all text above
+                ax.text(xi, t + Y_MAX * 0.015,
+                        f"{time_str}\n{ann}",
+                        ha="center", va="bottom", fontsize=6.5,
+                        color="black", zorder=6, linespacing=1.4)
+            elif t < 120:
+                # Medium bar: time above, specs inside
+                ax.text(xi, t + Y_MAX * 0.013, time_str,
+                        ha="center", va="bottom", fontsize=6.5,
+                        color="black", zorder=6)
+                ax.text(xi, t * 0.45, ann,
+                        ha="center", va="center", fontsize=6.5,
+                        color="white", fontweight="bold", zorder=5)
+            else:
+                # Tall bar: everything inside
+                ax.text(xi, t * 0.5, f"{time_str}\n{ann}",
+                        ha="center", va="center", fontsize=7,
+                        color="white", fontweight="bold", zorder=5, linespacing=1.5)
+
+    # X-axis: machine names under each bar
+    all_xs     = [x for grp_xs in positions for x in grp_xs]
+    all_labels = [d[0] for grp in GROUPS for d in grp["data"]]
+    ax.set_xticks(all_xs)
+    ax.set_xticklabels(all_labels, fontsize=8.5)
+
+    # Plotter group labels below x-axis tick labels
+    trans = mtransforms.blended_transform_factory(ax.transData, ax.transAxes)
+    for g_idx, group in enumerate(GROUPS):
+        ax.text(group_centers[g_idx], -0.13, group["plotter"],
+                ha="center", va="top", fontsize=9.5, fontweight="bold",
+                color=COLORS[group["plotter"]], transform=trans, clip_on=False)
+
+    ax.set_xlim(-0.7, max(all_xs) + 0.7)
     yticks = np.arange(0, Y_MAX + Y_STEP, Y_STEP)
     ax.set_yticks(yticks)
     ax.set_ylim(0, Y_MAX)
@@ -94,17 +142,23 @@ def main():
             color="gray", style="italic")
 
     legend_patches = [
-        mpatches.Patch(color=COLORS["ChiaPOS"],  label="ChiaPOS"),
-        mpatches.Patch(color=COLORS["Madmax"],   label="Madmax"),
         mpatches.Patch(color=COLORS["Bladebit"], label="Bladebit"),
+        mpatches.Patch(color=COLORS["Madmax"],   label="Madmax"),
+        mpatches.Patch(color=COLORS["ChiaPOS"],  label="ChiaPOS"),
     ]
     ax.legend(handles=legend_patches, fontsize=9, loc="upper left")
 
-    fig.tight_layout()
-    out = os.path.join(IMAGES_DIR, "chia_plotter_best_times.svg")
-    fig.savefig(out, bbox_inches="tight")
+    fig.subplots_adjust(bottom=0.16)
+    out     = os.path.join(IMAGES_DIR, "chia_plotter_best_times.svg")
+    out_png = os.path.join(IMAGES_DIR, "chia_plotter_best_times.png")
+    out_pp  = os.path.join(PAPER_IMAGES_DIR, "chia_plotter_best_times.png")
+    fig.savefig(out,     bbox_inches="tight")
+    fig.savefig(out_png, dpi=300, bbox_inches="tight")
+    fig.savefig(out_pp,  dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"  saved {out}")
+    print(f"  saved {out_png}")
+    print(f"  saved {out_pp}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,4 @@
+thread_count_r,k,buckets_u,buckets_v,temp_dir,final_dir,total_plot_time(s),total_plot_time(min),min_power,max_power,avg_power,total_energy(W),total_energy(kW),peak_memory(MB)
+8,32,128,128,/data-fast/sfatunmbi/temp,/data-fast/sfatunmbi/plots,17826,297.1000,N/A,N/A,N/A,N/A,N/A,7354.50
+4,32,128,128,/data-fast/sfatunmbi/temp,/data-fast/sfatunmbi/plots,9267,154.4500,N/A,N/A,N/A,N/A,N/A,5498.88
+2,32,128,128,/data-fast/sfatunmbi/temp,/data-fast/sfatunmbi/plots,11084,184.7333,N/A,N/A,N/A,N/A,N/A,5332.26

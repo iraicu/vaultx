@@ -1,0 +1,99 @@
+==============================
+EXPERIMENT 10 / 10
+Date/Time      : Thu Jun 18 23:20:43 UTC 2026
+Cache size     : 4G
+Threads (f1/fp): 128
+Temp dir       : /nfs_nvme/sfatunmbi/temp
+Final dir      : /nfs_nvme/sfatunmbi/plots
+K              : 32
+==============================
+
+
+Bladebit Chia Plotter
+Version      : 3.1.1-dev
+Git Commit   : 4a8566fdd4151f7823a27750fd6de1b34235c512
+Compiled With: gcc 11.4.0
+
+[Global Plotting Config]
+ Will create 1 plots.
+ Thread count          : 128
+ Warm start enabled    : false
+ NUMA disabled         : false
+ CPU affinity disabled : false
+ Farmer public key     : 96854d93efe790622d1a872ae3055eee65b2908bc3a55c203e1b81021179d797dfa219303a173808d76f15ce38efc1fa
+ Pool contract address : xch1ta2vz9qddvlhn6sahade07nfe9vf86jz8v0k3p4n62208rl377esytyjx3
+ Benchmark mode        : disabled
+
+[Bladebit Disk Plotter]
+ Heap size      : 5.43 GiB ( 5558.00 MiB )
+ Cache size     : 4.00 GiB ( 4096.00 MiB )
+ Bucket count   : 256
+ Alternating I/O: true
+ F1  threads    : 128
+ FP  threads    : 128
+ C   threads    : 128
+ P2  threads    : 128
+ P3  threads    : 128
+ I/O threads    : 1
+ Temp1 block sz : 1048576
+ Temp2 block sz : 1048576
+ Temp1 path     : /nfs_nvme/sfatunmbi/temp
+ Temp2 path     : /nfs_nvme/sfatunmbi/temp
+ I/O metrices enabled.
+ Allocating memory
+
+Generating plot 1 / 1: 3f8356f56ab1f1dba785405823011e60ad35ceffbd95c9f9ce9653223164b9b1
+Plot temporary file: /nfs_nvme/sfatunmbi/plots/plot-k32-2026-06-18-23-20-3f8356f56ab1f1dba785405823011e60ad35ceffbd95c9f9ce9653223164b9b1.plot.tmp
+
+Started plot.
+Running Phase 1
+Table 1: F1 generation
+Generating f1...
+Finished f1 generation in 2436.03 seconds. 
+Table 1 I/O wait time: 2436.03 seconds.
+ Table 1 Disk Write Metrics:
+  Average write throughput 67.17 MiB ( 70.43 MB ) or 0.07 GiB ( 0.07 GB ).
+  Total size written: 163578.00 MiB ( 171523.96 MB ) or 159.74 GiB ( 171.52 GB ).
+  Total write commands: 131072.
+
+Table 2
+ Sorting      : Completed in 13.42 seconds.
+ Distribution : Completed in 2812.83 seconds.
+ Matching     : Completed in 9.27 seconds.
+ Fx           : Completed in 8.47 seconds.
+Completed table 2 in 3307.84 seconds with 4289019771 entries.
+Table 2 I/O wait time: 3000.56 seconds.
+ Table 2 I/O Metrics:
+  Average read throughput 391.64 MiB ( 410.66 MB ) or 0.38 GiB ( 0.41 GB ).
+  Total size read: 163578.00 MiB ( 171523.96 MB ) or 159.74 GiB ( 171.52 GB ).
+  Total read commands: 131072.
+  Average write throughput 102.63 MiB ( 107.61 MB ) or 0.10 GiB ( 0.11 GB ).
+  Total size written: 295141.00 MiB ( 309477.77 MB ) or 288.22 GiB ( 309.48 GB ).
+  Total write commands: 197121.
+
+Table 3
+*** Crashed! ***
+./bladebit(_Z12CrashHandleri+0xaa)[0x558c56a5482a]
+/lib/x86_64-linux-gnu/libc.so.6(+0x42520)[0x7f013bc8d520]
+./bladebit(+0x87677)[0x558c56a5f677]
+./bladebit(+0xba8c7)[0x558c56a928c7]
+./bladebit(_ZN17DiskPlotFxBoundedIL7TableId2ELj256EE5RunMTEP16AnonPrefixSumJobIjE+0x401)[0x558c56aabf31]
+./bladebit(_ZN11MTJobRunnerI16AnonPrefixSumJobIjELj256EE13RunJobWrapperEPS1_+0x41)[0x558c56a64cd1]
+./bladebit(_ZN10ThreadPool17FixedThreadRunnerEPv+0x52)[0x558c56bcf112]
+./bladebit(_ZN6Thread17ThreadStarterUnixEPS_+0x7c)[0x558c56a558ac]
+/lib/x86_64-linux-gnu/libc.so.6(+0x94ac3)[0x7f013bcdfac3]
+/lib/x86_64-linux-gnu/libc.so.6(+0x1268d0)[0x7f013bd718d0]
+Dumping crash to crash.log
+
+==============================
+POWER CONSUMPTION SUMMARY
+==============================
+Experiment duration : 5758s (95m 58s)
+Readings collected  : 0
+Min power           : N/A W
+Max power           : N/A W
+Avg power           : N/A W
+Total energy used   : N/A Wh  /  N/A kWh
+Peak memory (RSS)   : 5244.25 MB
+Plot exit code      : 1
+==============================

@@ -7,3 +7,5 @@ cache_size,k,f1_threads,fp_threads,temp_dir,final_dir,total_plot_time(s),total_p
 16G,32,128,128,/nfs_nvme/sfatunmbi/temp,/nfs_nvme/sfatunmbi/plots,5047,84.1167,N/A,N/A,N/A,N/A,N/A,15967.81
 8G,32,128,128,/data-m/sfatunmbi/temp,/data-m/sfatunmbi/plots,93598,1559.9667,N/A,N/A,N/A,N/A,N/A,11487.66
 8G,32,128,128,/nfs_nvme/sfatunmbi/temp,/nfs_nvme/sfatunmbi/plots,5509,91.8167,N/A,N/A,N/A,N/A,N/A,9378.14
+4G,32,128,128,/data-m/sfatunmbi/temp,/data-m/sfatunmbi/plots,95408,1590.1333,N/A,N/A,N/A,N/A,N/A,7389.15
+4G,32,128,128,/nfs_nvme/sfatunmbi/temp,/nfs_nvme/sfatunmbi/plots,5758,95.9667,N/A,N/A,N/A,N/A,N/A,5244.25
