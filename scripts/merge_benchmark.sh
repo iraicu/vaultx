@@ -29,17 +29,17 @@ set -euo pipefail
 ulimit -n 1048576 2>/dev/null || ulimit -n 65536 2>/dev/null || true
 
 
-SOURCE_DIR=/nfs_nvme/sfatunmbi/subplots
+SOURCE_DIR=/ceph/sfatunmbi/singleplots
 
-DEST_DIR=/data-l/sfatunmbi/merged
+DEST_DIR=/data-m/sfatunmbi/plots
 
 CEPH_DIR=/ceph/sfatunmbi/mergedplots
 
-CSV_DIR=/home/sfatunmbi/vaultx/experiments/merge_benchmark
+CSV_DIR=/home/sfatunmbi/vaultx/newexperiments/epycbox/merge_benchmark
 
 K=32
-B_VALUES=(256 512 1024 2048)
-N_VALUES=(8 16 32)
+B_VALUES=(32768 16384 8192 4096 2048 1024 512 256)
+N_VALUES=(64)
 
 COMPUTE_THREADS=1
 READ_BATCH_SIZE=1024
@@ -70,7 +70,7 @@ safe_rm() {
 }
 
 safe_cp() {
-  cp "$@" 2>/dev/null || echo "$SUDO_PASS" | sudo -S cp "$@"
+  cp "$@" 2>/dev/null || echo "$SUDO_PASS" | sudo -S cp "$@" || true
 }
 
 n_b=${#B_VALUES[@]}
@@ -173,19 +173,19 @@ for n in "${N_VALUES[@]}"; do
     #   Peak Memory Usage: XXX MB
 
     read_time_s=$(grep "^Read Time:" "$log" 2>/dev/null | head -1 \
-      | awk '{v=$3; gsub(/s$/,"",v); printf "%.4f", v+0}')
+      | awk '{v=$3; gsub(/s$/,"",v); printf "%.4f", v+0}') || true
 
     write_time_s=$(grep "^Write Time:" "$log" 2>/dev/null | head -1 \
-      | awk '{v=$3; gsub(/s$/,"",v); printf "%.4f", v+0}')
+      | awk '{v=$3; gsub(/s$/,"",v); printf "%.4f", v+0}') || true
 
     total_merge_time_s=$(grep "^Merge Time:" "$log" 2>/dev/null | head -1 \
-      | awk '{v=$3; gsub(/s$/,"",v); printf "%.4f", v+0}')
+      | awk '{v=$3; gsub(/s$/,"",v); printf "%.4f", v+0}') || true
 
     avg_throughput_mbs=$(grep "^Avg Throughput:" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.4f", $3+0}')
+      | awk '{printf "%.4f", $3+0}') || true
 
     peak_memory_mb=$(grep "^Peak Memory Usage:" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.2f", $4+0}')
+      | awk '{printf "%.2f", $4+0}') || true
 
     # ── Parse config block ────────────────────────────────────────────────
     # Printed by merge.c before the merge starts:
@@ -197,22 +197,22 @@ for n in "${N_VALUES[@]}"; do
     #   Expected peak RAM : X MB (X.XX GB)  [2 x B]
 
     file_size_mb=$(grep "^File size" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.4f", $4+0}')
+      | awk '{printf "%.4f", $4+0}') || true
 
     total_data_gb=$(grep "^Total data" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.4f", $4+0}')
+      | awk '{printf "%.4f", $4+0}') || true
 
     total_batches=$(grep "^Total batches" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%d", $NF+0}')
+      | awk '{printf "%d", $NF+0}') || true
 
     buckets_per_batch=$(grep "^Buckets / batch" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%d", $NF+0}')
+      | awk '{printf "%d", $NF+0}') || true
 
     per_file_batch_mb=$(grep "^Per-file / batch" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.4f", $5+0}')
+      | awk '{printf "%.4f", $5+0}') || true
 
     expected_peak_ram_mb=$(grep "^Expected peak RAM" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.2f", $5+0}')
+      | awk '{printf "%.2f", $5+0}') || true
 
     # ── Average per-batch throughput ──────────────────────────────────────
     # Each batch line (pipelined approach) looks like:
@@ -221,7 +221,7 @@ for n in "${N_VALUES[@]}"; do
     avg_batch_throughput_mbs=$(grep "Throughput:" "$log" 2>/dev/null \
       | grep -v "^Avg Throughput:" \
       | sed 's/.*Throughput: \([0-9.]*\) MB.*/\1/' \
-      | awk 'BEGIN{sum=0;count=0} /^[0-9]/{sum+=$1; count++} END{if(count>0) printf "%.4f",sum/count; else print "NA"}')
+      | awk 'BEGIN{sum=0;count=0} /^[0-9]/{sum+=$1; count++} END{if(count>0) printf "%.4f",sum/count; else print "NA"}') || true
 
     # ── Defaults for any missing fields ──────────────────────────────────
 
