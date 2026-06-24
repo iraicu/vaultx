@@ -181,38 +181,42 @@ for n in "${N_VALUES[@]}"; do
     total_merge_time_s=$(grep "^Merge Time:" "$log" 2>/dev/null | head -1 \
       | awk '{v=$3; gsub(/s$/,"",v); printf "%.4f", v+0}') || true
 
-    avg_throughput_mbs=$(grep "^Avg Throughput:" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.4f", $3+0}') || true
+    # "Avg Throughput:" is not printed by vaultx; derive from total data / merge time
+    avg_throughput_mbs=""
 
     peak_memory_mb=$(grep "^Peak Memory Usage:" "$log" 2>/dev/null | head -1 \
       | awk '{printf "%.2f", $4+0}') || true
 
     # ── Parse config block ────────────────────────────────────────────────
-    # Printed by merge.c before the merge starts:
-    #   File size         : X.XX MB (X.XX GB)
-    #   Total data        : X.XX GB
-    #   Total batches     : N
-    #   Buckets / batch   : N
-    #   Per-file / batch  : X.XX MB
-    #   Expected peak RAM : X MB (X.XX GB)  [2 x B]
+    # Actual vaultx output uses these field names:
+    #   Total Batches: N
+    #   Buckets processed from each file per batch: N
+    #   Data read from each file per batch: X.XXMB
+    #   [X.XXs] Completed merging N K32-files of total size X.XXGB
+    # file_size_mb and avg_throughput_mbs are not printed; derived below.
 
-    file_size_mb=$(grep "^File size" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.4f", $4+0}') || true
+    # total size from: "[X.XXs] Completed merging N K32-files of total size X.XXGB"
+    total_data_gb=$(grep "Completed merging" "$log" 2>/dev/null | head -1 \
+      | sed 's/.*total size \([0-9.]*\)GB.*/\1/' \
+      | awk '{if ($1+0 > 0) printf "%.4f", $1+0}') || true
 
-    total_data_gb=$(grep "^Total data" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.4f", $4+0}') || true
-
-    total_batches=$(grep "^Total batches" "$log" 2>/dev/null | head -1 \
+    # "Total Batches: N"  (capital B in actual output)
+    total_batches=$(grep -i "^Total Batches:" "$log" 2>/dev/null | head -1 \
       | awk '{printf "%d", $NF+0}') || true
 
-    buckets_per_batch=$(grep "^Buckets / batch" "$log" 2>/dev/null | head -1 \
+    # "Buckets processed from each file per batch: N"
+    buckets_per_batch=$(grep "^Buckets processed from each file per batch:" "$log" 2>/dev/null | head -1 \
       | awk '{printf "%d", $NF+0}') || true
 
-    per_file_batch_mb=$(grep "^Per-file / batch" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.4f", $5+0}') || true
+    # "Data read from each file per batch: X.XXMB"
+    per_file_batch_mb=$(grep "^Data read from each file per batch:" "$log" 2>/dev/null | head -1 \
+      | awk '{v=$NF; gsub(/MB$/,"",v); if (v+0 > 0) printf "%.4f", v+0}') || true
 
-    expected_peak_ram_mb=$(grep "^Expected peak RAM" "$log" 2>/dev/null | head -1 \
-      | awk '{printf "%.2f", $5+0}') || true
+    # file_size_mb is not printed; derive after total_data_gb is known
+    file_size_mb=""
+
+    # expected_peak_ram is not printed; derive as 2 × B (pipeline double-buffer)
+    expected_peak_ram_mb=$(awk "BEGIN {printf \"%.2f\", 2 * ${b}}")
 
     # ── Average per-batch throughput ──────────────────────────────────────
     # Each batch line (pipelined approach) looks like:
@@ -228,15 +232,16 @@ for n in "${N_VALUES[@]}"; do
     read_time_s="${read_time_s:-NA}"
     write_time_s="${write_time_s:-NA}"
     total_merge_time_s="${total_merge_time_s:-NA}"
-    avg_throughput_mbs="${avg_throughput_mbs:-NA}"
     peak_memory_mb="${peak_memory_mb:-NA}"
-    file_size_mb="${file_size_mb:-NA}"
     total_data_gb="${total_data_gb:-NA}"
     total_batches="${total_batches:-NA}"
     buckets_per_batch="${buckets_per_batch:-NA}"
     per_file_batch_mb="${per_file_batch_mb:-NA}"
-    expected_peak_ram_mb="${expected_peak_ram_mb:-NA}"
     avg_batch_throughput_mbs="${avg_batch_throughput_mbs:-NA}"
+    # file_size_mb, avg_throughput_mbs: derived below; default NA if derivation fails
+    file_size_mb="${file_size_mb:-NA}"
+    avg_throughput_mbs="${avg_throughput_mbs:-NA}"
+    # expected_peak_ram_mb is always set to 2*B above (no NA fallback needed)
 
     # ── Derived fields ────────────────────────────────────────────────────
 
@@ -254,6 +259,16 @@ for n in "${N_VALUES[@]}"; do
       }")
     else
       compute_time_s="NA"
+    fi
+
+    # file_size_mb: total data / N files (not printed directly by vaultx)
+    if [[ -n "$total_data_gb" && "$total_data_gb" != "NA" ]]; then
+      file_size_mb=$(awk "BEGIN {printf \"%.4f\", ${total_data_gb} * 1024.0 / ${n}}")
+    fi
+
+    # avg_throughput_mbs: overall effective throughput = total data / merge time
+    if [[ -n "$total_data_gb" && "$total_data_gb" != "NA" && "$total_merge_time_s" != "NA" ]]; then
+      avg_throughput_mbs=$(awk "BEGIN {printf \"%.4f\", ${total_data_gb} * 1024.0 / ${total_merge_time_s}}")
     fi
 
     rm -f "$log"
