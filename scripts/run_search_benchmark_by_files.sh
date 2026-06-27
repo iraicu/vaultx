@@ -1,286 +1,358 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# General-purpose vaultx search benchmark: sweeps -t (multi-file) or -r
-# (single-file) in powers of two up to nproc, and sweeps -O (keep-open),
-# writing a CSV of timing metrics to ./data/.
-#
-# NOTE: do NOT pass -b true to vaultx here.  That flag suppresses the
-# TIMING/TOTAL stdout lines that this script parses; it also hardcodes
-# the output path to ./search-b.csv, bypassing --output.
-#
-# How to run:
-#   chmod +x scripts/run_search_benchmark_by_files.sh
-#
-#   # Defaults: 1000 lookups, 3-byte difficulty, ./plots/ target
-#   ./scripts/run_search_benchmark_by_files.sh
-#
-#   # Custom run
-#   ./scripts/run_search_benchmark_by_files.sh \
-#       -l 1500 -d 4 -f ./plots/ -o ./data/my_run.csv -b ./vaultx
-#
-#   # Plot results
-#   python3 ./scripts/plot_search_results_by_files.py \
-#       ./data/my_run.csv --title "vaultx search benchmark"
+
+# run_search_benchmark_by_files.sh
+
+# General-purpose vaultx search benchmark.  Sweeps -t (io threads,
+# multi-file directory) or -r (hash threads, single file).
+
+# Usage:
+#   ./scripts/run_search_benchmark_by_files.sh -sweep t
+#   ./scripts/run_search_benchmark_by_files.sh -sweep r
+
+N_LOOKUPS=10
+DIFFICULTY=3
+K_VALUE=32
+PREVIOUS_SEARCH=false
+KEEP_OPEN=false
+SWEEP_O=true
+TARGET="./plots/"
+BINARY="./vaultx"
+OUT_DIR="./data"
+LOG_FILE="/home/sfatunmbi/epycbox/search_log.txt"
+SUDO_PASS="sfatunmbi"
 
 
 usage() {
   cat <<'EOF'
-Run randomized search benchmarks and save results to CSV.
+Usage: run_search_benchmark_by_files.sh -sweep <mode>
 
-Options:
-  -l, --lookups NUM       Number of random lookups to perform (default: 1000)
-  -d, --difficulty NUM    Prefix length in bytes for each lookup (default: 3)
-  -f, --file PATH         Plot file or directory to search (default: ./plots/)
-  -o, --output FILE       CSV output path (default: ./data/search_benchmark_by_files_<timestamp>.csv)
-  -b, --binary PATH       vaultx binary to run (default: ./vaultx)
-  -T, --threads LIST      Space/comma separated thread counts to test (overrides default pow2 sweep)
-  -h, --help              Show this message
+  -sweep t    Sweep -t (io_threads) from 1 to N_cores using TARGET as a
+              directory.  Each file in the directory is searched in
+              parallel across the t threads.
 
-Environment overrides:
-  LOOKUPS, DIFFICULTY, TARGET, OUTPUT, VAULTX_BIN, THREAD_VALUES
+  -sweep r    Sweep -r (hash_threads) from 1 to N_cores using TARGET as
+              a single plot file.  The r threads parallelize the hashing
+              step within each bucket.
 
-  Avg Time/Lookup (ms)  -> avg_ms_per_lookup
-  Total Time (ms)       -> total_ms
+Edit the EDITABLE CONFIGURATION block at the top of this script to
+change N_LOOKUPS, DIFFICULTY, K_VALUE, KEEP_OPEN, SWEEP_O, TARGET, etc.
 EOF
 }
 
+
+SWEEP_MODE=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -sweep)
+      [[ $# -lt 2 ]] && { echo "Error: -sweep requires an argument: t or r" >&2; usage; exit 1; }
+      SWEEP_MODE="$2"; shift 2 ;;
+    -h|--help)
+      usage; exit 0 ;;
+    *)
+      echo "Unknown option: $1" >&2; usage; exit 1 ;;
+  esac
+done
+
+if [[ -z "$SWEEP_MODE" ]]; then
+  echo "Error: -sweep t|r is required" >&2
+  usage; exit 1
+fi
+
+case "$SWEEP_MODE" in
+  t|r) ;;
+  *) echo "Error: -sweep argument must be 't' or 'r', got '$SWEEP_MODE'" >&2; usage; exit 1 ;;
+esac
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DEFAULT_BIN="${VAULTX_BIN:-${ROOT_DIR}/vaultx}"
-DEFAULT_LOOKUPS="${LOOKUPS:-1000}"
-DEFAULT_DIFFICULTY="${DIFFICULTY:-3}"
-DEFAULT_TARGET="${TARGET:-${ROOT_DIR}/plots/}"
-DEFAULT_OUTPUT="${OUTPUT:-${ROOT_DIR}/data/search_benchmark_by_files_$(date +%Y%m%d_%H%M%S).csv}"
-THREAD_SPEC="${THREAD_VALUES:-}"  # optional env override
 
-LOOKUPS_VAL="$DEFAULT_LOOKUPS"
-DIFFICULTY_VAL="$DEFAULT_DIFFICULTY"
-TARGET_PATH="$DEFAULT_TARGET"
-OUTPUT_PATH="$DEFAULT_OUTPUT"
-BINARY_PATH="$DEFAULT_BIN"
+resolve_path() {
+  local p="$1"
+  if [[ "$p" == /* ]]; then
+    echo "$p"
+  else
+    echo "${ROOT_DIR}/${p#./}"
+  fi
+}
 
+BINARY="$(resolve_path "$BINARY")"
+TARGET="$(resolve_path "$TARGET")"
+OUT_DIR="$(resolve_path "$OUT_DIR")"
+
+_log_dir="$(dirname "$LOG_FILE")"
+if mkdir -p "$_log_dir" 2>/dev/null; then
+  exec > >(tee -a "$LOG_FILE") 2>&1
+else
+  _fallback_log="${OUT_DIR}/search_log_$(date +%Y%m%d).txt"
+  mkdir -p "$OUT_DIR" 2>/dev/null || true
+  echo "WARN: Cannot create log directory '$_log_dir'; logging to '$_fallback_log' instead" >&2
+  LOG_FILE="$_fallback_log"
+  exec > >(tee -a "$LOG_FILE") 2>&1
+fi
+
+
+TIMESTAMP_START=$(date -Iseconds)
+echo "========================================================"
+echo "  vaultx Search Benchmark  |  sweep: -${SWEEP_MODE}"
+echo "  Started: $TIMESTAMP_START"
+echo "========================================================"
+echo "  Binary:          $BINARY"
+echo "  Target:          $TARGET"
+echo "  N_LOOKUPS (-S):  $N_LOOKUPS"
+echo "  DIFFICULTY (-D): $DIFFICULTY"
+echo "  K_VALUE:         $K_VALUE"
+echo "  PREVIOUS_SEARCH: $PREVIOUS_SEARCH"
+echo "  KEEP_OPEN (-O):  $KEEP_OPEN  (SWEEP_O=$SWEEP_O)"
+echo "  OUT_DIR:         $OUT_DIR"
+echo "  LOG_FILE:        $LOG_FILE"
+echo "========================================================"
+echo ""
+
+if [[ ! -x "$BINARY" ]]; then
+  echo "Error: vaultx binary not found or not executable at '$BINARY'" >&2
+  exit 1
+fi
+
+if [[ "$SWEEP_MODE" == "t" ]]; then
+  if [[ ! -d "$TARGET" ]]; then
+    echo "Error: t-sweep requires a directory.  TARGET='$TARGET' is not a directory." >&2
+    exit 1
+  fi
+  file_count=$(find "$TARGET" -maxdepth 1 -name "k${K_VALUE}-*.plot" | wc -l | tr -d ' ')
+  if (( file_count < 1 )); then
+    echo "Error: no k${K_VALUE}-*.plot files found in '$TARGET'" >&2
+    exit 1
+  fi
+  file_size_bytes="N/A"
+  echo "t-sweep target directory: $TARGET"
+  echo "Plot files matching k${K_VALUE}-*.plot: $file_count"
+else
+  if [[ ! -f "$TARGET" ]]; then
+    echo "Error: r-sweep requires a file.  TARGET='$TARGET' is not a file." >&2
+    exit 1
+  fi
+  file_count=1
+  file_size_bytes=$(stat -c '%s' "$TARGET" 2>/dev/null || echo "N/A")
+  echo "r-sweep target file: $TARGET  ($file_size_bytes bytes)"
+fi
+
+
+core_count=$(nproc --all 2>/dev/null || printf '1')
+echo "CPU cores available: $core_count"
+
+raw_thread_vals=()
+val=1
+while (( val < core_count )); do
+  raw_thread_vals+=("$val")
+  val=$(( val * 2 ))
+done
+raw_thread_vals+=("$core_count")
+
+declare -A _seen_t
+thread_values=()
+for v in "${raw_thread_vals[@]}"; do
+  if [[ -z "${_seen_t[$v]:-}" ]]; then
+    thread_values+=("$v")
+    _seen_t[$v]=1
+  fi
+done
+unset _seen_t
+
+echo "Thread sweep values: ${thread_values[*]}"
+
+
+if [[ "$SWEEP_O" == "true" ]]; then
+  keep_values=(false true)
+else
+  keep_values=("$KEEP_OPEN")
+fi
+echo "Keep-open values to test: ${keep_values[*]}"
+echo ""
+
+mkdir -p "$OUT_DIR"
+RUN_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+OUTPUT="${OUT_DIR}/search_${SWEEP_MODE}_sweep_${RUN_TIMESTAMP}.csv"
+
+printf "sweep_mode,target,k_value,file_count,file_size_bytes," \
+       >> "$OUTPUT"
+printf "t,r,keep_open,difficulty,previous_search," \
+       >> "$OUTPUT"
+printf "lookups,found,not_found,matches," \
+       >> "$OUTPUT"
+printf "open_close_ms,seek_ms,read_ms,hash_ms," \
+       >> "$OUTPUT"
+printf "avg_ms_per_lookup,total_ms,total_s,peak_memory_mb\n" \
+       >> "$OUTPUT"
+
+echo "Results CSV: $OUTPUT"
+echo ""
+
+
+DROP_WARNED=""
 drop_caches() {
   if [[ -w /proc/sys/vm/drop_caches ]]; then
     sync
     echo 3 > /proc/sys/vm/drop_caches
   elif command -v sudo >/dev/null 2>&1; then
-    if sudo -n true 2>/dev/null; then
-      sync
-      sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
-    else
-      if [[ -z "${DROP_WARNED:-}" ]]; then
-        echo "WARN: cannot drop caches without sudo permissions" >&2
-        DROP_WARNED=1
-      fi
-    fi
+    echo "$SUDO_PASS" | sudo -S sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null \
+      || { [[ -z "$DROP_WARNED" ]] && echo "WARN: sudo cache drop failed, falling back to sync" >&2 && DROP_WARNED=1; sync; }
   else
-    if [[ -z "${DROP_WARNED:-}" ]]; then
-      echo "WARN: /proc/sys/vm/drop_caches not writable and sudo missing; skipping cache drop" >&2
+    if [[ -z "$DROP_WARNED" ]]; then
+      echo "WARN: cannot drop caches (no write access and sudo unavailable); skipping" >&2
       DROP_WARNED=1
     fi
   fi
 }
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    -l|--lookups)
-      LOOKUPS_VAL="$2"; shift 2;;
-    -d|--difficulty)
-      DIFFICULTY_VAL="$2"; shift 2;;
-    -f|--file)
-      TARGET_PATH="$2"; shift 2;;
-    -o|--output)
-      OUTPUT_PATH="$2"; shift 2;;
-    -b|--binary)
-      BINARY_PATH="$2"; shift 2;;
-    -T|--threads)
-      THREAD_SPEC="$2"; shift 2;;
-    -h|--help)
-      usage; exit 0;;
-    *)
-      echo "Unknown option: $1" >&2
-      usage
-      exit 1;;
-  esac
-done
 
-if [[ ! -x "$BINARY_PATH" ]]; then
-  echo "Error: vaultx binary not found or not executable at '$BINARY_PATH'" >&2
-  exit 1
-fi
+best_avg_ms="999999"
+best_avg_label=""
+best_total_ms="999999"
+best_total_label=""
 
-if [[ -f "$TARGET_PATH" ]]; then
-  file_count=1
-elif [[ -d "$TARGET_PATH" ]]; then
-  file_count=$(find "$TARGET_PATH" -maxdepth 1 -name "*.plot" | wc -l | tr -d ' ')
-else
-  echo "Error: target '$TARGET_PATH' is not a file or directory" >&2
-  exit 1
-fi
-
-if (( file_count < 1 )); then
-  echo "Error: target '$TARGET_PATH' contains no files" >&2
-  exit 1
-fi
-
-# K value: extracted from filename for a single file; "mixed" for a directory.
-k_value="mixed"
-if [[ -f "$TARGET_PATH" ]]; then
-  _bname=$(basename "$TARGET_PATH")
-  if [[ "$_bname" =~ ^k([0-9]+)- ]]; then
-    k_value="${BASH_REMATCH[1]}"
-  fi
-fi
-
-# File size in bytes: available for single file only.
-file_size_bytes="N/A"
-if [[ -f "$TARGET_PATH" ]]; then
-  file_size_bytes=$(stat -c '%s' "$TARGET_PATH" 2>/dev/null || echo "N/A")
-fi
-
-core_count=$(nproc --all 2>/dev/null || printf '1')
-
-
-raw_values=()
-if [[ -n "$THREAD_SPEC" ]]; then
-  THREAD_SPEC=${THREAD_SPEC//,/ }  # allow comma separated
-  for val in $THREAD_SPEC; do
-    raw_values+=("$val")
-  done
-else
-  val=1
-  while (( val < core_count )); do
-    raw_values+=("$val")
-    val=$(( val * 2 ))
-  done
-  raw_values+=("$core_count")
-fi
-
-declare -A seen
-thread_values=()
-for val in "${raw_values[@]}"; do
-  if [[ "$val" =~ ^[0-9]+$ ]] && (( val > 0 )); then
-    if [[ -z "${seen[$val]:-}" ]]; then
-      thread_values+=("$val")
-      seen[$val]=1
-    fi
-  fi
-done
-
-if [[ ${#thread_values[@]} -eq 0 ]]; then
-  echo "Error: no valid thread counts resolved" >&2
-  exit 1
-fi
-
-if (( file_count > 1 )); then
-  sweep_mode="t-sweep"
-  t_values=("${thread_values[@]}")
-  r_values=(1)
-else
-  sweep_mode="r-sweep"
-  t_values=(1)
-  r_values=("${thread_values[@]}")
-fi
-
-mkdir -p "$(dirname "$OUTPUT_PATH")"
-
-printf "timestamp,binary,file,k_value,file_size_bytes,file_count,sweep_mode,t,r,keep_open,lookups,difficulty,found,not_found,matches,open_close_ms,seek_ms,read_ms,hash_ms,avg_ms_per_lookup,total_ms,total_s\n" > "$OUTPUT_PATH"
-
-best_avg_ms=999999
-best_avg_cmd=""
-best_total_s=999999
-best_total_cmd=""
-
-keep_values=(false true)
-
-echo "Running benchmarks (mode: $sweep_mode) with t in: ${t_values[*]}, r in: ${r_values[*]} (files: $file_count, cores: ${core_count}), keep_open in: ${keep_values[*]}" >&2
 
 drop_caches
 
-for t in "${t_values[@]}"; do
-  # Clear cache between thread count changes.
-  if [[ "$sweep_mode" == "t-sweep" ]]; then
-    drop_caches
+for thread_val in "${thread_values[@]}"; do
+  # Assign to the appropriate flag depending on sweep mode
+  if [[ "$SWEEP_MODE" == "t" ]]; then
+    t="$thread_val"
+    r=1
+  else
+    t=1
+    r="$thread_val"
   fi
-  for r in "${r_values[@]}"; do
-    if [[ "$sweep_mode" == "r-sweep" ]]; then
-      drop_caches
+
+  drop_caches
+
+  for keep in "${keep_values[@]}"; do
+
+    # Build vaultx command
+    cmd=("$BINARY"
+         -S "$N_LOOKUPS"
+         -D "$DIFFICULTY"
+         -f "$TARGET"
+         -t "$t"
+         -r "$r"
+         -O "$keep")
+
+    # Only add -ps when true (flag alone enables it; --ps=false is default)
+    [[ "$PREVIOUS_SEARCH" == "true" ]] && cmd+=(-ps)
+
+    label="${SWEEP_MODE}=${thread_val} keep_open=${keep}"
+    echo "------------------------------------------------------------"
+    echo "  Run: $label"
+    echo "  Cmd: ${cmd[*]}"
+    echo "------------------------------------------------------------"
+
+    set +e
+    output="$("${cmd[@]}" 2>&1)"
+    exit_status=$?
+    set -e
+
+    # Echo vaultx output so it goes to terminal and log file via tee
+    echo "$output"
+    echo ""
+
+    if (( exit_status != 0 )); then
+      echo "WARN: vaultx exited with status $exit_status; skipping CSV entry" >&2
+      continue
     fi
-    for keep in "${keep_values[@]}"; do
-      cmd=("$BINARY_PATH" -S "$LOOKUPS_VAL" -D "$DIFFICULTY_VAL" -f "$TARGET_PATH" -t "$t" -r "$r" -O "$keep")
-      echo "--> ${cmd[*]}" >&2
 
-      set +e
-      output="$("${cmd[@]}" 2>&1)"
-      status=$?
-      set -e
+    # ----------------------------------------------------------
+    # Parse TIMING line
+    # Format: TIMING open_close_ms seek_ms read_ms hash_ms total_wall_ms avg_per_lookup_ms
+    # All values are per-lookup proportional wall-clock averages except
+    # total_wall_ms which is the full run wall clock.
+    # ----------------------------------------------------------
+    timing_line=$(grep '^TIMING' <<<"$output" || true)
+    if [[ -z "$timing_line" ]]; then
+      echo "WARN: TIMING line not found in output (PREVIOUS_SEARCH=true uses legacy path without TIMING); skipping CSV entry" >&2
+      continue
+    fi
 
-      if (( status != 0 )); then
-        echo "WARN: command failed (exit ${status}); skipping entry" >&2
-        echo "$output" >&2
-        continue
-      fi
+    open_close_ms=$(awk '{print $2}' <<<"$timing_line")
+    seek_ms=$(       awk '{print $3}' <<<"$timing_line")
+    read_ms=$(       awk '{print $4}' <<<"$timing_line")
+    hash_ms=$(       awk '{print $5}' <<<"$timing_line")
+    total_ms=$(      awk '{print $6}' <<<"$timing_line")
+    avg_ms=$(        awk '{print $7}' <<<"$timing_line")
 
-      # Parse TIMING line: TIMING open_close_ms seek_ms read_ms hash_ms total_wall_ms avg_per_lookup_ms
-      timing_line=$(grep '^TIMING' <<<"$output" || true)
-      if [[ -z "$timing_line" ]]; then
-        echo "WARN: could not find TIMING line in output; skipping entry" >&2
-        echo "$output" >&2
-        continue
-      fi
+    # ----------------------------------------------------------
+    # Parse TOTAL line
+    # Format (positional after "TOTAL (all lookups)"):
+    #   lookups  found  not_found  matches  avg_ms  total_ms
+    # We extract all numbers in order using grep -oE.
+    # ----------------------------------------------------------
+    total_line=$(grep 'TOTAL (all lookups)' <<<"$output" || true)
+    if [[ -n "$total_line" ]]; then
+      # Extract numbers in document order: int int int int float float
+      mapfile -t _nums < <(grep -oE '[0-9]+(\.[0-9]+)?' <<<"$total_line")
+      lookups_f="${_nums[0]:-$N_LOOKUPS}"
+      found_f="${_nums[1]:-0}"
+      not_found_f="${_nums[2]:-0}"
+      matches_f="${_nums[3]:-0}"
+      # _nums[4] and _nums[5] are avg_ms and total_ms — already from TIMING
+    else
+      lookups_f="$N_LOOKUPS"
+      found_f=0
+      not_found_f=0
+      matches_f=0
+    fi
 
-      # Extract component timing (avg per lookup)
-      open_close_ms=$(awk '{print $2}' <<<"$timing_line")
-      seek_ms=$(awk '{print $3}' <<<"$timing_line")
-      read_ms=$(awk '{print $4}' <<<"$timing_line")
-      hash_ms=$(awk '{print $5}' <<<"$timing_line")
-      total_ms=$(awk '{print $6}' <<<"$timing_line")
-      avg_ms=$(awk '{print $7}' <<<"$timing_line")
+    # ----------------------------------------------------------
+    # Parse Peak Memory Usage line (optional)
+    # Format: Peak Memory Usage: <value> MB
+    # ----------------------------------------------------------
+    peak_mem=$(grep -oP 'Peak Memory Usage:\s+\K[0-9.]+' <<<"$output" || echo "")
 
-      # Parse TOTAL line for found/not_found/matches counts
-      # Format: TOTAL (all lookups)  <blanks> lookups found not_found matches avg total
-      total_line=$(grep 'TOTAL (all lookups)' <<<"$output" || true)
-      if [[ -n "$total_line" ]]; then
-        # Extract numeric fields from the TOTAL line
-        lookups_field=$(echo "$total_line" | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/) {print $i; exit}}')
-        found_field=$(echo "$total_line" | awk '{n=0; for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/) {n++; if(n==2) {print $i; exit}}}')
-        not_found_field=$(echo "$total_line" | awk '{n=0; for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/) {n++; if(n==3) {print $i; exit}}}')
-        matches_field=$(echo "$total_line" | awk '{n=0; for(i=1;i<=NF;i++) if($i ~ /^[0-9]+$/) {n++; if(n==4) {print $i; exit}}}')
-      else
-        # Fallback: use lookups from args, zeros for counts
-        lookups_field="$LOOKUPS_VAL"
-        found_field=0
-        not_found_field=0
-        matches_field=0
-      fi
+    # ----------------------------------------------------------
+    # Derive total seconds
+    # ----------------------------------------------------------
+    total_s=$(awk -v ms="$total_ms" 'BEGIN { printf "%.6f", ms/1000.0 }')
 
-      timestamp=$(date -Iseconds)
-      total_s=$(awk -v ms="$total_ms" 'BEGIN { printf "%.6f", ms/1000.0 }')
+    # ----------------------------------------------------------
+    # Write CSV row
+    # ----------------------------------------------------------
+    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+      "$SWEEP_MODE" "$TARGET" "$K_VALUE" \
+      "$file_count" "$file_size_bytes" \
+      "$t" "$r" "$keep" \
+      "$DIFFICULTY" "$PREVIOUS_SEARCH" \
+      "$lookups_f" "$found_f" "$not_found_f" "$matches_f" \
+      "$open_close_ms" "$seek_ms" "$read_ms" "$hash_ms" \
+      "$avg_ms" "$total_ms" "$total_s" "$peak_mem" \
+      >> "$OUTPUT"
 
-      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
-        "$timestamp" "$BINARY_PATH" "$TARGET_PATH" "$k_value" "$file_size_bytes" \
-        "$file_count" "$sweep_mode" "$t" "$r" "$keep" \
-        "$lookups_field" "$DIFFICULTY_VAL" "$found_field" "$not_found_field" \
-        "$matches_field" "$open_close_ms" "$seek_ms" "$read_ms" "$hash_ms" \
-        "$avg_ms" "$total_ms" "$total_s" >> "$OUTPUT_PATH"
+    echo "  -> CSV row written | avg_ms_per_lookup=${avg_ms}  total_ms=${total_ms}  total_s=${total_s}"
 
-      cmd_repr="$BINARY_PATH -S $LOOKUPS_VAL -D $DIFFICULTY_VAL -f $TARGET_PATH -t $t -r $r -O $keep"
-      if awk -v avg="$avg_ms" -v best="$best_avg_ms" 'BEGIN { exit (avg < best ? 0 : 1) }'; then
-        best_avg_ms="$avg_ms"
-        best_avg_cmd="$cmd_repr"
-      fi
-      if awk -v ts="$total_s" -v best="$best_total_s" 'BEGIN { exit (ts < best ? 0 : 1) }'; then
-        best_total_s="$total_s"
-        best_total_cmd="$cmd_repr"
-      fi
-    done
+    # Track bests
+    if awk -v cur="$avg_ms" -v best="$best_avg_ms" 'BEGIN{exit(cur<best?0:1)}'; then
+      best_avg_ms="$avg_ms"
+      best_avg_label="$label  (avg=${avg_ms} ms/lookup)"
+    fi
+    if awk -v cur="$total_ms" -v best="$best_total_ms" 'BEGIN{exit(cur<best?0:1)}'; then
+      best_total_ms="$total_ms"
+      best_total_label="$label  (total=${total_ms} ms)"
+    fi
+
   done
 done
 
-echo "Benchmark complete. Results saved to $OUTPUT_PATH" >&2
-if [[ -n "$best_avg_cmd" ]]; then
-  echo "Best avg lookup time: ${best_avg_ms} ms via: $best_avg_cmd" >&2
+
+# ----------------------------------------------------------------
+# Summary
+# ----------------------------------------------------------------
+echo ""
+echo "========================================================"
+echo "  Benchmark complete"
+echo "  Finished: $(date -Iseconds)"
+echo "  Results:  $OUTPUT"
+if [[ -n "$best_avg_label" ]]; then
+  echo "  Best avg/lookup:  $best_avg_label"
 fi
-if [[ -n "$best_total_cmd" ]]; then
-  echo "Best total time: ${best_total_s} s via: $best_total_cmd" >&2
+if [[ -n "$best_total_label" ]]; then
+  echo "  Best total time:  $best_total_label"
 fi
+echo "========================================================"
