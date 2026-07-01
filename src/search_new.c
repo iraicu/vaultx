@@ -1,17 +1,5 @@
 #include "search.h"
 
-// Utility: map a global record index into its owning file slice.
-static int find_file_for_index(size_t idx, const size_t *prefix_offsets,
-                               const size_t *effective_counts, int file_count) {
-  for (int i = 0; i < file_count; i++) {
-    size_t start = prefix_offsets[i];
-    size_t end = start + effective_counts[i];
-    if (idx >= start && idx < end) {
-      return i;
-    }
-  }
-  return -1;
-}
 
 bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
                            SearchFileCtx *ctx_list, int file_count,
@@ -42,15 +30,12 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
   MemoTable2Record *combined_buffer =
       (MemoTable2Record *)malloc(total_capacity * sizeof(MemoTable2Record));
   size_t *file_offsets = (size_t *)calloc(file_count, sizeof(size_t));
-  size_t *effective_counts = (size_t *)calloc(file_count, sizeof(size_t));
 
-  if (!combined_buffer || !file_offsets || !effective_counts) {
+  if (!combined_buffer || !file_offsets) {
     free(combined_buffer);
     free(file_offsets);
-    free(effective_counts);
     return false;
   }
-
 
   file_offsets[0] = 0;
   for (int i = 1; i < file_count; i++) {
@@ -75,7 +60,6 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
     size_t offset = file_offsets[i];
     memcpy(combined_buffer + offset, ctx_list[i].buffer,
            records_read * sizeof(MemoTable2Record));
-    effective_counts[i] = effective_read;
   }
 
   double io_ms = (omp_get_wtime() - io_start) * 1000.0;
@@ -85,13 +69,28 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
   if (io_error > 0) {
     free(combined_buffer);
     free(file_offsets);
-    free(effective_counts);
     return false;
   }
 
-  size_t total_effective = 0;
-  for (int i = 0; i < file_count; i++) {
-    total_effective += effective_counts[i];
+  // Precompute which file each physical slot belongs to for O(1) lookup.
+  // Iterate over total_capacity (physical slots) so that empty slots between
+  // effective and capacity boundaries in earlier files do not cause later
+  // files' records to be skipped.
+  int *slot_file = (int *)malloc(total_capacity * sizeof(int));
+  if (!slot_file) {
+    free(combined_buffer);
+    free(file_offsets);
+    return false;
+  }
+  {
+    int fi = 0;
+    for (size_t pi = 0; pi < total_capacity; pi++) {
+      while (fi < file_count - 1 &&
+             pi >= file_offsets[fi] + ctx_list[fi].num_records_in_bucket_search) {
+        fi++;
+      }
+      slot_file[pi] = fi;
+    }
   }
 
   // Allocate match buffer with an initial capacity; grow as needed.
@@ -112,18 +111,13 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
     uint8_t hash_output[HASH_SIZE];
 
 #pragma omp for schedule(static)
-    for (size_t global_idx = 0; global_idx < total_effective; global_idx++) {
-        int file_index = find_file_for_index(global_idx, file_offsets,
-                                             effective_counts, file_count);
-      if (file_index < 0)
+    for (size_t phys_idx = 0; phys_idx < total_capacity; phys_idx++) {
+      MemoTable2Record *rec = combined_buffer + phys_idx;
+      if (is_record_empty(rec))
         continue;
 
-      size_t local_idx = global_idx - file_offsets[file_index];
-      MemoTable2Record *rec = combined_buffer + file_offsets[file_index] + local_idx;
-
-      if (is_record_empty(rec)) {
-        continue;
-      }
+      int file_index = slot_file[phys_idx];
+      size_t local_idx = phys_idx - file_offsets[file_index];
 
       uint8_t *record_key = ctx_list[file_index].local_key;
       if (ctx_list[file_index].plotData_array != NULL &&
@@ -196,9 +190,9 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
     free(matches);
   }
 
+  free(slot_file);
   free(combined_buffer);
   free(file_offsets);
-  free(effective_counts);
   return true;
 }
 
@@ -235,15 +229,13 @@ bool search_rewrite_lookup_timed(const uint8_t *query, size_t search_length,
   MemoTable2Record *combined_buffer =
       (MemoTable2Record *)malloc(total_capacity * sizeof(MemoTable2Record));
   size_t *file_offsets = (size_t *)calloc(file_count, sizeof(size_t));
-  size_t *effective_counts = (size_t *)calloc(file_count, sizeof(size_t));
   double *per_file_seek_ms = (double *)calloc(file_count, sizeof(double));
   double *per_file_read_ms = (double *)calloc(file_count, sizeof(double));
 
-  if (!combined_buffer || !file_offsets || !effective_counts ||
+  if (!combined_buffer || !file_offsets ||
       !per_file_seek_ms || !per_file_read_ms) {
     free(combined_buffer);
     free(file_offsets);
-    free(effective_counts);
     free(per_file_seek_ms);
     free(per_file_read_ms);
     return false;
@@ -276,11 +268,11 @@ bool search_rewrite_lookup_timed(const uint8_t *query, size_t search_length,
     size_t offset = file_offsets[i];
     memcpy(combined_buffer + offset, ctx_list[i].buffer,
            records_read * sizeof(MemoTable2Record));
-    effective_counts[i] = effective_read;
   }
 
-  // Aggregate seek and read times across all files
-  // We report sum for detailed breakdown to show total CPU time spent.
+  // Aggregate seek and read times across all files.
+  // These are cumulative CPU-time sums (all threads combined); the caller
+  // converts them to proportional wall-clock fractions for reporting.
   double sum_seek_ms = 0.0, sum_read_ms = 0.0;
   for (int i = 0; i < file_count; i++) {
     sum_seek_ms += per_file_seek_ms[i];
@@ -295,13 +287,28 @@ bool search_rewrite_lookup_timed(const uint8_t *query, size_t search_length,
   if (io_error > 0) {
     free(combined_buffer);
     free(file_offsets);
-    free(effective_counts);
     return false;
   }
 
-  size_t total_effective = 0;
-  for (int i = 0; i < file_count; i++) {
-    total_effective += effective_counts[i];
+  // Precompute which file each physical slot belongs to for O(1) lookup.
+  // We iterate over total_capacity (not total_effective) so that empty slots
+  // inside a file's bucket section do not shift the physical positions of
+  // records from later files, which would cause tail records to be missed.
+  int *slot_file = (int *)malloc(total_capacity * sizeof(int));
+  if (!slot_file) {
+    free(combined_buffer);
+    free(file_offsets);
+    return false;
+  }
+  {
+    int fi = 0;
+    for (size_t pi = 0; pi < total_capacity; pi++) {
+      while (fi < file_count - 1 &&
+             pi >= file_offsets[fi] + ctx_list[fi].num_records_in_bucket_search) {
+        fi++;
+      }
+      slot_file[pi] = fi;
+    }
   }
 
   // Allocate match buffer with an initial capacity; grow as needed.
@@ -322,18 +329,13 @@ bool search_rewrite_lookup_timed(const uint8_t *query, size_t search_length,
     uint8_t hash_output[HASH_SIZE];
 
 #pragma omp for schedule(static)
-    for (size_t global_idx = 0; global_idx < total_effective; global_idx++) {
-      int file_index = find_file_for_index(global_idx, file_offsets,
-                                           effective_counts, file_count);
-      if (file_index < 0)
+    for (size_t phys_idx = 0; phys_idx < total_capacity; phys_idx++) {
+      MemoTable2Record *rec = combined_buffer + phys_idx;
+      if (is_record_empty(rec))
         continue;
 
-      size_t local_idx = global_idx - file_offsets[file_index];
-      MemoTable2Record *rec = combined_buffer + file_offsets[file_index] + local_idx;
-
-      if (is_record_empty(rec)) {
-        continue;
-      }
+      int file_index = slot_file[phys_idx];
+      size_t local_idx = phys_idx - file_offsets[file_index];
 
       uint8_t *record_key = ctx_list[file_index].local_key;
       if (ctx_list[file_index].plotData_array != NULL &&
@@ -411,8 +413,8 @@ bool search_rewrite_lookup_timed(const uint8_t *query, size_t search_length,
     free(matches);
   }
 
+  free(slot_file);
   free(combined_buffer);
   free(file_offsets);
-  free(effective_counts);
   return true;
 }

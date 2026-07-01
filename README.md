@@ -21,6 +21,7 @@ Vaults are files stored on users' machines and later used for fast leader electi
 - [`BLAKE3`](https://github.com/BLAKE3-team/BLAKE3) — for fast cryptographic hash functions
 - [`OpenMP`](https://www.openmp.org/) — for parallel programming
 - [`Sodium`](https://github.com/jedisct1/libsodium) — for secure hashing with SHA-256 and generating random unpredictable data (public key)
+- [`libnuma`](https://github.com/numactl/numactl) — for NUMA-aware memory allocation
 
 
 ## Installation
@@ -42,7 +43,15 @@ submodules associated with it:
   git submodule update --init --recursive --progress
 ```
 
-2. **Compile the program**
+2. **Install libraries**
+
+```bash
+  sudo apt install libomp-dev libsodium-dev libnuma-dev
+```
+
+**Blake3 is already included in the repository**
+
+3. **Compile the program**
 
 ```bash
   make <program_name> NONCE_SIZE=<nonce_size> RECORD_SIZE=16
@@ -55,14 +64,6 @@ submodules associated with it:
 
 `nonce_size=4` if `27<=k<=32`
 `nonce_size=5` if `33<=k<=40`
-
-3. **Install libraries**
-
-```bash
-  sudo apt install libomp-dev libsodium-dev
-```
-
-**Blake3 is already included in the repository**
 
 
 ## Running

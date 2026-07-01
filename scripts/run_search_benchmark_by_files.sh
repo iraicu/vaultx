@@ -182,7 +182,7 @@ printf "lookups,found,not_found,matches," \
        >> "$OUTPUT"
 printf "open_close_ms,seek_ms,read_ms,hash_ms," \
        >> "$OUTPUT"
-printf "avg_ms_per_lookup,total_ms,total_s,peak_memory_mb\n" \
+printf "avg_ms_per_lookup,avg_ms_per_lookup_per_file,total_ms,total_s,peak_memory_mb\n" \
        >> "$OUTPUT"
 
 echo "Results CSV: $OUTPUT"
@@ -262,9 +262,10 @@ for thread_val in "${thread_values[@]}"; do
 
     # ----------------------------------------------------------
     # Parse TIMING line
-    # Format: TIMING open_close_ms seek_ms read_ms hash_ms total_wall_ms avg_per_lookup_ms
-    # All values are per-lookup proportional wall-clock averages except
-    # total_wall_ms which is the full run wall clock.
+    # Format: TIMING open_close_ms seek_ms read_ms hash_ms total_wall_ms
+    #                avg_per_lookup_ms avg_per_lookup_per_file_ms
+    # avg_per_lookup_ms          = wall-clock per lookup across ALL files
+    # avg_per_lookup_per_file_ms = avg_per_lookup_ms / file_count
     # ----------------------------------------------------------
     timing_line=$(grep '^TIMING' <<<"$output" || true)
     if [[ -z "$timing_line" ]]; then
@@ -278,6 +279,7 @@ for thread_val in "${thread_values[@]}"; do
     hash_ms=$(       awk '{print $5}' <<<"$timing_line")
     total_ms=$(      awk '{print $6}' <<<"$timing_line")
     avg_ms=$(        awk '{print $7}' <<<"$timing_line")
+    avg_ms_per_file=$(awk '{print $8}' <<<"$timing_line")
 
     # ----------------------------------------------------------
     # Parse TOTAL line
@@ -315,22 +317,22 @@ for thread_val in "${thread_values[@]}"; do
     # ----------------------------------------------------------
     # Write CSV row
     # ----------------------------------------------------------
-    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
       "$SWEEP_MODE" "$TARGET" "$K_VALUE" \
       "$file_count" "$file_size_bytes" \
       "$t" "$r" "$keep" \
       "$DIFFICULTY" "$PREVIOUS_SEARCH" \
       "$lookups_f" "$found_f" "$not_found_f" "$matches_f" \
       "$open_close_ms" "$seek_ms" "$read_ms" "$hash_ms" \
-      "$avg_ms" "$total_ms" "$total_s" "$peak_mem" \
+      "$avg_ms" "$avg_ms_per_file" "$total_ms" "$total_s" "$peak_mem" \
       >> "$OUTPUT"
 
-    echo "  -> CSV row written | avg_ms_per_lookup=${avg_ms}  total_ms=${total_ms}  total_s=${total_s}"
+    echo "  -> CSV row written | avg_ms_per_lookup=${avg_ms}  avg_ms_per_lookup_per_file=${avg_ms_per_file}  total_ms=${total_ms}  total_s=${total_s}"
 
     # Track bests
     if awk -v cur="$avg_ms" -v best="$best_avg_ms" 'BEGIN{exit(cur<best?0:1)}'; then
       best_avg_ms="$avg_ms"
-      best_avg_label="$label  (avg=${avg_ms} ms/lookup)"
+      best_avg_label="$label  (avg=${avg_ms} ms/lookup, ${avg_ms_per_file} ms/lookup/file)"
     fi
     if awk -v cur="$total_ms" -v best="$best_total_ms" 'BEGIN{exit(cur<best?0:1)}'; then
       best_total_ms="$total_ms"
