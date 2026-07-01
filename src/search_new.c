@@ -93,12 +93,9 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
     }
   }
 
-  // Allocate match buffer with an initial capacity; grow as needed.
-  SearchMatch *matches = NULL;
-  size_t matches_capacity = 128;
-  if (matches_capacity > 0) {
-    matches = (SearchMatch *)malloc(matches_capacity * sizeof(SearchMatch));
-  }
+  // Pre-allocate to total_capacity
+  SearchMatch *matches = (SearchMatch *)malloc(total_capacity * sizeof(SearchMatch));
+  size_t matches_capacity = total_capacity;
 
   size_t total_matches = 0;
   size_t total_hashed = 0;
@@ -139,28 +136,9 @@ bool search_rewrite_lookup(const uint8_t *query, size_t search_length,
 #pragma omp atomic capture
         slot = total_matches++;
 
-        // Grow matches buffer if needed (single-threaded critical section)
-        if (matches) {
-          if (slot >= matches_capacity) {
-#pragma omp critical
-            {
-              if (slot >= matches_capacity) {
-                size_t new_cap = matches_capacity * 2;
-                if (new_cap < slot + 1)
-                  new_cap = slot + 1;
-                SearchMatch *resized = (SearchMatch *)realloc(
-                    matches, new_cap * sizeof(SearchMatch));
-                if (resized) {
-                  matches = resized;
-                  matches_capacity = new_cap;
-                }
-              }
-            }
-          }
-          if (slot < matches_capacity) {
-            matches[slot].record = *rec;
-            matches[slot].file_index = file_index;
-          }
+        if (matches && slot < matches_capacity) {
+          matches[slot].record = *rec;
+          matches[slot].file_index = file_index;
         }
 
         if (matches_by_file) {
@@ -311,12 +289,9 @@ bool search_rewrite_lookup_timed(const uint8_t *query, size_t search_length,
     }
   }
 
-  // Allocate match buffer with an initial capacity; grow as needed.
-  SearchMatch *matches = NULL;
-  size_t matches_capacity = 128;
-  if (matches_capacity > 0) {
-    matches = (SearchMatch *)malloc(matches_capacity * sizeof(SearchMatch));
-  }
+  // Pre-allocate to total_capacity (same reasoning as search_rewrite_lookup).
+  SearchMatch *matches = (SearchMatch *)malloc(total_capacity * sizeof(SearchMatch));
+  size_t matches_capacity = total_capacity;
 
   size_t total_matches = 0;
   size_t total_hashed = 0;
@@ -357,28 +332,9 @@ bool search_rewrite_lookup_timed(const uint8_t *query, size_t search_length,
 #pragma omp atomic capture
         slot = total_matches++;
 
-        // Grow matches buffer if needed (single-threaded critical section)
-        if (matches) {
-          if (slot >= matches_capacity) {
-#pragma omp critical
-            {
-              if (slot >= matches_capacity) {
-                size_t new_cap = matches_capacity * 2;
-                if (new_cap < slot + 1)
-                  new_cap = slot + 1;
-                SearchMatch *resized = (SearchMatch *)realloc(
-                    matches, new_cap * sizeof(SearchMatch));
-                if (resized) {
-                  matches = resized;
-                  matches_capacity = new_cap;
-                }
-              }
-            }
-          }
-          if (slot < matches_capacity) {
-            matches[slot].record = *rec;
-            matches[slot].file_index = file_index;
-          }
+        if (matches && slot < matches_capacity) {
+          matches[slot].record = *rec;
+          matches[slot].file_index = file_index;
         }
 
         if (matches_by_file) {
