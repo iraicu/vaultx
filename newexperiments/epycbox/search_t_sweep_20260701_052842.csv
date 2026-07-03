@@ -1,0 +1,9 @@
+sweep_mode,target,k_value,file_count,file_size_bytes,t,r,keep_open,difficulty,previous_search,lookups,found,not_found,matches,open_close_ms,seek_ms,read_ms,hash_ms,avg_ms_per_lookup,avg_ms_per_lookup_per_file,total_ms,total_s,peak_memory_mb
+t,/data-l/sfatunmbi/plots/,32,450,N/A,1,1,false,3,false,10,4500,0,1151395,30.8012,1546.8108,1528.3312,45.3987,3151.3420,7.0030,31513.4197,31.513420,4.58
+t,/data-l/sfatunmbi/plots/,32,450,N/A,2,1,false,3,false,10,4500,0,1151495,16.5143,1453.4720,1431.3720,22.8556,2924.2139,6.4983,29242.1392,29.242139,4.35
+t,/data-l/sfatunmbi/plots/,32,450,N/A,4,1,false,3,false,10,4500,0,1151323,13.5881,1086.0340,1082.6767,9.7912,2192.0900,4.8713,21920.9003,21.920900,4.30
+t,/data-l/sfatunmbi/plots/,32,450,N/A,8,1,false,3,false,10,4500,0,1151395,11.2045,331.7607,1381.5437,5.8321,1730.3410,3.8452,17303.4099,17.303410,4.52
+t,/data-l/sfatunmbi/plots/,32,450,N/A,16,1,false,3,false,10,4500,0,1151218,21.7042,873.4410,1003.3051,2.8707,1901.3210,4.2252,19013.2102,19.013210,4.46
+t,/data-l/sfatunmbi/plots/,32,450,N/A,32,1,false,3,false,10,4500,0,1151334,16.9556,634.0323,1300.6620,1.5071,1953.1571,4.3403,19531.5707,19.531571,4.61
+t,/data-l/sfatunmbi/plots/,32,450,N/A,64,1,false,3,false,10,4500,0,1151432,3.3823,302.8074,1709.4698,0.7997,2016.4592,4.4810,20164.5920,20.164592,4.34
+t,/data-l/sfatunmbi/plots/,32,450,N/A,128,1,false,3,false,10,4500,0,1151439,6.6789,900.9621,1735.0043,0.4430,2643.0883,5.8735,26430.8831,26.430883,4.83

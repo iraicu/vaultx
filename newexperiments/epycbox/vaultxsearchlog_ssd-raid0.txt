@@ -1,0 +1,24 @@
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 1000
+
+--- Timing Breakdown (Total for 1000 lookups on 1 files) ---
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close       22.4160 ms    22.6656 ms     0.0227 ms
+  Disk Seek             80.1600 ms    81.0524 ms     0.0811 ms
+  Disk Read            201.7297 ms   203.9755 ms     0.2040 ms
+  Record Hashing        40.9936 ms    41.4500 ms     0.0415 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                345.2993 ms   349.1436 ms     0.3491 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=1 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/ssd-raid0/sfatunmbi/plots/k32-7fbe59e9f56ec13cb257a018fe8fe074c8b5711b7ec15ea642a6fd764e2a26a4.plot     34359738368       1000       1000            0          255917               0.3478             347.81
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                    1000       1000            0          255917               0.3491             349.14
+TIMING 0.0227 0.0811 0.2040 0.0415 349.1436 0.3491
+Peak Memory Usage: 1.26 MB

@@ -1,0 +1,1486 @@
+========================================================
+  vaultx Search Benchmark  |  sweep: -r
+  Started: 2026-07-01T05:35:31+00:00
+========================================================
+  Binary:          /home/sfatunmbi/vaultx/vaultx
+  Target:          /data-m/sfatunmbi/plots/merge_32_450.plot
+  N_LOOKUPS (-S):  10
+  DIFFICULTY (-D): 3
+  K_VALUE:         32
+  PREVIOUS_SEARCH: false
+  KEEP_OPEN (-O):  false  (SWEEP_O=false)
+  OUT_DIR:         /home/sfatunmbi/vaultx/newexperiments/epycbox
+  LOG_FILE:        /home/sfatunmbi/vaultx/newexperiments/epycbox/vaultxsearchvarying_r_log.txt
+========================================================
+
+r-sweep target file: /data-m/sfatunmbi/plots/merge_32_450.plot  (15461882281800 bytes)
+CPU cores available: 128
+Thread sweep values: 1 2 4 8 16 32 64 128
+Keep-open values to test: false
+
+Results CSV: /home/sfatunmbi/vaultx/newexperiments/epycbox/search_r_sweep_20260701_053532.csv
+
+------------------------------------------------------------
+  Run: r=1 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 1 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 68.5277 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close       29.8915 ms    30.1071 ms     3.0107 ms
+  Disk Seek              0.0085 ms     0.0086 ms     0.0009 ms
+  Disk Read            277.6960 ms   279.6983 ms    27.9698 ms
+  Record Hashing       372.7751 ms   375.4630 ms    37.5463 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                680.3712 ms   685.2770 ms    68.5277 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=1 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151399              68.4613             684.61
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151399              68.5277             685.28
+TIMING 3.0107 0.0009 27.9698 37.5463 685.2770 68.5277 68.5277
+Peak Memory Usage: 6.22 MB
+
+  -> CSV row written | avg_ms_per_lookup=68.5277  avg_ms_per_lookup_per_file=68.5277  total_ms=685.2770  total_s=0.685277
+------------------------------------------------------------
+  Run: r=2 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 2 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 62.7191 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.1193 ms     1.1262 ms     0.1126 ms
+  Disk Seek              0.0074 ms     0.0074 ms     0.0007 ms
+  Disk Read            252.9795 ms   254.5244 ms    25.4524 ms
+  Record Hashing       369.2775 ms   371.5326 ms    37.1533 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                623.3836 ms   627.1906 ms    62.7191 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=2 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151299              62.6800             626.80
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151299              62.7191             627.19
+TIMING 0.1126 0.0007 25.4524 37.1533 627.1906 62.7191 62.7191
+Peak Memory Usage: 6.57 MB
+
+  -> CSV row written | avg_ms_per_lookup=62.7191  avg_ms_per_lookup_per_file=62.7191  total_ms=627.1906  total_s=0.627191
+------------------------------------------------------------
+  Run: r=4 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 4 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 57.4080 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.1411 ms     1.1500 ms     0.1150 ms
+  Disk Seek              0.0082 ms     0.0083 ms     0.0008 ms
+  Disk Read            215.3097 ms   216.9965 ms    21.6996 ms
+  Record Hashing       353.1581 ms   355.9249 ms    35.5925 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                569.6171 ms   574.0797 ms    57.4080 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=4 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151312              57.3602             573.60
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151312              57.4080             574.08
+TIMING 0.1150 0.0008 21.6996 35.5925 574.0797 57.4080 57.4080
+Peak Memory Usage: 6.48 MB
+
+  -> CSV row written | avg_ms_per_lookup=57.4080  avg_ms_per_lookup_per_file=57.4080  total_ms=574.0797  total_s=0.574080
+------------------------------------------------------------
+  Run: r=8 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 8 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 49.1867 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.3282 ms     1.3473 ms     0.1347 ms
+  Disk Seek              0.0094 ms     0.0096 ms     0.0010 ms
+  Disk Read            177.5844 ms   180.1404 ms    18.0140 ms
+  Record Hashing       305.9655 ms   310.3694 ms    31.0369 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                484.8876 ms   491.8667 ms    49.1867 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=8 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151312              49.0977             490.98
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151312              49.1867             491.87
+TIMING 0.1347 0.0010 18.0140 31.0369 491.8667 49.1867 49.1867
+Peak Memory Usage: 6.72 MB
+
+  -> CSV row written | avg_ms_per_lookup=49.1867  avg_ms_per_lookup_per_file=49.1867  total_ms=491.8667  total_s=0.491867
+------------------------------------------------------------
+  Run: r=16 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 16 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 50.8226 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.7997 ms     1.8259 ms     0.1826 ms
+  Disk Seek              0.0136 ms     0.0138 ms     0.0014 ms
+  Disk Read            285.8676 ms   290.0442 ms    29.0044 ms
+  Record Hashing       213.2271 ms   216.3424 ms    21.6342 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                500.9080 ms   508.2263 ms    50.8226 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=16 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151403              50.7417             507.42
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151403              50.8226             508.23
+TIMING 0.1826 0.0014 29.0044 21.6342 508.2263 50.8226 50.8226
+Peak Memory Usage: 6.32 MB
+
+  -> CSV row written | avg_ms_per_lookup=50.8226  avg_ms_per_lookup_per_file=50.8226  total_ms=508.2263  total_s=0.508226
+------------------------------------------------------------
+  Run: r=32 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 32 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+
+WARN: vaultx exited with status 139; skipping CSV entry
+------------------------------------------------------------
+  Run: r=64 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 64 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 53.5218 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        2.0705 ms     2.1020 ms     0.2102 ms
+  Disk Seek              0.0145 ms     0.0148 ms     0.0015 ms
+  Disk Read            260.6644 ms   264.6271 ms    26.4627 ms
+  Record Hashing       264.4534 ms   268.4737 ms    26.8474 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                527.2028 ms   535.2176 ms    53.5218 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=64 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151321              53.4271             534.27
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151321              53.5218             535.22
+TIMING 0.2102 0.0015 26.4627 26.8474 535.2176 53.5218 53.5218
+Peak Memory Usage: 7.21 MB
+
+  -> CSV row written | avg_ms_per_lookup=53.5218  avg_ms_per_lookup_per_file=53.5218  total_ms=535.2176  total_s=0.535218
+------------------------------------------------------------
+  Run: r=128 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 128 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+
+WARN: vaultx exited with status 139; skipping CSV entry
+
+========================================================
+  Benchmark complete
+  Finished: 2026-07-01T05:35:37+00:00
+  Results:  /home/sfatunmbi/vaultx/newexperiments/epycbox/search_r_sweep_20260701_053532.csv
+  Best avg/lookup:  r=8 keep_open=false  (avg=49.1867 ms/lookup, 49.1867 ms/lookup/file)
+  Best total time:  r=8 keep_open=false  (total=491.8667 ms)
+========================================================
+========================================================
+  vaultx Search Benchmark  |  sweep: -r
+  Started: 2026-07-01T05:42:18+00:00
+========================================================
+  Binary:          /home/sfatunmbi/vaultx/vaultx
+  Target:          /data-m/sfatunmbi/plots/merge_32_450.plot
+  N_LOOKUPS (-S):  10
+  DIFFICULTY (-D): 3
+  K_VALUE:         32
+  PREVIOUS_SEARCH: false
+  KEEP_OPEN (-O):  false  (SWEEP_O=false)
+  OUT_DIR:         /home/sfatunmbi/vaultx/newexperiments/epycbox
+  LOG_FILE:        /home/sfatunmbi/vaultx/newexperiments/epycbox/vaultxsearchvarying_r_log.txt
+========================================================
+
+r-sweep target file: /data-m/sfatunmbi/plots/merge_32_450.plot  (15461882281800 bytes)
+CPU cores available: 128
+Thread sweep values: 1 2 4 8 16 32 64 128
+Keep-open values to test: false
+
+Results CSV: /home/sfatunmbi/vaultx/newexperiments/epycbox/search_r_sweep_20260701_054218.csv
+
+------------------------------------------------------------
+  Run: r=1 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 1 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 69.6805 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close       23.8083 ms    23.9804 ms     2.3980 ms
+  Disk Seek              0.0095 ms     0.0095 ms     0.0010 ms
+  Disk Read            268.5446 ms   270.4857 ms    27.0486 ms
+  Record Hashing       399.4418 ms   402.3290 ms    40.2329 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                691.8042 ms   696.8047 ms    69.6805 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=1 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151374              69.6147             696.15
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151374              69.6805             696.80
+TIMING 2.3980 0.0010 27.0486 40.2329 696.8047 69.6805 69.6805
+Peak Memory Usage: 6.23 MB
+
+  -> CSV row written | avg_ms_per_lookup=69.6805  avg_ms_per_lookup_per_file=69.6805  total_ms=696.8047  total_s=0.696805
+------------------------------------------------------------
+  Run: r=2 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 2 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 64.2470 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.0762 ms     1.0840 ms     0.1084 ms
+  Disk Seek              0.0062 ms     0.0063 ms     0.0006 ms
+  Disk Read            258.6533 ms   260.5230 ms    26.0523 ms
+  Record Hashing       378.1234 ms   380.8567 ms    38.0857 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                637.8591 ms   642.4700 ms    64.2470 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=2 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151352              64.2097             642.10
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151352              64.2470             642.47
+TIMING 0.1084 0.0006 26.0523 38.0857 642.4700 64.2470 64.2470
+Peak Memory Usage: 6.50 MB
+
+  -> CSV row written | avg_ms_per_lookup=64.2470  avg_ms_per_lookup_per_file=64.2470  total_ms=642.4700  total_s=0.642470
+------------------------------------------------------------
+  Run: r=4 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 4 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 64.4445 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.3676 ms     1.3782 ms     0.1378 ms
+  Disk Seek              0.0103 ms     0.0104 ms     0.0010 ms
+  Disk Read            265.9219 ms   267.9805 ms    26.7980 ms
+  Record Hashing       372.1950 ms   375.0761 ms    37.5076 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                639.4948 ms   644.4452 ms    64.4445 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=4 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151350              64.3979             643.98
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151350              64.4445             644.45
+TIMING 0.1378 0.0010 26.7980 37.5076 644.4452 64.4445 64.4445
+Peak Memory Usage: 6.66 MB
+
+  -> CSV row written | avg_ms_per_lookup=64.4445  avg_ms_per_lookup_per_file=64.4445  total_ms=644.4452  total_s=0.644445
+------------------------------------------------------------
+  Run: r=8 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 8 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 55.1627 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.5989 ms     1.6199 ms     0.1620 ms
+  Disk Seek              0.0167 ms     0.0169 ms     0.0017 ms
+  Disk Read            232.3866 ms   235.4292 ms    23.5429 ms
+  Record Hashing       310.4958 ms   314.5611 ms    31.4561 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                544.4981 ms   551.6271 ms    55.1627 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=8 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151534              55.0963             550.96
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151534              55.1627             551.63
+TIMING 0.1620 0.0017 23.5429 31.4561 551.6271 55.1627 55.1627
+Peak Memory Usage: 6.73 MB
+
+  -> CSV row written | avg_ms_per_lookup=55.1627  avg_ms_per_lookup_per_file=55.1627  total_ms=551.6271  total_s=0.551627
+------------------------------------------------------------
+  Run: r=16 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 16 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 38.0248 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.3553 ms     1.3787 ms     0.1379 ms
+  Disk Seek              0.0127 ms     0.0129 ms     0.0013 ms
+  Disk Read            159.2374 ms   161.9886 ms    16.1989 ms
+  Record Hashing       213.1849 ms   216.8681 ms    21.6868 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                373.7903 ms   380.2483 ms    38.0248 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=16 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151534              37.9414             379.41
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151534              38.0248             380.25
+TIMING 0.1379 0.0013 16.1989 21.6868 380.2483 38.0248 38.0248
+Peak Memory Usage: 6.61 MB
+
+  -> CSV row written | avg_ms_per_lookup=38.0248  avg_ms_per_lookup_per_file=38.0248  total_ms=380.2483  total_s=0.380248
+------------------------------------------------------------
+  Run: r=32 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 32 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 47.9631 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.9694 ms     2.0041 ms     0.2004 ms
+  Disk Seek              0.0172 ms     0.0175 ms     0.0018 ms
+  Disk Read            278.5823 ms   283.4915 ms    28.3492 ms
+  Record Hashing       190.7566 ms   194.1181 ms    19.4118 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                471.3256 ms   479.6314 ms    47.9631 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=32 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151435              47.8709             478.71
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151435              47.9631             479.63
+TIMING 0.2004 0.0018 28.3492 19.4118 479.6314 47.9631 47.9631
+Peak Memory Usage: 6.62 MB
+
+  -> CSV row written | avg_ms_per_lookup=47.9631  avg_ms_per_lookup_per_file=47.9631  total_ms=479.6314  total_s=0.479631
+------------------------------------------------------------
+  Run: r=64 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 64 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+
+WARN: vaultx exited with status 139; skipping CSV entry
+------------------------------------------------------------
+  Run: r=128 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 128 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+
+WARN: vaultx exited with status 139; skipping CSV entry
+
+========================================================
+  Benchmark complete
+  Finished: 2026-07-01T05:42:23+00:00
+  Results:  /home/sfatunmbi/vaultx/newexperiments/epycbox/search_r_sweep_20260701_054218.csv
+  Best avg/lookup:  r=16 keep_open=false  (avg=38.0248 ms/lookup, 38.0248 ms/lookup/file)
+  Best total time:  r=16 keep_open=false  (total=380.2483 ms)
+========================================================
+========================================================
+  vaultx Search Benchmark  |  sweep: -r
+  Started: 2026-07-01T05:50:26+00:00
+========================================================
+  Binary:          /home/sfatunmbi/vaultx/vaultx
+  Target:          /data-m/sfatunmbi/plots/merge_32_450.plot
+  N_LOOKUPS (-S):  10
+  DIFFICULTY (-D): 3
+  K_VALUE:         32
+  PREVIOUS_SEARCH: false
+  KEEP_OPEN (-O):  false  (SWEEP_O=false)
+  OUT_DIR:         /home/sfatunmbi/vaultx/newexperiments/epycbox
+  LOG_FILE:        /home/sfatunmbi/vaultx/newexperiments/epycbox/vaultxsearchvarying_r_log.txt
+========================================================
+
+r-sweep target file: /data-m/sfatunmbi/plots/merge_32_450.plot  (15461882281800 bytes)
+CPU cores available: 128
+Thread sweep values: 1 2 4 8 16 32 64 128
+Keep-open values to test: false
+
+Results CSV: /home/sfatunmbi/vaultx/newexperiments/epycbox/search_r_sweep_20260701_055026.csv
+
+------------------------------------------------------------
+  Run: r=1 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 1 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 86.1546 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close      231.3472 ms   232.6673 ms    23.2667 ms
+  Disk Seek              0.0084 ms     0.0084 ms     0.0008 ms
+  Disk Read            272.4087 ms   273.9631 ms    27.3963 ms
+  Record Hashing       352.8933 ms   354.9070 ms    35.4907 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                856.6575 ms   861.5459 ms    86.1546 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=1 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151357              86.0857             860.86
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151357              86.1546             861.55
+TIMING 23.2667 0.0008 27.3963 35.4907 861.5459 86.1546 86.1546
+Peak Memory Usage: 7.14 MB
+
+  -> CSV row written | avg_ms_per_lookup=86.1546  avg_ms_per_lookup_per_file=86.1546  total_ms=861.5459  total_s=0.861546
+------------------------------------------------------------
+  Run: r=2 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 2 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 66.5289 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.4537 ms     1.4664 ms     0.1466 ms
+  Disk Seek              0.0077 ms     0.0078 ms     0.0008 ms
+  Disk Read            259.0803 ms   261.3504 ms    26.1350 ms
+  Record Hashing       398.9685 ms   402.4642 ms    40.2464 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                659.5103 ms   665.2888 ms    66.5289 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=2 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151357              66.4588             664.59
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151357              66.5289             665.29
+TIMING 0.1466 0.0008 26.1350 40.2464 665.2888 66.5289 66.5289
+Peak Memory Usage: 7.59 MB
+
+  -> CSV row written | avg_ms_per_lookup=66.5289  avg_ms_per_lookup_per_file=66.5289  total_ms=665.2888  total_s=0.665289
+------------------------------------------------------------
+  Run: r=4 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 4 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 65.5398 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.4889 ms     1.5012 ms     0.1501 ms
+  Disk Seek              0.0114 ms     0.0115 ms     0.0012 ms
+  Disk Read            280.6733 ms   282.9807 ms    28.2981 ms
+  Record Hashing       367.8805 ms   370.9048 ms    37.0905 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                650.0542 ms   655.3982 ms    65.5398 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=4 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151314              65.4937             654.94
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151314              65.5398             655.40
+TIMING 0.1501 0.0012 28.2981 37.0905 655.3982 65.5398 65.5398
+Peak Memory Usage: 7.48 MB
+
+  -> CSV row written | avg_ms_per_lookup=65.5398  avg_ms_per_lookup_per_file=65.5398  total_ms=655.3982  total_s=0.655398
+------------------------------------------------------------
+  Run: r=8 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 8 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 45.9515 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.3124 ms     1.3273 ms     0.1327 ms
+  Disk Seek              0.0075 ms     0.0075 ms     0.0008 ms
+  Disk Read            130.6124 ms   132.1000 ms    13.2100 ms
+  Record Hashing       322.4085 ms   326.0806 ms    32.6081 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                454.3407 ms   459.5154 ms    45.9515 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=8 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151314              45.8947             458.95
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151314              45.9515             459.52
+TIMING 0.1327 0.0008 13.2100 32.6081 459.5154 45.9515 45.9515
+Peak Memory Usage: 7.70 MB
+
+  -> CSV row written | avg_ms_per_lookup=45.9515  avg_ms_per_lookup_per_file=45.9515  total_ms=459.5154  total_s=0.459515
+------------------------------------------------------------
+  Run: r=16 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 16 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 49.7491 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        2.1981 ms     2.2369 ms     0.2237 ms
+  Disk Seek              0.0149 ms     0.0152 ms     0.0015 ms
+  Disk Read            258.0728 ms   262.6277 ms    26.2628 ms
+  Record Hashing       228.5766 ms   232.6109 ms    23.2611 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                488.8625 ms   497.4906 ms    49.7491 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=16 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151348              49.6263             496.26
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151348              49.7491             497.49
+TIMING 0.2237 0.0015 26.2628 23.2611 497.4906 49.7491 49.7491
+Peak Memory Usage: 7.67 MB
+
+  -> CSV row written | avg_ms_per_lookup=49.7491  avg_ms_per_lookup_per_file=49.7491  total_ms=497.4906  total_s=0.497491
+------------------------------------------------------------
+  Run: r=32 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 32 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 46.1646 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.9254 ms     1.9553 ms     0.1955 ms
+  Disk Seek              0.0123 ms     0.0125 ms     0.0013 ms
+  Disk Read            270.7523 ms   274.9565 ms    27.4957 ms
+  Record Hashing       181.8975 ms   184.7219 ms    18.4722 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                454.5876 ms   461.6463 ms    46.1646 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=32 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151217              46.0792             460.79
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151217              46.1646             461.65
+TIMING 0.1955 0.0013 27.4957 18.4722 461.6463 46.1646 46.1646
+Peak Memory Usage: 6.71 MB
+
+  -> CSV row written | avg_ms_per_lookup=46.1646  avg_ms_per_lookup_per_file=46.1646  total_ms=461.6463  total_s=0.461646
+------------------------------------------------------------
+  Run: r=64 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 64 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 37.1188 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.8375 ms     1.8686 ms     0.1869 ms
+  Disk Seek              0.0133 ms     0.0135 ms     0.0014 ms
+  Disk Read            146.9265 ms   149.4119 ms    14.9412 ms
+  Record Hashing       216.2363 ms   219.8942 ms    21.9894 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                365.0136 ms   371.1882 ms    37.1188 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=64 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151217              37.0585             370.59
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151217              37.1188             371.19
+TIMING 0.1869 0.0014 14.9412 21.9894 371.1882 37.1188 37.1188
+Peak Memory Usage: 7.13 MB
+
+  -> CSV row written | avg_ms_per_lookup=37.1188  avg_ms_per_lookup_per_file=37.1188  total_ms=371.1882  total_s=0.371188
+------------------------------------------------------------
+  Run: r=128 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 128 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 63.5177 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        2.8744 ms     2.9158 ms     0.2916 ms
+  Disk Seek              0.0239 ms     0.0242 ms     0.0024 ms
+  Disk Read            283.6201 ms   287.7123 ms    28.7712 ms
+  Record Hashing       339.6245 ms   344.5248 ms    34.4525 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                626.1429 ms   635.1771 ms    63.5177 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=128 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151430              63.3609             633.61
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151430              63.5177             635.18
+TIMING 0.2916 0.0024 28.7712 34.4525 635.1771 63.5177 63.5177
+Peak Memory Usage: 7.96 MB
+
+  -> CSV row written | avg_ms_per_lookup=63.5177  avg_ms_per_lookup_per_file=63.5177  total_ms=635.1771  total_s=0.635177
+
+========================================================
+  Benchmark complete
+  Finished: 2026-07-01T05:50:32+00:00
+  Results:  /home/sfatunmbi/vaultx/newexperiments/epycbox/search_r_sweep_20260701_055026.csv
+  Best avg/lookup:  r=64 keep_open=false  (avg=37.1188 ms/lookup, 37.1188 ms/lookup/file)
+  Best total time:  r=64 keep_open=false  (total=371.1882 ms)
+========================================================
+========================================================
+  vaultx Search Benchmark  |  sweep: -r
+  Started: 2026-07-01T05:51:10+00:00
+========================================================
+  Binary:          /home/sfatunmbi/vaultx/vaultx
+  Target:          /data-m/sfatunmbi/plots/merge_32_450.plot
+  N_LOOKUPS (-S):  10
+  DIFFICULTY (-D): 3
+  K_VALUE:         32
+  PREVIOUS_SEARCH: false
+  KEEP_OPEN (-O):  false  (SWEEP_O=false)
+  OUT_DIR:         /home/sfatunmbi/vaultx/newexperiments/epycbox
+  LOG_FILE:        /home/sfatunmbi/vaultx/newexperiments/epycbox/vaultxsearchvarying_r_log.txt
+========================================================
+
+r-sweep target file: /data-m/sfatunmbi/plots/merge_32_450.plot  (15461882281800 bytes)
+CPU cores available: 128
+Thread sweep values: 1 2 4 8 16 32 64 128
+Keep-open values to test: false
+
+Results CSV: /home/sfatunmbi/vaultx/newexperiments/epycbox/search_r_sweep_20260701_055110.csv
+
+------------------------------------------------------------
+  Run: r=1 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 1 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 65.7658 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.3803 ms     1.3873 ms     0.1387 ms
+  Disk Seek              0.0081 ms     0.0081 ms     0.0008 ms
+  Disk Read            291.6775 ms   293.1524 ms    29.3152 ms
+  Record Hashing       361.2834 ms   363.1103 ms    36.3110 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                654.3493 ms   657.6581 ms    65.7658 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=1 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151323              65.7304             657.30
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151323              65.7658             657.66
+TIMING 0.1387 0.0008 29.3152 36.3110 657.6581 65.7658 65.7658
+Peak Memory Usage: 7.25 MB
+
+  -> CSV row written | avg_ms_per_lookup=65.7658  avg_ms_per_lookup_per_file=65.7658  total_ms=657.6581  total_s=0.657658
+------------------------------------------------------------
+  Run: r=2 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 2 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 67.7979 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.3416 ms     1.3510 ms     0.1351 ms
+  Disk Seek              0.0076 ms     0.0076 ms     0.0008 ms
+  Disk Read            264.0102 ms   265.8698 ms    26.5870 ms
+  Record Hashing       407.8779 ms   410.7509 ms    41.0751 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                673.2372 ms   677.9793 ms    67.7979 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=2 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151496              67.7623             677.62
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151496              67.7979             677.98
+TIMING 0.1351 0.0008 26.5870 41.0751 677.9793 67.7979 67.7979
+Peak Memory Usage: 7.48 MB
+
+  -> CSV row written | avg_ms_per_lookup=67.7979  avg_ms_per_lookup_per_file=67.7979  total_ms=677.9793  total_s=0.677979
+------------------------------------------------------------
+  Run: r=4 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 4 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 62.3950 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.7098 ms     1.7267 ms     0.1727 ms
+  Disk Seek              0.0110 ms     0.0111 ms     0.0011 ms
+  Disk Read            270.9550 ms   273.6385 ms    27.3638 ms
+  Record Hashing       345.1559 ms   348.5741 ms    34.8574 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                617.8317 ms   623.9505 ms    62.3950 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=4 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151463              62.3196             623.20
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151463              62.3950             623.95
+TIMING 0.1727 0.0011 27.3638 34.8574 623.9505 62.3950 62.3950
+Peak Memory Usage: 7.63 MB
+
+  -> CSV row written | avg_ms_per_lookup=62.3950  avg_ms_per_lookup_per_file=62.3950  total_ms=623.9505  total_s=0.623951
+------------------------------------------------------------
+  Run: r=8 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 8 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 62.8366 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.8879 ms     1.9096 ms     0.1910 ms
+  Disk Seek              0.0135 ms     0.0136 ms     0.0014 ms
+  Disk Read            281.5119 ms   284.7401 ms    28.4740 ms
+  Record Hashing       337.8290 ms   341.7030 ms    34.1703 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                621.2423 ms   628.3663 ms    62.8366 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=8 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151304              62.7727             627.73
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151304              62.8366             628.37
+TIMING 0.1910 0.0014 28.4740 34.1703 628.3663 62.8366 62.8366
+Peak Memory Usage: 7.80 MB
+
+  -> CSV row written | avg_ms_per_lookup=62.8366  avg_ms_per_lookup_per_file=62.8366  total_ms=628.3663  total_s=0.628366
+------------------------------------------------------------
+  Run: r=16 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 16 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 38.6832 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.9180 ms     1.9537 ms     0.1954 ms
+  Disk Seek              0.0179 ms     0.0182 ms     0.0018 ms
+  Disk Read            150.1627 ms   152.9589 ms    15.2959 ms
+  Record Hashing       227.6620 ms   231.9013 ms    23.1901 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                379.7605 ms   386.8321 ms    38.6832 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=16 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151304              38.5760             385.76
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151304              38.6832             386.83
+TIMING 0.1954 0.0018 15.2959 23.1901 386.8321 38.6832 38.6832
+Peak Memory Usage: 7.81 MB
+
+  -> CSV row written | avg_ms_per_lookup=38.6832  avg_ms_per_lookup_per_file=38.6832  total_ms=386.8321  total_s=0.386832
+------------------------------------------------------------
+  Run: r=32 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 32 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 51.5829 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        2.2803 ms     2.3169 ms     0.2317 ms
+  Disk Seek              0.0140 ms     0.0142 ms     0.0014 ms
+  Disk Read            311.8222 ms   316.8196 ms    31.6820 ms
+  Record Hashing       193.5759 ms   196.6782 ms    19.6678 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                507.6923 ms   515.8289 ms    51.5829 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=32 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151344              51.4725             514.73
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151344              51.5829             515.83
+TIMING 0.2317 0.0014 31.6820 19.6678 515.8289 51.5829 51.5829
+Peak Memory Usage: 6.79 MB
+
+  -> CSV row written | avg_ms_per_lookup=51.5829  avg_ms_per_lookup_per_file=51.5829  total_ms=515.8289  total_s=0.515829
+------------------------------------------------------------
+  Run: r=64 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 64 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 56.3748 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        2.3931 ms     2.4341 ms     0.2434 ms
+  Disk Seek              0.0165 ms     0.0167 ms     0.0017 ms
+  Disk Read            300.8401 ms   305.9966 ms    30.5997 ms
+  Record Hashing       250.9986 ms   255.3008 ms    25.5301 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                554.2482 ms   563.7482 ms    56.3748 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=64 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151324              56.2441             562.44
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151324              56.3748             563.75
+TIMING 0.2434 0.0017 30.5997 25.5301 563.7482 56.3748 56.3748
+Peak Memory Usage: 7.17 MB
+
+  -> CSV row written | avg_ms_per_lookup=56.3748  avg_ms_per_lookup_per_file=56.3748  total_ms=563.7482  total_s=0.563748
+------------------------------------------------------------
+  Run: r=128 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 128 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 42.4395 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        2.0828 ms     2.1242 ms     0.2124 ms
+  Disk Seek              0.0096 ms     0.0098 ms     0.0010 ms
+  Disk Read            124.2179 ms   126.6869 ms    12.6687 ms
+  Record Hashing       289.8134 ms   295.5737 ms    29.5574 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                416.1238 ms   424.3945 ms    42.4395 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=128 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151324              42.3229             423.23
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151324              42.4395             424.39
+TIMING 0.2124 0.0010 12.6687 29.5574 424.3945 42.4395 42.4395
+Peak Memory Usage: 7.75 MB
+
+  -> CSV row written | avg_ms_per_lookup=42.4395  avg_ms_per_lookup_per_file=42.4395  total_ms=424.3945  total_s=0.424395
+
+========================================================
+  Benchmark complete
+  Finished: 2026-07-01T05:51:16+00:00
+  Results:  /home/sfatunmbi/vaultx/newexperiments/epycbox/search_r_sweep_20260701_055110.csv
+  Best avg/lookup:  r=16 keep_open=false  (avg=38.6832 ms/lookup, 38.6832 ms/lookup/file)
+  Best total time:  r=16 keep_open=false  (total=386.8321 ms)
+========================================================
+========================================================
+  vaultx Search Benchmark  |  sweep: -r
+  Started: 2026-07-01T05:51:27+00:00
+========================================================
+  Binary:          /home/sfatunmbi/vaultx/vaultx
+  Target:          /data-m/sfatunmbi/plots/merge_32_450.plot
+  N_LOOKUPS (-S):  10
+  DIFFICULTY (-D): 3
+  K_VALUE:         32
+  PREVIOUS_SEARCH: false
+  KEEP_OPEN (-O):  false  (SWEEP_O=false)
+  OUT_DIR:         /home/sfatunmbi/vaultx/newexperiments/epycbox
+  LOG_FILE:        /home/sfatunmbi/vaultx/newexperiments/epycbox/vaultxsearchvarying_r_log.txt
+========================================================
+
+r-sweep target file: /data-m/sfatunmbi/plots/merge_32_450.plot  (15461882281800 bytes)
+CPU cores available: 128
+Thread sweep values: 1 2 4 8 16 32 64 128
+Keep-open values to test: false
+
+Results CSV: /home/sfatunmbi/vaultx/newexperiments/epycbox/search_r_sweep_20260701_055127.csv
+
+------------------------------------------------------------
+  Run: r=1 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 1 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 66.9479 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.5582 ms     1.5699 ms     0.1570 ms
+  Disk Seek              0.0093 ms     0.0094 ms     0.0009 ms
+  Disk Read            293.6763 ms   295.8912 ms    29.5891 ms
+  Record Hashing       369.2238 ms   372.0084 ms    37.2008 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                664.4675 ms   669.4789 ms    66.9479 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=1 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151250              66.8863             668.86
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151250              66.9479             669.48
+TIMING 0.1570 0.0009 29.5891 37.2008 669.4789 66.9479 66.9479
+Peak Memory Usage: 7.32 MB
+
+  -> CSV row written | avg_ms_per_lookup=66.9479  avg_ms_per_lookup_per_file=66.9479  total_ms=669.4789  total_s=0.669479
+------------------------------------------------------------
+  Run: r=2 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 2 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 50.2748 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.3434 ms     1.3591 ms     0.1359 ms
+  Disk Seek              0.0064 ms     0.0065 ms     0.0006 ms
+  Disk Read            158.0955 ms   159.9491 ms    15.9949 ms
+  Record Hashing       337.4764 ms   341.4332 ms    34.1433 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                496.9217 ms   502.7479 ms    50.2748 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=2 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151250              50.1935             501.93
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151250              50.2748             502.75
+TIMING 0.1359 0.0006 15.9949 34.1433 502.7479 50.2748 50.2748
+Peak Memory Usage: 7.43 MB
+
+  -> CSV row written | avg_ms_per_lookup=50.2748  avg_ms_per_lookup_per_file=50.2748  total_ms=502.7479  total_s=0.502748
+------------------------------------------------------------
+  Run: r=4 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 4 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 65.0290 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.6061 ms     1.6195 ms     0.1619 ms
+  Disk Seek              0.0118 ms     0.0119 ms     0.0012 ms
+  Disk Read            289.1305 ms   291.5320 ms    29.1532 ms
+  Record Hashing       354.1852 ms   357.1271 ms    35.7127 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                644.9336 ms   650.2904 ms    65.0290 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=4 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151310              64.9803             649.80
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151310              65.0290             650.29
+TIMING 0.1619 0.0012 29.1532 35.7127 650.2904 65.0290 65.0290
+Peak Memory Usage: 7.50 MB
+
+  -> CSV row written | avg_ms_per_lookup=65.0290  avg_ms_per_lookup_per_file=65.0290  total_ms=650.2904  total_s=0.650290
+------------------------------------------------------------
+  Run: r=8 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 8 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 61.6895 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        2.1150 ms     2.1429 ms     0.2143 ms
+  Disk Seek              0.0146 ms     0.0148 ms     0.0015 ms
+  Disk Read            284.5631 ms   288.3241 ms    28.8324 ms
+  Record Hashing       322.1547 ms   326.4127 ms    32.6413 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                608.8474 ms   616.8945 ms    61.6895 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=8 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151332              61.5846             615.85
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151332              61.6895             616.89
+TIMING 0.2143 0.0015 28.8324 32.6413 616.8945 61.6895 61.6895
+Peak Memory Usage: 7.79 MB
+
+  -> CSV row written | avg_ms_per_lookup=61.6895  avg_ms_per_lookup_per_file=61.6895  total_ms=616.8945  total_s=0.616895
+------------------------------------------------------------
+  Run: r=16 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 16 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 51.1345 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        1.9488 ms     1.9741 ms     0.1974 ms
+  Disk Seek              0.0131 ms     0.0133 ms     0.0013 ms
+  Disk Read            289.6123 ms   293.3723 ms    29.3372 ms
+  Record Hashing       213.2172 ms   215.9854 ms    21.5985 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                504.7914 ms   511.3450 ms    51.1345 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=16 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151390              51.0656             510.66
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151390              51.1345             511.35
+TIMING 0.1974 0.0013 29.3372 21.5985 511.3450 51.1345 51.1345
+Peak Memory Usage: 7.86 MB
+
+  -> CSV row written | avg_ms_per_lookup=51.1345  avg_ms_per_lookup_per_file=51.1345  total_ms=511.3450  total_s=0.511345
+------------------------------------------------------------
+  Run: r=32 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 32 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 32.0575 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        2.1562 ms     2.2074 ms     0.2207 ms
+  Disk Seek              0.0123 ms     0.0125 ms     0.0013 ms
+  Disk Read            138.8478 ms   142.1422 ms    14.2142 ms
+  Record Hashing       172.1287 ms   176.2127 ms    17.6213 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                313.1450 ms   320.5749 ms    32.0575 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=32 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151390              31.9710             319.71
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151390              32.0575             320.57
+TIMING 0.2207 0.0013 14.2142 17.6213 320.5749 32.0575 32.0575
+Peak Memory Usage: 6.74 MB
+
+  -> CSV row written | avg_ms_per_lookup=32.0575  avg_ms_per_lookup_per_file=32.0575  total_ms=320.5749  total_s=0.320575
+------------------------------------------------------------
+  Run: r=64 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 64 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 56.9108 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        2.2140 ms     2.2422 ms     0.2242 ms
+  Disk Seek              0.0133 ms     0.0135 ms     0.0013 ms
+  Disk Read            321.6695 ms   325.7587 ms    32.5759 ms
+  Record Hashing       238.0667 ms   241.0932 ms    24.1093 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                561.9636 ms   569.1075 ms    56.9108 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=64 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151222              56.7993             567.99
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151222              56.9108             569.11
+TIMING 0.2242 0.0013 32.5759 24.1093 569.1075 56.9108 56.9108
+Peak Memory Usage: 6.98 MB
+
+  -> CSV row written | avg_ms_per_lookup=56.9108  avg_ms_per_lookup_per_file=56.9108  total_ms=569.1075  total_s=0.569107
+------------------------------------------------------------
+  Run: r=128 keep_open=false
+  Cmd: /home/sfatunmbi/vaultx/vaultx -S 10 -D 3 -f /data-m/sfatunmbi/plots/merge_32_450.plot -t 1 -r 128 -O false
+------------------------------------------------------------
+DEBUG: File discovery starting for path: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: Path is a regular file
+DEBUG: File added: '/data-m/sfatunmbi/plots/merge_32_450.plot'
+DEBUG: File discovery complete. SEARCH_FILES_COUNT = 1
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 10
+
+--- Timing Breakdown (Total for 10 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 62.8673 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close        2.6387 ms     2.6760 ms     0.2676 ms
+  Disk Seek              0.0177 ms     0.0180 ms     0.0018 ms
+  Disk Read            272.3970 ms   276.2491 ms    27.6249 ms
+  Record Hashing       344.8529 ms   349.7296 ms    34.9730 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL                619.9063 ms   628.6727 ms    62.8673 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=128 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-m/sfatunmbi/plots/merge_32_450.plot                               15461882281800         10         10            0         1151338              62.7075             627.08
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                      10         10            0         1151338              62.8673             628.67
+TIMING 0.2676 0.0018 27.6249 34.9730 628.6727 62.8673 62.8673
+Peak Memory Usage: 7.91 MB
+
+  -> CSV row written | avg_ms_per_lookup=62.8673  avg_ms_per_lookup_per_file=62.8673  total_ms=628.6727  total_s=0.628673
+
+========================================================
+  Benchmark complete
+  Finished: 2026-07-01T05:51:33+00:00
+  Results:  /home/sfatunmbi/vaultx/newexperiments/epycbox/search_r_sweep_20260701_055127.csv
+  Best avg/lookup:  r=32 keep_open=false  (avg=32.0575 ms/lookup, 32.0575 ms/lookup/file)
+  Best total time:  r=32 keep_open=false  (total=320.5749 ms)
+========================================================
