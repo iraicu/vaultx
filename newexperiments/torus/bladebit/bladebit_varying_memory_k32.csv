@@ -1,0 +1,2 @@
+cache_size,k,f1_threads,fp_threads,temp_dir,final_dir,total_plot_time(s),total_plot_time(min),min_power,max_power,avg_power,total_energy(W),total_energy(kW),peak_memory(MB)
+48G,32,32,32,/ssd-raid0/sfatunmbi/temp,/ssd-raid0/sfatunmbi/plots,24397,406.6167,81,192,151,1023.3186,1.023319,52437.80

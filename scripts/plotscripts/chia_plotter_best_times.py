@@ -92,7 +92,10 @@ def main():
 
         for i, (machine, t, threads, mem_gb) in enumerate(group["data"]):
             xi  = xs[i]
-            ann = f"{threads}T / {fmt_mem(mem_gb)}"
+            # Epycbox's 3-digit thread counts make "NNNT / MMGB" wider than the
+            # bar itself, so stack thread count and memory on their own lines.
+            stack_ann = (machine == "Epycbox")
+            ann = f"{threads}T\n{fmt_mem(mem_gb)}" if stack_ann else f"{threads}T / {fmt_mem(mem_gb)}"
             time_str = f"{t:.2f}m" if t < 100 else f"{t:.1f}m"
 
             ax.bar(xi, t, color=color, width=BAR_W, zorder=3,
@@ -111,7 +114,7 @@ def main():
                         color="black", zorder=6)
                 ax.text(xi, t * 0.45, ann,
                         ha="center", va="center", fontsize=6.5,
-                        color="white", fontweight="bold", zorder=5)
+                        color="white", fontweight="bold", zorder=5, linespacing=1.3)
             else:
                 # Tall bar: everything inside
                 ax.text(xi, t * 0.5, f"{time_str}\n{ann}",
