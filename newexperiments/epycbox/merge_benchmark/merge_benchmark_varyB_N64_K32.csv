@@ -1,0 +1,9 @@
+B_mb,N,K,A,F,T,compute_threads_t,read_batch_R,file_size_mb,per_file_batch_mb,total_data_gb,total_batches,buckets_per_batch,expected_peak_ram_mb,read_time_s,write_time_s,compute_time_s,total_merge_time_s,total_merge_time_min,avg_throughput_mbs,avg_batch_throughput_mbs,peak_memory_mb,wall_time_s,wall_time_min
+32768,64,32,pipelined,/ceph/sfatunmbi/singleplots,/data-m/sfatunmbi/plots,1,1024,NA,NA,NA,NA,NA,NA,2430.6100,99.8400,6417.6800,8948.1300,149.135500,NA,237.0895,2.57,8976.068,149.601133
+16384,64,32,pipelined,/ceph/sfatunmbi/singleplots,/data-m/sfatunmbi/plots,1,1024,NA,NA,NA,NA,NA,NA,2322.8700,132.9800,7112.9300,9568.7800,159.479667,NA,223.6657,2.58,9592.202,159.870033
+8192,64,32,pipelined,/ceph/sfatunmbi/singleplots,/data-m/sfatunmbi/plots,1,1024,NA,NA,NA,NA,NA,NA,2339.5500,133.2300,6981.6700,9454.4500,157.574167,NA,226.8901,2.59,9476.384,157.939733
+4096,64,32,pipelined,/ceph/sfatunmbi/singleplots,/data-m/sfatunmbi/plots,1,1024,NA,NA,NA,NA,NA,NA,2090.4600,145.2900,7255.4600,9491.2100,158.186833,NA,228.2504,2.59,9512.098,158.534967
+2048,64,32,pipelined,/ceph/sfatunmbi/singleplots,/data-m/sfatunmbi/plots,1,1024,NA,NA,NA,NA,NA,NA,2220.8000,140.1800,7389.7500,9750.7300,162.512167,NA,224.3028,2.59,9770.114,162.835233
+1024,64,32,pipelined,/ceph/sfatunmbi/singleplots,/data-m/sfatunmbi/plots,1,1024,NA,NA,NA,NA,NA,NA,2310.0600,149.4000,7000.5800,9460.0400,157.667333,NA,232.7456,2.59,9480.996,158.016600
+512,64,32,pipelined,/ceph/sfatunmbi/singleplots,/data-m/sfatunmbi/plots,1,1024,NA,NA,NA,NA,NA,NA,479.8200,161.9600,9015.8700,9657.6500,160.960833,NA,227.6939,2.59,9676.985,161.283083
+256,64,32,pipelined,/ceph/sfatunmbi/singleplots,/data-m/sfatunmbi/plots,1,1024,NA,NA,NA,NA,NA,NA,598.5300,151.2800,8494.7300,9244.5400,154.075667,NA,239.9753,2.59,9263.107,154.385117

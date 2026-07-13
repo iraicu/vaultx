@@ -2,7 +2,9 @@
 """
 Best k32 times for Chia plotters (ChiaPOS, Madmax, Bladebit).
 Bars grouped by plotter across 4 machines. All runs on NVMe. No title.
-Y-axis in 60-minute intervals. Annotated with thread count and peak memory.
+Y-axis in 60-minute intervals. Bars annotated with time only (rounded
+to the nearest whole minute); thread count and memory config are the
+best for each machine/plotter and are documented in the paper instead.
 """
 
 import os
@@ -19,41 +21,50 @@ PAPER_IMAGES_DIR = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
 os.makedirs(PAPER_IMAGES_DIR, exist_ok=True)
 
-# (machine_label, time_min, threads, mem_gb)
-# All runs on NVMe drives.
-# Threads: full core count of the machine, or the count that gave the best time.
-# Memory: configurable for Bladebit; reflects thread-count-dependent usage for Madmax/ChiaPOS.
+# (machine_label, time_min)
+# All runs on NVMe drives, using the best thread count and memory
+# configuration found for each machine/plotter (documented in the paper).
 GROUPS = [
+    {
+        "plotter": "VX",
+        "data": [
+            ("8Socket",   1.77),
+            ("Epycbox",  3.77),
+            ("Torus",   6.4),
+            ("OPI5",    33.3),
+        ],
+    },
     {
         "plotter": "Bladebit",
         "data": [
-            ("8Socket",   9.42,  128, 416),
-            ("Epycbox",  73.58,  128,  48),
-            ("Torus",   104.8,    32,  48),
-            ("OPI5",    201.2,     8,  30),
+            ("8Socket",   9.42),
+            ("Epycbox",  73.58),
+            ("Torus",   104.8),
+            ("OPI5",    201.2),
         ],
     },
     {
         "plotter": "Madmax",
         "data": [
-            ("8Socket",  25.72,  32, 25.0),
-            ("Epycbox",  54.45,  64, 41.0),
-            ("Torus",    97.33,  32, 25.0),
-            ("OPI5",    154.45,   4,  5.36),
+            ("8Socket",  25.72),
+            ("Epycbox",  54.45),
+            ("Torus",    97.33),
+            ("OPI5",    154.45),
         ],
     },
     {
         "plotter": "ChiaPOS",
         "data": [
-            ("8Socket",  379.45, 192, 4.19),
-            ("Epycbox",  448.45, 128, 3.92),
-            ("Torus",    393.28,  32, 3.62),
-            ("OPI5",     630.01,   8, 3.54),
+            ("8Socket",  379.45),
+            ("Epycbox",  448.45),
+            ("Torus",    393.28),
+            ("OPI5",     630.01),
         ],
     },
 ]
 
 COLORS = {
+    "VX":       "#1F77B4",
     "ChiaPOS":  "#D62728",
     "Madmax":   "#FF7F0E",
     "Bladebit": "#2CA02C",
@@ -64,12 +75,6 @@ Y_STEP    = 60
 BAR_W     = 0.8
 N_BARS    = 4
 GROUP_GAP = 2   # empty x-units between groups
-
-
-def fmt_mem(mem_gb):
-    if mem_gb >= 10:
-        return f"{round(mem_gb):d}GB"
-    return f"{mem_gb:.1f}GB"
 
 
 def main():
@@ -90,36 +95,23 @@ def main():
         color   = COLORS[plotter]
         xs      = positions[g_idx]
 
-        for i, (machine, t, threads, mem_gb) in enumerate(group["data"]):
+        for i, (_, t) in enumerate(group["data"]):
             xi  = xs[i]
-            # Epycbox's 3-digit thread counts make "NNNT / MMGB" wider than the
-            # bar itself, so stack thread count and memory on their own lines.
-            stack_ann = (machine == "Epycbox")
-            ann = f"{threads}T\n{fmt_mem(mem_gb)}" if stack_ann else f"{threads}T / {fmt_mem(mem_gb)}"
-            time_str = f"{t:.2f}m" if t < 100 else f"{t:.1f}m"
+            time_str = f"{round(t)}m"
 
             ax.bar(xi, t, color=color, width=BAR_W, zorder=3,
                    edgecolor="white", linewidth=0.5)
 
-            if t < 50:
-                # Small bar: all text above
-                ax.text(xi, t + Y_MAX * 0.015,
-                        f"{time_str}\n{ann}",
-                        ha="center", va="bottom", fontsize=6.5,
-                        color="black", zorder=6, linespacing=1.4)
-            elif t < 120:
-                # Medium bar: time above, specs inside
-                ax.text(xi, t + Y_MAX * 0.013, time_str,
-                        ha="center", va="bottom", fontsize=6.5,
+            if t < 120:
+                # Small/medium bar: text above
+                ax.text(xi, t + Y_MAX * 0.015, time_str,
+                        ha="center", va="bottom", fontsize=8,
                         color="black", zorder=6)
-                ax.text(xi, t * 0.45, ann,
-                        ha="center", va="center", fontsize=6.5,
-                        color="white", fontweight="bold", zorder=5, linespacing=1.3)
             else:
-                # Tall bar: everything inside
-                ax.text(xi, t * 0.5, f"{time_str}\n{ann}",
-                        ha="center", va="center", fontsize=7,
-                        color="white", fontweight="bold", zorder=5, linespacing=1.5)
+                # Tall bar: text inside
+                ax.text(xi, t * 0.5, time_str,
+                        ha="center", va="center", fontsize=9,
+                        color="white", fontweight="bold", zorder=5)
 
     # X-axis: machine names under each bar
     all_xs     = [x for grp_xs in positions for x in grp_xs]
@@ -148,6 +140,7 @@ def main():
         mpatches.Patch(color=COLORS["Bladebit"], label="Bladebit"),
         mpatches.Patch(color=COLORS["Madmax"],   label="Madmax"),
         mpatches.Patch(color=COLORS["ChiaPOS"],  label="ChiaPOS"),
+        mpatches.Patch(color=COLORS["VX"],       label="VX"),
     ]
     ax.legend(handles=legend_patches, fontsize=9, loc="upper left")
 

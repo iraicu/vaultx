@@ -1,0 +1,9 @@
+sweep_mode,target,k_value,file_count,file_size_bytes,t,r,keep_open,difficulty,previous_search,lookups,found,not_found,matches,open_close_ms,seek_ms,read_ms,hash_ms,avg_ms_per_lookup,avg_ms_per_lookup_per_file,total_ms,total_s,peak_memory_mb
+r,/data-m/sfatunmbi/plots/merge_32_450.plot,32,1,15461882281800,1,1,false,3,false,10,10,0,1151357,23.2667,0.0008,27.3963,35.4907,86.1546,86.1546,861.5459,0.861546,7.14
+r,/data-m/sfatunmbi/plots/merge_32_450.plot,32,1,15461882281800,1,2,false,3,false,10,10,0,1151357,0.1466,0.0008,26.1350,40.2464,66.5289,66.5289,665.2888,0.665289,7.59
+r,/data-m/sfatunmbi/plots/merge_32_450.plot,32,1,15461882281800,1,4,false,3,false,10,10,0,1151314,0.1501,0.0012,28.2981,37.0905,65.5398,65.5398,655.3982,0.655398,7.48
+r,/data-m/sfatunmbi/plots/merge_32_450.plot,32,1,15461882281800,1,8,false,3,false,10,10,0,1151314,0.1327,0.0008,13.2100,32.6081,45.9515,45.9515,459.5154,0.459515,7.70
+r,/data-m/sfatunmbi/plots/merge_32_450.plot,32,1,15461882281800,1,16,false,3,false,10,10,0,1151348,0.2237,0.0015,26.2628,23.2611,49.7491,49.7491,497.4906,0.497491,7.67
+r,/data-m/sfatunmbi/plots/merge_32_450.plot,32,1,15461882281800,1,32,false,3,false,10,10,0,1151217,0.1955,0.0013,27.4957,18.4722,46.1646,46.1646,461.6463,0.461646,6.71
+r,/data-m/sfatunmbi/plots/merge_32_450.plot,32,1,15461882281800,1,64,false,3,false,10,10,0,1151217,0.1869,0.0014,14.9412,21.9894,37.1188,37.1188,371.1882,0.371188,7.13
+r,/data-m/sfatunmbi/plots/merge_32_450.plot,32,1,15461882281800,1,128,false,3,false,10,10,0,1151430,0.2916,0.0024,28.7712,34.4525,63.5177,63.5177,635.1771,0.635177,7.96
