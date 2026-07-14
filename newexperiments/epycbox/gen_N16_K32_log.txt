@@ -1,0 +1,565 @@
+Selected Approach           : for
+Number of Threads           : 128
+Number of Threads I/O       : 1
+Exponent k                  : 32
+
+[1/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-228de0386c512717666b70e5ec61e4d0f058e1ad2bfd743e8fc46d9643780d27.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854272910 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292598061 storage_efficiency_table2=99.94 full_buckets=16413480 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561674832 hash_efficiency=88.43
+[183.13] HashGen 100.00%: Total 23.56 MH/s 179.76 MB/s : I/O 631.15 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-228de0386c512717666b70e5ec61e4d0f058e1ad2bfd743e8fc46d9643780d27.tmp' to '/data-l/sfatunmbi/temp/k32-228de0386c512717666b70e5ec61e4d0f058e1ad2bfd743e8fc46d9643780d27.plot'.
+Zero nonces found: 2369235 out of 4294967296 total records processed.
+Total Throughput: 13.61 MH/s  108.89 MB/s
+Overall I/O Throughput: 190.63 MB/s (0.00 GB read + 32.00 GB written)
+Total Time: 315.539516 seconds
+
+[2/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-00915e97f80a969206203a98f1b46bb6f904058aee473d57458ce0faae10e465.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854222729 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292588145 storage_efficiency_table2=99.94 full_buckets=16412830 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561634571 hash_efficiency=88.44
+[177.29] HashGen 100.00%: Total 24.34 MH/s 185.68 MB/s : I/O 632.78 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-00915e97f80a969206203a98f1b46bb6f904058aee473d57458ce0faae10e465.tmp' to '/data-l/sfatunmbi/temp/k32-00915e97f80a969206203a98f1b46bb6f904058aee473d57458ce0faae10e465.plot'.
+Zero nonces found: 2379151 out of 4294967296 total records processed.
+Total Throughput: 13.75 MH/s  109.97 MB/s
+Overall I/O Throughput: 377.80 MB/s (0.00 GB read + 64.00 GB written)
+Total Time: 312.458338 seconds
+
+[3/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-fd9ff6fbfdb17486a6d8a9cdeb4e2547aefe38b6681e232e7c1911a6e77b3873.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854157900 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292584952 storage_efficiency_table2=99.94 full_buckets=16412487 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561572937 hash_efficiency=88.44
+[177.14] HashGen 100.00%: Total 24.36 MH/s 185.84 MB/s : I/O 616.21 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-fd9ff6fbfdb17486a6d8a9cdeb4e2547aefe38b6681e232e7c1911a6e77b3873.tmp' to '/data-l/sfatunmbi/temp/k32-fd9ff6fbfdb17486a6d8a9cdeb4e2547aefe38b6681e232e7c1911a6e77b3873.plot'.
+Zero nonces found: 2382344 out of 4294967296 total records processed.
+Total Throughput: 13.11 MH/s  104.85 MB/s
+Overall I/O Throughput: 516.26 MB/s (0.00 GB read + 96.00 GB written)
+Total Time: 327.705725 seconds
+
+[4/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-a9d2ef59ace04fd29b2d3fcbf1647dd3fbac201186a355ea466349026866fe1a.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854240175 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292590699 storage_efficiency_table2=99.94 full_buckets=16413119 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561649454 hash_efficiency=88.44
+[178.74] HashGen 100.00%: Total 24.14 MH/s 184.18 MB/s : I/O 602.21 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-a9d2ef59ace04fd29b2d3fcbf1647dd3fbac201186a355ea466349026866fe1a.tmp' to '/data-l/sfatunmbi/temp/k32-a9d2ef59ace04fd29b2d3fcbf1647dd3fbac201186a355ea466349026866fe1a.plot'.
+Zero nonces found: 2376597 out of 4294967296 total records processed.
+Total Throughput: 13.59 MH/s  108.70 MB/s
+Overall I/O Throughput: 737.81 MB/s (0.00 GB read + 128.00 GB written)
+Total Time: 316.103295 seconds
+
+[5/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-429ccd4bfae3a9719fd484ad2e312f1b5c3f6ebc542228c57171318405747d59.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854182395 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292585378 storage_efficiency_table2=99.94 full_buckets=16411747 bucket_efficiency=97.82 nonce_max=0 record_counts_waste=561597000 hash_efficiency=88.44
+[168.36] HashGen 100.00%: Total 25.63 MH/s 195.55 MB/s : I/O 644.05 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-429ccd4bfae3a9719fd484ad2e312f1b5c3f6ebc542228c57171318405747d59.tmp' to '/data-l/sfatunmbi/temp/k32-429ccd4bfae3a9719fd484ad2e312f1b5c3f6ebc542228c57171318405747d59.plot'.
+Zero nonces found: 2381918 out of 4294967296 total records processed.
+Total Throughput: 13.87 MH/s  110.93 MB/s
+Overall I/O Throughput: 921.57 MB/s (0.00 GB read + 160.00 GB written)
+Total Time: 309.751103 seconds
+
+[6/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-93ee76fb57f9d233e6ce5038feada2e4b977233a0be660fdb220500540748b33.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854220074 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292599900 storage_efficiency_table2=99.94 full_buckets=16414362 bucket_efficiency=97.84 nonce_max=0 record_counts_waste=561620154 hash_efficiency=88.44
+[182.40] HashGen 100.00%: Total 23.66 MH/s 180.51 MB/s : I/O 645.29 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-93ee76fb57f9d233e6ce5038feada2e4b977233a0be660fdb220500540748b33.tmp' to '/data-l/sfatunmbi/temp/k32-93ee76fb57f9d233e6ce5038feada2e4b977233a0be660fdb220500540748b33.plot'.
+Zero nonces found: 2367396 out of 4294967296 total records processed.
+Total Throughput: 13.06 MH/s  104.46 MB/s
+Overall I/O Throughput: 1075.23 MB/s (0.00 GB read + 192.00 GB written)
+Total Time: 328.938705 seconds
+
+[7/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-864f071472b6f24716f2fae1e2255e61b0753889127d3fe7604008123af50515.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854247260 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292596404 storage_efficiency_table2=99.94 full_buckets=16412987 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561650840 hash_efficiency=88.44
+[187.05] HashGen 100.00%: Total 23.07 MH/s 175.99 MB/s : I/O 635.65 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-864f071472b6f24716f2fae1e2255e61b0753889127d3fe7604008123af50515.tmp' to '/data-l/sfatunmbi/temp/k32-864f071472b6f24716f2fae1e2255e61b0753889127d3fe7604008123af50515.plot'.
+Zero nonces found: 2370892 out of 4294967296 total records processed.
+Total Throughput: 13.00 MH/s  104.03 MB/s
+Overall I/O Throughput: 1283.13 MB/s (0.00 GB read + 224.00 GB written)
+Total Time: 330.294145 seconds
+
+[8/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-0d785f1668a82efc36780177087e307715e76dec6f678d2463db1793bed04e4e.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854112910 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292583917 storage_efficiency_table2=99.94 full_buckets=16412196 bucket_efficiency=97.82 nonce_max=0 record_counts_waste=561528975 hash_efficiency=88.44
+[184.20] HashGen 100.00%: Total 23.43 MH/s 178.73 MB/s : I/O 629.10 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-0d785f1668a82efc36780177087e307715e76dec6f678d2463db1793bed04e4e.tmp' to '/data-l/sfatunmbi/temp/k32-0d785f1668a82efc36780177087e307715e76dec6f678d2463db1793bed04e4e.plot'.
+Zero nonces found: 2383379 out of 4294967296 total records processed.
+Total Throughput: 12.85 MH/s  102.82 MB/s
+Overall I/O Throughput: 1402.71 MB/s (0.00 GB read + 256.00 GB written)
+Total Time: 334.189674 seconds
+
+[9/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-5384c5adf1bf526af4c85bb62a10a8f7cc221cba3f85fd1037af1dd4a43a3579.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854193466 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292592676 storage_efficiency_table2=99.94 full_buckets=16412882 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561600758 hash_efficiency=88.44
+[211.30] HashGen 100.00%: Total 20.41 MH/s 155.73 MB/s : I/O 619.48 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-5384c5adf1bf526af4c85bb62a10a8f7cc221cba3f85fd1037af1dd4a43a3579.tmp' to '/data-l/sfatunmbi/temp/k32-5384c5adf1bf526af4c85bb62a10a8f7cc221cba3f85fd1037af1dd4a43a3579.plot'.
+Zero nonces found: 2374620 out of 4294967296 total records processed.
+Total Throughput: 11.93 MH/s  95.44 MB/s
+Overall I/O Throughput: 1581.24 MB/s (0.00 GB read + 288.00 GB written)
+Total Time: 360.016110 seconds
+
+[10/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-180b2b8c4e312c6e0bc81c2715354bc9dc047aebc03086d12e24bb7109f4b389.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854384309 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292596295 storage_efficiency_table2=99.94 full_buckets=16413867 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561787992 hash_efficiency=88.43
+[170.70] HashGen 100.00%: Total 25.33 MH/s 193.29 MB/s : I/O 625.30 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-180b2b8c4e312c6e0bc81c2715354bc9dc047aebc03086d12e24bb7109f4b389.tmp' to '/data-l/sfatunmbi/temp/k32-180b2b8c4e312c6e0bc81c2715354bc9dc047aebc03086d12e24bb7109f4b389.plot'.
+Zero nonces found: 2371001 out of 4294967296 total records processed.
+Total Throughput: 13.70 MH/s  109.61 MB/s
+Overall I/O Throughput: 1819.90 MB/s (0.00 GB read + 320.00 GB written)
+Total Time: 313.461697 seconds
+
+[11/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-b3dac17b99bac4e28cfce9667ea2e0d8eb345e499aa6c365532d320b6c9ec029.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854208273 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292591883 storage_efficiency_table2=99.94 full_buckets=16413444 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561616373 hash_efficiency=88.44
+[187.65] HashGen 100.00%: Total 22.99 MH/s 175.40 MB/s : I/O 698.68 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-b3dac17b99bac4e28cfce9667ea2e0d8eb345e499aa6c365532d320b6c9ec029.tmp' to '/data-l/sfatunmbi/temp/k32-b3dac17b99bac4e28cfce9667ea2e0d8eb345e499aa6c365532d320b6c9ec029.plot'.
+Zero nonces found: 2375413 out of 4294967296 total records processed.
+Total Throughput: 12.83 MH/s  102.64 MB/s
+Overall I/O Throughput: 2010.84 MB/s (0.00 GB read + 352.00 GB written)
+Total Time: 334.769569 seconds
+
+[12/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-8a7bc3730188a49f4d6a042fc4f546040601f6ee7b5d37cfdd15371c95848b5e.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854164949 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292590830 storage_efficiency_table2=99.94 full_buckets=16413369 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561574102 hash_efficiency=88.44
+[215.44] HashGen 100.00%: Total 20.02 MH/s 152.73 MB/s : I/O 633.22 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-8a7bc3730188a49f4d6a042fc4f546040601f6ee7b5d37cfdd15371c95848b5e.tmp' to '/data-l/sfatunmbi/temp/k32-8a7bc3730188a49f4d6a042fc4f546040601f6ee7b5d37cfdd15371c95848b5e.plot'.
+Zero nonces found: 2376466 out of 4294967296 total records processed.
+Total Throughput: 11.79 MH/s  94.30 MB/s
+Overall I/O Throughput: 2128.56 MB/s (0.00 GB read + 384.00 GB written)
+Total Time: 364.369307 seconds
+
+[13/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-293d98c985b506ea6ab89e5dd3dd35cab6b3ac0fba6563848c29ed54fd4967c4.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854155827 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292582527 storage_efficiency_table2=99.94 full_buckets=16412919 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561573285 hash_efficiency=88.44
+[196.55] HashGen 100.00%: Total 21.97 MH/s 167.61 MB/s : I/O 637.69 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-293d98c985b506ea6ab89e5dd3dd35cab6b3ac0fba6563848c29ed54fd4967c4.tmp' to '/data-l/sfatunmbi/temp/k32-293d98c985b506ea6ab89e5dd3dd35cab6b3ac0fba6563848c29ed54fd4967c4.plot'.
+Zero nonces found: 2384769 out of 4294967296 total records processed.
+Total Throughput: 12.64 MH/s  101.12 MB/s
+Overall I/O Throughput: 2371.46 MB/s (0.00 GB read + 416.00 GB written)
+Total Time: 339.808445 seconds
+
+[14/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-9065ccb5ffa1bc933334d6a53278cd8e7ef03fd0898ff257010f6ee1643e37cc.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854163505 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292584034 storage_efficiency_table2=99.94 full_buckets=16412473 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561579451 hash_efficiency=88.44
+[214.31] HashGen 100.00%: Total 20.12 MH/s 153.53 MB/s : I/O 625.08 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-9065ccb5ffa1bc933334d6a53278cd8e7ef03fd0898ff257010f6ee1643e37cc.tmp' to '/data-l/sfatunmbi/temp/k32-9065ccb5ffa1bc933334d6a53278cd8e7ef03fd0898ff257010f6ee1643e37cc.plot'.
+Zero nonces found: 2383262 out of 4294967296 total records processed.
+Total Throughput: 11.93 MH/s  95.44 MB/s
+Overall I/O Throughput: 2506.27 MB/s (0.00 GB read + 448.00 GB written)
+Total Time: 360.031426 seconds
+
+[15/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-2ab5d9cd5b00a5744fc58d4ca7cce348b9b796cd19d94ab6f1c61a84bdd34639.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854207335 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292584972 storage_efficiency_table2=99.94 full_buckets=16412748 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561622345 hash_efficiency=88.44
+[215.96] HashGen 100.00%: Total 19.99 MH/s 152.50 MB/s : I/O 619.96 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-2ab5d9cd5b00a5744fc58d4ca7cce348b9b796cd19d94ab6f1c61a84bdd34639.tmp' to '/data-l/sfatunmbi/temp/k32-2ab5d9cd5b00a5744fc58d4ca7cce348b9b796cd19d94ab6f1c61a84bdd34639.plot'.
+Zero nonces found: 2382324 out of 4294967296 total records processed.
+Total Throughput: 11.83 MH/s  94.61 MB/s
+Overall I/O Throughput: 2656.90 MB/s (0.00 GB read + 480.00 GB written)
+Total Time: 363.166815 seconds
+
+[16/16] Generating plot file...
+Threads (Hash/Sort)         : 128
+Threads (I/O)               : 1
+Table1 Size (GB)            : 16.0
+Table2 Size (GB)            : 32.0
+Max Memory Size (GB)        : 49.3
+Expected Memory Size (GB)   : 49.3
+Number of Hashes (Disk)     : 4294967296
+File Size (GB)              : 32.0
+Temporary Data Size (GB)    : 0
+Size of MemoRecord          : 4
+Rounds                      : 1
+Number of Buckets           : 16777216
+Number of Records in Bucket : 256
+BATCH_SIZE                  : 1024
+WRITE_BATCH_SIZE            : 1024
+READ_BATCH_SIZE             : 1
+HASHGEN                     : true
+MEMORY_WRITE                : true
+CIRCULAR_ARRAY              : false
+FULL_BUCKETS                : false
+File Table 2                : /data-l/sfatunmbi/temp/k32-007999fa7b7866da934f15c90eb4be2ff26831a031393120eee3c7d0d82155c2.plot
+------------------------Table 1 generation started------------------------
+------------------------In-memory Table 2 generation started------------------------
+Total matches found in table1: 4854240346 out of 4294967296 records
+Percentage of matches: 113.02%
+524288 buckets to write at once
+record_counts=4292601050 storage_efficiency_table2=99.94 full_buckets=16413132 bucket_efficiency=97.83 nonce_max=0 record_counts_waste=561639275 hash_efficiency=88.44
+[208.30] HashGen 100.00%: Total 20.71 MH/s 157.97 MB/s : I/O 627.04 MB/s
+File renamed/moved successfully from '/data-l/sfatunmbi/temp/k32-007999fa7b7866da934f15c90eb4be2ff26831a031393120eee3c7d0d82155c2.tmp' to '/data-l/sfatunmbi/temp/k32-007999fa7b7866da934f15c90eb4be2ff26831a031393120eee3c7d0d82155c2.plot'.
+Zero nonces found: 2366246 out of 4294967296 total records processed.
+Total Throughput: 12.03 MH/s  96.22 MB/s
+Overall I/O Throughput: 2819.01 MB/s (0.00 GB read + 512.00 GB written)
+Total Time: 357.095031 seconds
+Peak Memory Usage: 50438.20 MB
