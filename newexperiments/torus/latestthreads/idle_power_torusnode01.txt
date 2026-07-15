@@ -1,0 +1,5 @@
+host=torusnode01
+sample_seconds=60
+min_power_w=119
+max_power_w=123
+avg_power_w=120
