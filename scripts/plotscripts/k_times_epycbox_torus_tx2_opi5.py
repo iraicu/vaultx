@@ -5,11 +5,9 @@ ThunderX2, OPI5), 2x2 grid, for Section IV-B (Vault Generation: Storage
 Medium Comparison). A reduced view of k_times_by_drive.py's full 11-machine
 figure -- same source CSVs and drive-selection rules, fewer machines.
 
-Axis choice: EpycBox, Torus, and ThunderX2 share one linear y-axis (0-12 min,
-step 2) since all three finish K=32 well under that range on every drive
-(one exception: Torus/CEPH_HDD K=32 is 12.16 min, 1.3% over the 12 cap --
-left as a very slight clip rather than breaking the shared scale). OPI5 gets
-its own y-axis (step 5) since it is far slower.
+Axis choice: EpycBox, Torus, and ThunderX2 share one linear y-axis (0-10 min,
+step 2) since all three finish K=32 well under that range on every drive.
+OPI5 gets its own y-axis (step 5) since it is far slower.
 
 OPI5 K=32 caveat: OPI5 has 32GB RAM; a true K=32 in-memory run needs ~48GB
 (same formula as Section III), so OPI5's K=32 point is not actually a full
@@ -45,7 +43,7 @@ MACHINE_TITLES = {
     "thunderx2": "ThunderX2", "opi5": "OPI5",
 }
 SHARED_SCALE_MACHINES = {"epycbox", "torus", "thunderx2"}
-SHARED_YTICKS = np.arange(0, 13, 2)  # 0,2,4,6,8,10,12
+SHARED_YTICKS = np.arange(0, 11, 2)  # 0,2,4,6,8,10
 OPI5_MEMORY_LIMITED_K = 32            # 32GB RAM < ~48GB needed for true K=32 IM
 
 
@@ -78,9 +76,9 @@ def plot_machine(machine: str, ax: plt.Axes):
 
     if machine in SHARED_SCALE_MACHINES:
         ax.set_yticks(SHARED_YTICKS)
-        # Same 0-12 step-2 gridlines on all three; ylim gets a touch of
-        # headroom beyond 12 only if a bar would otherwise clip (Torus/CEPH
-        # K=32 = 12.16 min), so no bar is cut off flat at the axis top.
+        # Same 0-10 step-2 gridlines on all three; ylim gets a touch of
+        # headroom beyond 10 only if a bar would otherwise clip, so no bar
+        # is cut off flat at the axis top.
         ax.set_ylim(0, max(SHARED_YTICKS[-1], max_time * 1.03))
     else:
         top = int(np.ceil((max_time * 1.1) / 5.0) * 5)
