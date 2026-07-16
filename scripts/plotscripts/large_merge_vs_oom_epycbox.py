@@ -28,6 +28,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.patheffects as patheffects
 import numpy as np
 import pandas as pd
 
@@ -105,6 +106,8 @@ def main():
         pm_s = plot_component_s(n, subplot_times_s) + merge_times_s[n]
         pm_min.append(pm_s / 60.0)
 
+    pct_saved = [(o - p) / o * 100.0 for o, p in zip(oom_min, pm_min)]
+
     x = np.arange(len(K_VALUES))
     bw = 0.35
 
@@ -128,6 +131,17 @@ def main():
     for xi, v in zip(x, pm_min):
         ax.text(xi + bw / 2, v * 1.12, fmt_min(v), ha="center", va="bottom",
                  fontsize=7.5, color=MERGE_COLOR, fontweight="bold", zorder=5)
+
+    # "-XX%" label inside each merge bar, near its base. Placed at a fixed
+    # fraction of the bar's own height in log-space (rather than a fixed
+    # data value) so it sits just above the bar's bottom edge consistently
+    # whether the bar spans one log decade (K=33) or nearly three (K=40).
+    y_floor = 10.0
+    for xi, v, pct in zip(x, pm_min, pct_saved):
+        y_label = y_floor * (v / y_floor) ** 0.35
+        txt = ax.text(xi + bw / 2, y_label, f"-{pct:.0f}%", ha="center", va="bottom",
+                      fontsize=8, color="white", fontweight="bold", zorder=6)
+        txt.set_path_effects([patheffects.withStroke(linewidth=2.0, foreground=MERGE_COLOR)])
 
     ax.annotate("infeasible on 14TB HDD\n(15TB temp needed) --\nextrapolated",
                 xy=(x[-1] - bw / 2, oom_min[-1]), xytext=(x[-1] - 1.65, oom_min[-1] * 1.35),
@@ -170,8 +184,8 @@ def main():
     print(f"  saved {out_pp}")
 
     print("\n  K   N    OOM(min)   Plot+Merge(min)   P+M faster by")
-    for k, o, p in zip(K_VALUES, oom_min, pm_min):
-        print(f"  {k}  {N_FOR_K[k]:>4}  {o:9.1f}   {p:14.1f}      {(o - p) / o * 100:5.1f}%")
+    for k, o, p, pct in zip(K_VALUES, oom_min, pm_min, pct_saved):
+        print(f"  {k}  {N_FOR_K[k]:>4}  {o:9.1f}   {p:14.1f}      {pct:5.1f}%")
 
 
 if __name__ == "__main__":
