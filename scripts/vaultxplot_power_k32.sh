@@ -121,7 +121,7 @@ power_monitor() {
   while [[ -f "${pid_file}" ]]; do
     reading=$(echo "${SUDO_PASS}" | sudo -S ipmitool dcmi power reading 2>/dev/null \
         | grep -i "Instantaneous power reading" \
-        | grep -oP '\d+(?=\s+Watts)')
+        | grep -oP '\d+(?=\s+Watts)') || reading=""
     if [[ -n "${reading}" ]]; then
       echo "${reading}" >> "${power_tmp}"
     fi
@@ -179,7 +179,7 @@ capture_idle_baseline() {
   local mon_pid=$!
   sleep "${IDLE_SAMPLE_SECONDS}"
   rm -f "${sentinel}"
-  wait "${mon_pid}" 2>/dev/null
+  wait "${mon_pid}" 2>/dev/null || true
 
   read -r min max avg wh kwh <<< "$(summarize_power "${power_tmp}" "${IDLE_SAMPLE_SECONDS}")"
   rm -f "${power_tmp}"
@@ -305,7 +305,7 @@ run_once() {
   exp_duration=$(( exp_end - exp_start ))
 
   rm -f "${power_sentinel}"
-  wait "${power_pid}" 2>/dev/null
+  wait "${power_pid}" 2>/dev/null || true
   kill "${tail_pid}" 2>/dev/null
   wait "${tail_pid}" 2>/dev/null
 

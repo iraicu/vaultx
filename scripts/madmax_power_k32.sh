@@ -125,7 +125,7 @@ power_monitor() {
     while [ -f "$pid_file" ]; do
         reading=$(echo "$SUDO_PASS" | sudo -S ipmitool dcmi power reading 2>/dev/null \
             | grep -i "Instantaneous power reading" \
-            | grep -oP '\d+(?=\s+Watts)')
+            | grep -oP '\d+(?=\s+Watts)') || reading=""
         if [ -n "$reading" ]; then
             echo "$reading" >> "$power_tmp"
         fi
@@ -297,7 +297,7 @@ for i in "${!TEMP_DRIVES[@]}"; do
         GRAND_DURATION_S=$(( GRAND_DURATION_S + EXP_DURATION ))
 
         rm -f "$POWER_SENTINEL" "$MEM_SENTINEL"
-        wait "$POWER_BG_PID" 2>/dev/null
+        wait "$POWER_BG_PID" 2>/dev/null || true
         wait "$MEM_BG_PID" 2>/dev/null
 
         kill "$TAIL_PID" 2>/dev/null
