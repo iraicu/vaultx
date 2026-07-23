@@ -601,6 +601,7 @@ bool read_bucket_into_buffer_timed(SearchFileCtx *ctx, const uint8_t *query,
     *seek_ms_out = (seek_end - seek_start) * 1000.0;
   }
 
+  printf("Just completed a seek\n");
   // Time the read operation
   double read_start = omp_get_wtime();
   size_t read_count = fread(ctx->buffer, sizeof(MemoTable2Record),

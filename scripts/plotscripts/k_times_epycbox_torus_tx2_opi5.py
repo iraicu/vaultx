@@ -5,9 +5,9 @@ ThunderX2, OPI5), 2x2 grid, for Section IV-B (Vault Generation: Storage
 Medium Comparison). A reduced view of k_times_by_drive.py's full 11-machine
 figure -- same source CSVs and drive-selection rules, fewer machines.
 
-Axis choice: EpycBox, Torus, and ThunderX2 share one linear y-axis (0-10 min,
-step 2) since all three finish K=32 well under that range on every drive.
-OPI5 gets its own y-axis (step 5) since it is far slower.
+Axis choice: all four machines share one symlog y-axis (linear 0-1, then log
+1-10-100) so EpycBox/Torus/ThunderX2 (well under 10 min) and OPI5 (up to
+~52 min) can be read off the same scale without OPI5 dwarfing the rest.
 
 OPI5 K=32 caveat: OPI5 has 32GB RAM; a true K=32 in-memory run needs ~48GB
 (same formula as Section III), so OPI5's K=32 point is not actually a full
@@ -25,6 +25,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.ticker
 import numpy as np
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -42,8 +43,9 @@ MACHINE_TITLES = {
     "epycbox": "EpycBox", "torus": "Torus",
     "thunderx2": "ThunderX2", "opi5": "OPI5",
 }
-SHARED_SCALE_MACHINES = {"epycbox", "torus", "thunderx2"}
-SHARED_YTICKS = np.arange(0, 11, 2)  # 0,2,4,6,8,10
+YSCALE_LINTHRESH = 1.0                 # linear below 1 min, log above
+YTICKS = [0, 1, 10, 100]
+YLIM = (0, 100)
 OPI5_MEMORY_LIMITED_K = 32            # 32GB RAM < ~48GB needed for true K=32 IM
 
 
@@ -56,7 +58,6 @@ def plot_machine(machine: str, ax: plt.Axes):
     bar_width = 0.8 / n_drives
     x         = np.arange(n_k)
 
-    max_time = 0.0
     for i, drive in enumerate(available_drives):
         df    = drive_data[drive]
         times = [df.loc[df["k"] == k, "total_time_min"].values[0]
@@ -72,18 +73,11 @@ def plot_machine(machine: str, ax: plt.Axes):
             bars[k32_idx].set_edgecolor("black")
             bars[k32_idx].set_linewidth(0.6)
 
-        max_time = max(max_time, max(times))
-
-    if machine in SHARED_SCALE_MACHINES:
-        ax.set_yticks(SHARED_YTICKS)
-        # Same 0-10 step-2 gridlines on all three; ylim gets a touch of
-        # headroom beyond 10 only if a bar would otherwise clip, so no bar
-        # is cut off flat at the axis top.
-        ax.set_ylim(0, max(SHARED_YTICKS[-1], max_time * 1.03))
-    else:
-        top = int(np.ceil((max_time * 1.1) / 5.0) * 5)
-        ax.set_yticks(np.arange(0, top + 1, 5))
-        ax.set_ylim(0, top)
+    ax.set_yscale("symlog", linthresh=YSCALE_LINTHRESH)
+    ax.set_yticks(YTICKS)
+    ax.set_yticklabels([str(t) for t in YTICKS])
+    ax.set_ylim(*YLIM)
+    ax.yaxis.set_minor_locator(matplotlib.ticker.NullLocator())
 
     ax.set_xticks(x)
     ax.set_xticklabels([f"k{k}" for k in K_VALUES], fontsize=8)

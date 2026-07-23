@@ -5,6 +5,12 @@ Two side-by-side subplots: NVME (left) and HDD (right), shared y-axis (log, 10â€
 X-axis: memory allocation scale [2, 4, 8, 16, 32, 48 GB].
 VaultX bars use actual allocations [2, 5, 8, 14, 26, 50 GB] mapped to those positions.
 Bladebit bars at [4, 8, 16, 32, 48 GB] (no 2 GB: minimum is 4 GB).
+
+NVMe-only extra bar: Bladebit full in-memory run at 416 GB RAM, 17.9 min
+(one-off data point, not present in bladebit_varying_memory_k32.csv -- no
+matching VaultX bar since VaultX never needs that much memory). Bracketed
+and labeled "In-memory" on the x-axis to distinguish it from the disk-cache
+runs to its left.
 """
 
 import os
@@ -32,6 +38,10 @@ VX_MEM_GB = [2, 5, 8, 14, 26, 50]
 # Bladebit: actual memory values per x-position (None = no data at x=0)
 BB_MEM_GB = [None, 4, 8, 16, 32, 48]
 
+# NVMe-only: Bladebit full in-memory run, one-off data point (see module docstring)
+BB_INMEM_LABEL    = "416 GB"
+BB_INMEM_TIME_MIN = 17.9
+
 VX_COLOR = "#1F77B4"   # blue
 BB_COLOR = "#2CA02C"   # green
 
@@ -55,8 +65,21 @@ def load_bb(drive_key: str) -> dict[int, float]:
     return dict(zip(subset["cache_gb"], subset["total_plot_time(min)"]))
 
 
+def draw_bracket(ax: plt.Axes, x_center: float, half_width: float, label: str,
+                 y: float = -0.13, drop: float = 0.02):
+    """Square bracket under an x-tick label, e.g. spanning the in-memory bar,
+    with a caption centered beneath it. y/drop are in axes-fraction units so
+    the bracket sits at a fixed offset below the axis regardless of data scale."""
+    trans = ax.get_xaxis_transform()
+    x0, x1 = x_center - half_width, x_center + half_width
+    ax.plot([x0, x0, x1, x1], [y + drop, y, y, y + drop],
+            transform=trans, color="black", linewidth=1, clip_on=False)
+    ax.text(x_center, y - drop, label, transform=trans,
+            ha="center", va="top", fontsize=8, style="italic", clip_on=False)
+
+
 def draw_subplot(ax: plt.Axes, vx_data: dict, bb_data: dict, title: str,
-                 show_ylabel: bool = True):
+                 show_ylabel: bool = True, show_inmem: bool = False):
     for xi, (vx_mem, bb_mem) in enumerate(zip(VX_MEM_GB, BB_MEM_GB)):
         # VaultX bar (always present)
         vx_time = vx_data.get(vx_mem)
@@ -77,13 +100,28 @@ def draw_subplot(ax: plt.Axes, vx_data: dict, bb_data: dict, title: str,
                         f"{bb_time:.0f}m", ha="center", va="bottom", fontsize=6.5,
                         color=BB_COLOR, fontweight="bold", zorder=5)
 
+    x_positions = list(X_POSITIONS)
+    x_labels    = list(X_LABELS)
+
+    if show_inmem:
+        xi_inmem = len(X_POSITIONS)
+        ax.bar(xi_inmem, BB_INMEM_TIME_MIN, width=BAR_WIDTH,
+               color=BB_COLOR, zorder=3, edgecolor="white", linewidth=0.4)
+        ax.text(xi_inmem, BB_INMEM_TIME_MIN * 1.25,
+                f"{BB_INMEM_TIME_MIN:.1f}m", ha="center", va="bottom", fontsize=6.5,
+                color=BB_COLOR, fontweight="bold", zorder=5)
+        x_positions.append(xi_inmem)
+        x_labels.append(BB_INMEM_LABEL)
+        draw_bracket(ax, xi_inmem, BAR_WIDTH * 0.9, "In-memory")
+        ax.set_xlim(-0.6, xi_inmem + 0.6)
+
     ax.set_yscale("log")
     ax.set_ylim(1, 3000)
     ax.set_yticks([1, 10, 100, 1000])
     ax.yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-    ax.set_xticks(X_POSITIONS)
-    ax.set_xticklabels(X_LABELS, fontsize=8)
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(x_labels, fontsize=8)
     if show_ylabel:
         ax.set_ylabel("Time (minutes, log scale)", fontsize=9)
     ax.set_title(title, fontsize=10, fontweight="bold")
@@ -103,7 +141,7 @@ def main():
     fig.suptitle("K=32 Gen time vs Memory: VX/Bladebit (Epycbox)",
                  fontsize=11, fontweight="bold")
 
-    draw_subplot(ax_nvme, vx_nvme, bb_nvme, "NVMe", show_ylabel=True)
+    draw_subplot(ax_nvme, vx_nvme, bb_nvme, "NVMe", show_ylabel=True, show_inmem=True)
     draw_subplot(ax_hdd,  vx_hdd,  bb_hdd,  "HDD",  show_ylabel=False)
 
     legend_handles = [
@@ -111,9 +149,9 @@ def main():
         mpatches.Patch(color=BB_COLOR, label="Bladebit"),
     ]
     fig.legend(handles=legend_handles, loc="lower center", ncol=2,
-               fontsize=9, frameon=True, bbox_to_anchor=(0.5, -0.04))
+               fontsize=9, frameon=True, bbox_to_anchor=(0.5, -0.07))
 
-    fig.tight_layout(rect=[0, 0.05, 1, 1])
+    fig.tight_layout(rect=[0, 0.08, 1, 1])
 
     base = "vaultx_vs_bladebit_memory_k32"
     out     = os.path.join(IMAGES_DIR, f"{base}.png")
