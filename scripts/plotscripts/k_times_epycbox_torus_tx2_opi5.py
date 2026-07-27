@@ -58,6 +58,7 @@ def plot_machine(machine: str, ax: plt.Axes):
     bar_width = 0.8 / n_drives
     x         = np.arange(n_k)
 
+    k32_idx = K_VALUES.index(32)
     for i, drive in enumerate(available_drives):
         df    = drive_data[drive]
         times = [df.loc[df["k"] == k, "total_time_min"].values[0]
@@ -68,10 +69,14 @@ def plot_machine(machine: str, ax: plt.Axes):
                       color=DRIVE_COLORS[drive], label=DRIVE_LABELS[drive], zorder=3)
 
         if machine == "opi5":
-            k32_idx = K_VALUES.index(OPI5_MEMORY_LIMITED_K)
             bars[k32_idx].set_hatch("xx")
             bars[k32_idx].set_edgecolor("black")
             bars[k32_idx].set_linewidth(0.6)
+
+        k32_bar = bars[k32_idx]
+        ax.text(k32_bar.get_x() + k32_bar.get_width() / 2,
+                k32_bar.get_height(), f"{k32_bar.get_height():.1f}",
+                ha="center", va="bottom", fontsize=5.5, zorder=4)
 
     ax.set_yscale("symlog", linthresh=YSCALE_LINTHRESH)
     ax.set_yticks(YTICKS)

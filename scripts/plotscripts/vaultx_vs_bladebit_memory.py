@@ -6,11 +6,11 @@ X-axis: memory allocation scale [2, 4, 8, 16, 32, 48 GB].
 VaultX bars use actual allocations [2, 5, 8, 14, 26, 50 GB] mapped to those positions.
 Bladebit bars at [4, 8, 16, 32, 48 GB] (no 2 GB: minimum is 4 GB).
 
-NVMe-only extra bar: Bladebit full in-memory run at 416 GB RAM, 17.9 min
-(one-off data point, not present in bladebit_varying_memory_k32.csv -- no
-matching VaultX bar since VaultX never needs that much memory). Bracketed
-and labeled "In-memory" on the x-axis to distinguish it from the disk-cache
-runs to its left.
+Extra bar per subplot: Bladebit full in-memory run at 416 GB RAM -- 17.9 min
+on NVMe, 46 min on HDD (one-off data points, not present in
+bladebit_varying_memory_k32.csv -- no matching VaultX bar since VaultX never
+needs that much memory). Bracketed and labeled "In-memory" on the x-axis to
+distinguish them from the disk-cache runs to their left.
 """
 
 import os
@@ -38,9 +38,9 @@ VX_MEM_GB = [2, 5, 8, 14, 26, 50]
 # Bladebit: actual memory values per x-position (None = no data at x=0)
 BB_MEM_GB = [None, 4, 8, 16, 32, 48]
 
-# NVMe-only: Bladebit full in-memory run, one-off data point (see module docstring)
-BB_INMEM_LABEL    = "416 GB"
-BB_INMEM_TIME_MIN = 17.9
+# Bladebit full in-memory run, one-off data points (see module docstring)
+BB_INMEM_LABEL = "416 GB"
+BB_INMEM_TIME_MIN = {"NVMe": 17.9, "HDD": 46.0}
 
 VX_COLOR = "#1F77B4"   # blue
 BB_COLOR = "#2CA02C"   # green
@@ -79,7 +79,7 @@ def draw_bracket(ax: plt.Axes, x_center: float, half_width: float, label: str,
 
 
 def draw_subplot(ax: plt.Axes, vx_data: dict, bb_data: dict, title: str,
-                 show_ylabel: bool = True, show_inmem: bool = False):
+                 show_ylabel: bool = True, inmem_time: float | None = None):
     for xi, (vx_mem, bb_mem) in enumerate(zip(VX_MEM_GB, BB_MEM_GB)):
         # VaultX bar (always present)
         vx_time = vx_data.get(vx_mem)
@@ -103,12 +103,12 @@ def draw_subplot(ax: plt.Axes, vx_data: dict, bb_data: dict, title: str,
     x_positions = list(X_POSITIONS)
     x_labels    = list(X_LABELS)
 
-    if show_inmem:
+    if inmem_time is not None:
         xi_inmem = len(X_POSITIONS)
-        ax.bar(xi_inmem, BB_INMEM_TIME_MIN, width=BAR_WIDTH,
+        ax.bar(xi_inmem, inmem_time, width=BAR_WIDTH,
                color=BB_COLOR, zorder=3, edgecolor="white", linewidth=0.4)
-        ax.text(xi_inmem, BB_INMEM_TIME_MIN * 1.25,
-                f"{BB_INMEM_TIME_MIN:.1f}m", ha="center", va="bottom", fontsize=6.5,
+        ax.text(xi_inmem, inmem_time * 1.25,
+                f"{inmem_time:.1f}m", ha="center", va="bottom", fontsize=6.5,
                 color=BB_COLOR, fontweight="bold", zorder=5)
         x_positions.append(xi_inmem)
         x_labels.append(BB_INMEM_LABEL)
@@ -141,8 +141,10 @@ def main():
     fig.suptitle("K=32 Gen time vs Memory: VX/Bladebit (Epycbox)",
                  fontsize=11, fontweight="bold")
 
-    draw_subplot(ax_nvme, vx_nvme, bb_nvme, "NVMe", show_ylabel=True, show_inmem=True)
-    draw_subplot(ax_hdd,  vx_hdd,  bb_hdd,  "HDD",  show_ylabel=False)
+    draw_subplot(ax_nvme, vx_nvme, bb_nvme, "NVMe", show_ylabel=True,
+                 inmem_time=BB_INMEM_TIME_MIN["NVMe"])
+    draw_subplot(ax_hdd,  vx_hdd,  bb_hdd,  "HDD",  show_ylabel=False,
+                 inmem_time=BB_INMEM_TIME_MIN["HDD"])
 
     legend_handles = [
         mpatches.Patch(color=VX_COLOR, label="VaultX"),

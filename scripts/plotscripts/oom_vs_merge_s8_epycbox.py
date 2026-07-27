@@ -29,7 +29,7 @@ os.makedirs(PAPER_IMAGES_DIR, exist_ok=True)
 # epycbox: temp = sfatunmbi  (local NVMe)
 DRIVE_CSVS = {
     "HDD": {
-        "s8":      ("s8/varying_memory_k32_CP384_IO1_data-i.csv",
+        "s8":      ("s8/memvary/varying_memory_k32_CP384_IO1_nvme-nfs_hdd.csv",
                     "s8/k27-k32merge_nvme-raid0-data-i.csv"),
         "epycbox": ("epycbox/varying_memory_k32_CP128_IO1_data-m.csv",
                     "epycbox/k27-k32merge_sfatunmbi-data-m.csv"),
