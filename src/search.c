@@ -95,16 +95,25 @@ bool search_ctx_open(const char *filename, SearchFileCtx *ctx) {
       ctx->plotData_array =
           (PlotData *)malloc(ctx->num_files * sizeof(PlotData));
       if (ctx->plotData_array != NULL) {
-        if (fseek(ctx->file, -(ctx->num_files * sizeof(PlotData)), SEEK_END) ==
-            0) {
-          size_t read_count = fread(ctx->plotData_array, sizeof(PlotData),
-                                    ctx->num_files, ctx->file);
-          if (read_count != (size_t)ctx->num_files) {
-            fprintf(stderr, "Warning: Failed to read metadata footer\n");
-            free(ctx->plotData_array);
-            ctx->plotData_array = NULL;
-            ctx->num_files = 0;
-          }
+        // Read the footer via pread() on the raw fd instead of
+        // fseek()/fread() on ctx->file. pread() does not touch the fd's
+        // file offset or the FILE*'s internal stdio buffer, so ctx->file
+        // is left exactly as it was right after fopen() (position 0,
+        // buffer not yet allocated). That keeps its state identical to a
+        // non-merged file's stream by the time the timed per-lookup
+        // fseek()/fread() in read_bucket_into_buffer_timed() runs -
+        // otherwise that priming seek+read silently made the first real
+        // positioning cheap for merged files only, so it showed up as
+        // near-zero seek_ms and inflated read_ms instead.
+        size_t footer_bytes = (size_t)ctx->num_files * sizeof(PlotData);
+        off_t footer_offset = (off_t)filesize - (off_t)footer_bytes;
+        ssize_t read_count = pread(fileno(ctx->file), ctx->plotData_array,
+                                   footer_bytes, footer_offset);
+        if (read_count != (ssize_t)footer_bytes) {
+          fprintf(stderr, "Warning: Failed to read metadata footer\n");
+          free(ctx->plotData_array);
+          ctx->plotData_array = NULL;
+          ctx->num_files = 0;
         }
       }
     }
