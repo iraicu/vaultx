@@ -22,8 +22,8 @@ set -euo pipefail
 
 
 K_VALUES=(32)
-N_VALUES=(2 4 8 16 32 64)
-B_VALUES=(256 512 1024 2048 4096)
+N_VALUES=(64)
+B_VALUES=(128 64 32)
 
 # pipelined | serial | tasks
 APPROACH=pipelined
@@ -31,16 +31,22 @@ APPROACH=pipelined
 COMPUTE_THREADS=$(nproc)
 MERGE_IO_THREADS=(1)
 
+# Per-run wall-clock cap. If a merge hangs, `timeout` kills it directly so
+# the pipe/tee below actually sees EOF and the sweep can move on to the
+# next B instead of blocking forever. Tune to comfortably exceed your
+# largest expected merge.
+TIMEOUT_SECONDS=7200
+
 # Paired 1-to-1 with FINAL_DRIVES.
 TEMP_DRIVES=(
-  "/data-l/iraicu/tmp/"
+  "/data-f/iraicu/tmp/"
 )
 FINAL_DRIVES=(
-  "/data-r/iraicu/vaults/"
+  "/data-e/sfatunmbi/plots/"
 )
 
 CEPH_DIR="/ceph/sfatunmbi/mergedplots"
-EXPERIMENTS_DIR="${HOME}/vaultx/newexperiments/$(hostname)"
+EXPERIMENTS_DIR="${HOME}/vaultx/newexperiments/torus/mergedlittlebs"
 SUDO_PASS="sfatunmbi"
 
 
@@ -64,7 +70,6 @@ if [[ ${#K_VALUES[@]} -eq 0 || ${#N_VALUES[@]} -eq 0 || ${#B_VALUES[@]} -eq 0 ]]
   exit 1
 fi
 
-safe_mkdir "$CEPH_DIR" "$EXPERIMENTS_DIR"
 
 # Check for /usr/bin/time -v support
 HAS_TIME_V=false
@@ -94,6 +99,8 @@ safe_mv() {
 drive_id() {
   echo "$1" | sed 's|^/*||; s|/.*||'
 }
+
+safe_mkdir "$CEPH_DIR" "$EXPERIMENTS_DIR"
 
 # Parse a vaultx merge log and emit one CSV data row.
 # Args: log time_log k n b approach temp_drive final_drive
@@ -238,8 +245,9 @@ for k in "${K_VALUES[@]}"; do
 
         set +e
         if [[ "$HAS_TIME_V" == true ]]; then
-          {
-            /usr/bin/time -v "$BIN" \
+          /usr/bin/time -v -o "$time_log" \
+            timeout -k 30 "$TIMEOUT_SECONDS" \
+            "$BIN" \
               -P merge \
               -k  "$k" \
               -n  "$n" \
@@ -249,9 +257,9 @@ for k in "${K_VALUES[@]}"; do
               -mt "$MERGE_IO_THREADS" \
               -A  "$APPROACH" \
               -B  "$b" \
-              2>&1
-          } 2>"$time_log" | tee "$log"
+              2>&1 | tee "$log"
         else
+          timeout -k 30 "$TIMEOUT_SECONDS" \
           "$BIN" \
             -P merge \
             -k  "$k" \
@@ -266,6 +274,16 @@ for k in "${K_VALUES[@]}"; do
         fi
         vaultx_exit="${PIPESTATUS[0]}"
         set -e
+
+        if [[ "$vaultx_exit" -eq 124 ]]; then
+          echo "  Error: vaultx timed out after ${TIMEOUT_SECONDS}s" >&2
+          printf "%s\n" \
+            "${k},${n},${b},${APPROACH},${temp_drive},${final_drive},TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT" \
+            >> "$csv"
+          rm -f "$log" "$time_log"
+          drop_caches
+          continue
+        fi
 
         if [[ "$vaultx_exit" -ne 0 ]]; then
           echo "  Error: vaultx exited with code $vaultx_exit" >&2
