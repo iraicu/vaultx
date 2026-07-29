@@ -31,12 +31,6 @@ APPROACH=pipelined
 COMPUTE_THREADS=$(nproc)
 MERGE_IO_THREADS=(1)
 
-# Per-run wall-clock cap. If a merge hangs, `timeout` kills it directly so
-# the pipe/tee below actually sees EOF and the sweep can move on to the
-# next B instead of blocking forever. Tune to comfortably exceed your
-# largest expected merge.
-TIMEOUT_SECONDS=7200
-
 # Paired 1-to-1 with FINAL_DRIVES.
 TEMP_DRIVES=(
   "/data-f/iraicu/tmp/"
@@ -246,7 +240,6 @@ for k in "${K_VALUES[@]}"; do
         set +e
         if [[ "$HAS_TIME_V" == true ]]; then
           /usr/bin/time -v -o "$time_log" \
-            timeout -k 30 "$TIMEOUT_SECONDS" \
             "$BIN" \
               -P merge \
               -k  "$k" \
@@ -259,7 +252,6 @@ for k in "${K_VALUES[@]}"; do
               -B  "$b" \
               2>&1 | tee "$log"
         else
-          timeout -k 30 "$TIMEOUT_SECONDS" \
           "$BIN" \
             -P merge \
             -k  "$k" \
@@ -274,16 +266,6 @@ for k in "${K_VALUES[@]}"; do
         fi
         vaultx_exit="${PIPESTATUS[0]}"
         set -e
-
-        if [[ "$vaultx_exit" -eq 124 ]]; then
-          echo "  Error: vaultx timed out after ${TIMEOUT_SECONDS}s" >&2
-          printf "%s\n" \
-            "${k},${n},${b},${APPROACH},${temp_drive},${final_drive},TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT,TIMEOUT" \
-            >> "$csv"
-          rm -f "$log" "$time_log"
-          drop_caches
-          continue
-        fi
 
         if [[ "$vaultx_exit" -ne 0 ]]; then
           echo "  Error: vaultx exited with code $vaultx_exit" >&2
