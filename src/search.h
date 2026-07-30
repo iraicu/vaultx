@@ -18,6 +18,7 @@ typedef struct {
 // Timing breakdown for detailed search performance analysis
 typedef struct {
   double open_close_ms;   // Time spent opening and closing files
+  double footer_ms;       // Time spent reading the merge-footer plotData array
   double seek_ms;         // Time spent seeking to bucket positions
   double read_ms;         // Time spent reading bucket data from disk
   double hash_ms;         // Time spent hashing records (-r threads)
@@ -41,6 +42,8 @@ typedef struct {
   int records_per_file;
   uint8_t local_key[32];
   MemoTable2Record *buffer;
+  double footer_ms; // Time spent reading the merge-footer plotData array
+                     // (0 for non-merged plots, which have no footer)
 } SearchFileCtx;
 
 MemoTable2Record *search_memo_record(

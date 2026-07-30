@@ -88,6 +88,7 @@ bool search_ctx_open(const char *filename, SearchFileCtx *ctx) {
 
   ctx->plotData_array = NULL;
   ctx->num_files = 0;
+  ctx->footer_ms = 0.0;
   if (strncmp(basename, "merge_", 6) == 0) {
     int num_files_from_name;
     if (sscanf(basename, "merge_%*d_%d.plot", &num_files_from_name) == 1) {
@@ -95,20 +96,30 @@ bool search_ctx_open(const char *filename, SearchFileCtx *ctx) {
       ctx->plotData_array =
           (PlotData *)malloc(ctx->num_files * sizeof(PlotData));
       if (ctx->plotData_array != NULL) {
-        // Read the footer via pread() on the raw fd instead of
-        // fseek()/fread() on ctx->file. pread() does not touch the fd's
-        // file offset or the FILE*'s internal stdio buffer, so ctx->file
-        // is left exactly as it was right after fopen() (position 0,
-        // buffer not yet allocated). That keeps its state identical to a
-        // non-merged file's stream by the time the timed per-lookup
-        // fseek()/fread() in read_bucket_into_buffer_timed() runs -
-        // otherwise that priming seek+read silently made the first real
-        // positioning cheap for merged files only, so it showed up as
-        // near-zero seek_ms and inflated read_ms instead.
+        // Read the footer through a dedicated, throwaway fd instead of
+        // fileno(ctx->file). pread() alone doesn't move ctx->file's stdio
+        // position, but it's still a real read() on the SAME open file
+        // description that the timed per-lookup fseek()/fread() in
+        // read_bucket_into_buffer_timed() uses later - so it can still
+        // influence that fd's kernel-side readahead/access-pattern state
+        // before the timed region runs. A separate fd removes that
+        // channel entirely: ctx->file is never touched here. The cost is
+        // timed on its own (footer_ms) instead of being folded into
+        // open_close_ms, so it stays visible in the breakdown rather than
+        // silently explaining away a "missing" seek cost.
         size_t footer_bytes = (size_t)ctx->num_files * sizeof(PlotData);
         off_t footer_offset = (off_t)filesize - (off_t)footer_bytes;
-        ssize_t read_count = pread(fileno(ctx->file), ctx->plotData_array,
-                                   footer_bytes, footer_offset);
+
+        double footer_start = omp_get_wtime();
+        int footer_fd = open(filename, O_RDONLY);
+        ssize_t read_count = -1;
+        if (footer_fd >= 0) {
+          read_count = pread(footer_fd, ctx->plotData_array, footer_bytes,
+                             footer_offset);
+          close(footer_fd);
+        }
+        ctx->footer_ms = (omp_get_wtime() - footer_start) * 1000.0;
+
         if (read_count != (ssize_t)footer_bytes) {
           fprintf(stderr, "Warning: Failed to read metadata footer\n");
           free(ctx->plotData_array);

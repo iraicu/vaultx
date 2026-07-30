@@ -155,7 +155,8 @@ static int write_search_benchmark_csv(
     int total_not_found,
     long long total_matches,
     size_t records_hashed,
-    const char *path
+    const char *path,
+    double footer_ms
 ) {
   const char *csv_path = "./search-b.csv";
 
@@ -170,13 +171,15 @@ static int write_search_benchmark_csv(
   }
 
   if (write_header) {
+    // footer_ms is appended last (not inserted) so existing positional CSV
+    // readers built against the older column layout keep working unchanged.
     fprintf(csv, "type,files,lookups,difficulty,io_threads,hash_threads,keep_open,"
                  "open_close_ms,seek_ms,read_ms,hash_ms,total_wall_ms,"
                  "avg_per_lookup_ms,avg_per_lookup_per_file_ms,"
-                 "found,not_found,matches,records_hashed,path\n");
+                 "found,not_found,matches,records_hashed,path,footer_ms\n");
   }
 
-  fprintf(csv, "%s,%d,%d,%zu,%d,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%d,%d,%lld,%zu,%s\n",
+  fprintf(csv, "%s,%d,%d,%zu,%d,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%d,%d,%lld,%zu,%s,%.4f\n",
           search_type,
           files_count,
           lookups,
@@ -195,7 +198,8 @@ static int write_search_benchmark_csv(
           total_not_found,
           total_matches,
           records_hashed,
-          path ? path : "");
+          path ? path : "",
+          footer_ms);
 
   fclose(csv);
   return 0;
@@ -2697,6 +2701,7 @@ int main(int argc, char *argv[]) {
 
       // Time file open operations
       double open_start = omp_get_wtime();
+      double open_footer_ms = 0.0;
       for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
         if (!search_ctx_open(SEARCH_FILES[i], &ctx_list[i])) {
           fprintf(stderr, "Error: Failed to open %s for search.\n",
@@ -2707,8 +2712,11 @@ int main(int argc, char *argv[]) {
                 sizeof(results[i].filename) - 1);
         results[i].filesize = ctx_list[i].filesize;
         results[i].num_lookups = 1;
+        open_footer_ms += ctx_list[i].footer_ms;
       }
-      double open_ms = (omp_get_wtime() - open_start) * 1000.0;
+      // Pull the merge-footer read time (merged plots only) out of open_ms
+      // into its own component so it's visible instead of hiding here.
+      double open_ms = (omp_get_wtime() - open_start) * 1000.0 - open_footer_ms;
 
       int io_threads = (num_threads > 0) ? num_threads : omp_get_max_threads();
       int hash_threads = (num_threads_record > 0)
@@ -2734,6 +2742,7 @@ int main(int argc, char *argv[]) {
       }
       double close_ms = (omp_get_wtime() - close_start) * 1000.0;
       timing.open_close_ms = open_ms + close_ms;
+      timing.footer_ms = open_footer_ms;
 
       if (!ok) {
         fprintf(stderr, "Search failed while loading or hashing buckets.\n");
@@ -2742,13 +2751,13 @@ int main(int argc, char *argv[]) {
           results[i].match_count = (long long)matches_by_file[i];
           results[i].found_count = (matches_by_file[i] > 0) ? 1 : 0;
           results[i].not_found_count = (matches_by_file[i] > 0) ? 0 : 1;
-          results[i].search_time_ms = timing.total_ms + timing.open_close_ms;
-          results[i].avg_time_per_lookup_ms = timing.total_ms + timing.open_close_ms;
+          results[i].search_time_ms = timing.total_ms + timing.open_close_ms + timing.footer_ms;
+          results[i].avg_time_per_lookup_ms = timing.total_ms + timing.open_close_ms + timing.footer_ms;
         }
 
         // Print detailed timing breakdown
-        double wall_clock_ms = timing.total_ms + timing.open_close_ms;
-        double cumulative_ms = timing.open_close_ms + timing.seek_ms + timing.read_ms + timing.hash_ms;
+        double wall_clock_ms = timing.total_ms + timing.open_close_ms + timing.footer_ms;
+        double cumulative_ms = timing.open_close_ms + timing.footer_ms + timing.seek_ms + timing.read_ms + timing.hash_ms;
 
         // Calculate totals for benchmark output
         int total_found = 0;
@@ -2783,7 +2792,8 @@ int main(int argc, char *argv[]) {
               total_not_found,
               total_matches_sum,
               records_hashed,
-              DIR_TABLE2 ? DIR_TABLE2 : ""
+              DIR_TABLE2 ? DIR_TABLE2 : "",
+              timing.footer_ms
           );
           printf("Benchmark results written to ./search-b.csv\n");
         } else {
@@ -2794,6 +2804,7 @@ int main(int argc, char *argv[]) {
           printf("\n--- Timing Breakdown ---\n");
           printf("  [Component times are cumulative CPU time across all threads]\n");
           printf("  File Open/Close:  %8.4f ms\n", timing.open_close_ms);
+          printf("  Footer Read:      %8.4f ms\n", timing.footer_ms);
           printf("  Disk Seek:        %8.4f ms\n", timing.seek_ms);
           printf("  Disk Read:        %8.4f ms\n", timing.read_ms);
           printf("  Record Hashing:   %8.4f ms\n", timing.hash_ms);
@@ -3174,6 +3185,7 @@ int main(int argc, char *argv[]) {
 
       // Track open time for keep_open mode
       double initial_open_ms = 0.0;
+      double initial_footer_ms = 0.0;
       if (keep_open) {
         double open_start = omp_get_wtime();
         for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
@@ -3186,8 +3198,9 @@ int main(int argc, char *argv[]) {
           strncpy(results[i].filename, ctx_list[i].filename,
                   sizeof(results[i].filename) - 1);
           results[i].filesize = ctx_list[i].filesize;
+          initial_footer_ms += ctx_list[i].footer_ms;
         }
-        initial_open_ms = (omp_get_wtime() - open_start) * 1000.0;
+        initial_open_ms = (omp_get_wtime() - open_start) * 1000.0 - initial_footer_ms;
       }
 
       srand((unsigned int)time(NULL));
@@ -3195,8 +3208,9 @@ int main(int argc, char *argv[]) {
       size_t total_records_hashed = 0;
 
       // Aggregate timing breakdown across all lookups
-      SearchTimingBreakdown total_timing = {0.0, 0.0, 0.0, 0.0, 0.0};
+      SearchTimingBreakdown total_timing = {0};
       total_timing.open_close_ms = initial_open_ms;  // Initial open time
+      total_timing.footer_ms = initial_footer_ms;    // Initial footer read time
 
       size_t *matches_by_file =
           (size_t *)calloc(SEARCH_FILES_COUNT, sizeof(size_t));
@@ -3262,13 +3276,14 @@ int main(int argc, char *argv[]) {
 
           // Per-file timing accumulators for this lookup
           double lookup_open_close_ms = 0.0;
+          double lookup_footer_ms = 0.0;
           double lookup_seek_ms = 0.0;
           double lookup_read_ms = 0.0;
           double lookup_hash_ms = 0.0;
           size_t lookup_records_hashed = 0;
 
           omp_set_num_threads(io_threads);
-#pragma omp parallel for schedule(dynamic) reduction(+:lookup_open_close_ms, lookup_seek_ms, lookup_read_ms, lookup_hash_ms, lookup_records_hashed)
+#pragma omp parallel for schedule(dynamic) reduction(+:lookup_open_close_ms, lookup_footer_ms, lookup_seek_ms, lookup_read_ms, lookup_hash_ms, lookup_records_hashed)
           for (int i = 0; i < SEARCH_FILES_COUNT; i++) {
             SearchFileCtx ctx_temp;
             SearchTimingBreakdown file_timing = {0};
@@ -3281,6 +3296,11 @@ int main(int argc, char *argv[]) {
               continue;
             }
             double open_ms = (omp_get_wtime() - open_start) * 1000.0;
+            // search_ctx_open() may have spent part of open_ms reading the
+            // merge footer (merged plots only). Pull that out into its own
+            // component so it's visible instead of hiding inside open/close.
+            double footer_ms = ctx_temp.footer_ms;
+            open_ms -= footer_ms;
 
             // Search this single file
             SearchMatch *file_matches_arr = NULL;
@@ -3305,6 +3325,7 @@ int main(int argc, char *argv[]) {
 
             // Accumulate per-file timing
             lookup_open_close_ms += open_ms + close_ms;
+            lookup_footer_ms += footer_ms;
             lookup_seek_ms += file_timing.seek_ms;
             lookup_read_ms += file_timing.read_ms;
             lookup_hash_ms += file_timing.hash_ms;
@@ -3328,7 +3349,7 @@ int main(int argc, char *argv[]) {
               } else {
                 results[i].not_found_count += 1;
               }
-              results[i].search_time_ms += file_timing.total_ms + open_ms + close_ms;
+              results[i].search_time_ms += file_timing.total_ms + open_ms + footer_ms + close_ms;
             }
           }
 
@@ -3338,6 +3359,7 @@ int main(int argc, char *argv[]) {
 
           // Accumulate timing breakdown (cumulative across threads)
           total_timing.open_close_ms += lookup_open_close_ms;
+          total_timing.footer_ms += lookup_footer_ms;
           total_timing.seek_ms += lookup_seek_ms;
           total_timing.read_ms += lookup_read_ms;
           total_timing.hash_ms += lookup_hash_ms;
@@ -3380,19 +3402,22 @@ int main(int argc, char *argv[]) {
       // Print detailed timing breakdown before the summary table
       // Component times are cumulative (sum across all parallel threads)
       // Wall-clock time is the actual elapsed time
-      double cumulative_total_ms = total_timing.open_close_ms + total_timing.seek_ms +
-                                   total_timing.read_ms + total_timing.hash_ms;
-      
+      double cumulative_total_ms = total_timing.open_close_ms + total_timing.footer_ms +
+                                   total_timing.seek_ms + total_timing.read_ms +
+                                   total_timing.hash_ms;
+
       // Calculate proportional wall-clock time for each component
       // Each component gets a share of wall-clock proportional to its share of cumulative
-      double open_close_wall_ms = 0.0, seek_wall_ms = 0.0, read_wall_ms = 0.0, hash_wall_ms = 0.0;
+      double open_close_wall_ms = 0.0, footer_wall_ms = 0.0, seek_wall_ms = 0.0, read_wall_ms = 0.0, hash_wall_ms = 0.0;
       if (cumulative_total_ms > 0) {
         open_close_wall_ms = (total_timing.open_close_ms / cumulative_total_ms) * total_wall_time_ms;
+        footer_wall_ms = (total_timing.footer_ms / cumulative_total_ms) * total_wall_time_ms;
         seek_wall_ms = (total_timing.seek_ms / cumulative_total_ms) * total_wall_time_ms;
         read_wall_ms = (total_timing.read_ms / cumulative_total_ms) * total_wall_time_ms;
         hash_wall_ms = (total_timing.hash_ms / cumulative_total_ms) * total_wall_time_ms;
       }
       double open_close_avg_wall = LOOKUP_COUNT > 0 ? open_close_wall_ms / LOOKUP_COUNT : 0.0;
+      double footer_avg_wall = LOOKUP_COUNT > 0 ? footer_wall_ms / LOOKUP_COUNT : 0.0;
       double seek_avg_wall = LOOKUP_COUNT > 0 ? seek_wall_ms / LOOKUP_COUNT : 0.0;
       double read_avg_wall = LOOKUP_COUNT > 0 ? read_wall_ms / LOOKUP_COUNT : 0.0;
       double hash_avg_wall = LOOKUP_COUNT > 0 ? hash_wall_ms / LOOKUP_COUNT : 0.0;
@@ -3422,7 +3447,8 @@ int main(int argc, char *argv[]) {
             total_not_found,
             total_matches,
             total_records_hashed,
-            DIR_TABLE2 ? DIR_TABLE2 : ""
+            DIR_TABLE2 ? DIR_TABLE2 : "",
+            footer_avg_wall
         );
         printf("Benchmark results written to ./search-b.csv\n");
       } else {
@@ -3439,6 +3465,8 @@ int main(int argc, char *argv[]) {
         printf("  %-18s %12s %12s %12s\n", "-----------------", "----------", "----------", "----------");
         printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "File Open/Close",
                total_timing.open_close_ms, open_close_wall_ms, open_close_avg_wall);
+        printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "Footer Read",
+               total_timing.footer_ms, footer_wall_ms, footer_avg_wall);
         printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "Disk Seek",
                total_timing.seek_ms, seek_wall_ms, seek_avg_wall);
         printf("  %-18s %10.4f ms %10.4f ms %10.4f ms\n", "Disk Read",
@@ -3474,12 +3502,14 @@ int main(int argc, char *argv[]) {
 
         // Parseable TIMING line consumed by benchmark scripts.
         // Fields: open_close_ms seek_ms read_ms hash_ms total_wall_ms
-        //         avg_per_lookup_ms avg_per_lookup_per_file_ms
+        //         avg_per_lookup_ms avg_per_lookup_per_file_ms footer_ms
         // avg_per_lookup_ms     = wall-clock per lookup across ALL files
         // avg_per_lookup_per_file_ms = avg_per_lookup_ms / file_count
-        printf("TIMING %.4f %.4f %.4f %.4f %.4f %.4f %.4f\n",
+        // footer_ms is appended last (not inserted) so existing positional
+        // parsers reading the first 7 fields keep working unchanged.
+        printf("TIMING %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f\n",
                open_close_avg_wall, seek_avg_wall, read_avg_wall, hash_avg_wall,
-               total_wall_time_ms, avg_wall_time_ms, avg_per_file_ms);
+               total_wall_time_ms, avg_wall_time_ms, avg_per_file_ms, footer_avg_wall);
       }
 
       free(matches_by_file);

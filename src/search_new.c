@@ -192,7 +192,7 @@ bool search_rewrite_lookup_timed(const uint8_t *query, size_t search_length,
   }
 
   // Initialize timing breakdown
-  SearchTimingBreakdown timing = {0.0, 0.0, 0.0, 0.0, 0.0};
+  SearchTimingBreakdown timing = {0};
   double overall_start = omp_get_wtime();
 
   // Compute total bucket capacity across all files.
