@@ -22,8 +22,8 @@ set -euo pipefail
 
 
 K_VALUES=(32)
-N_VALUES=(2 4 8 16 32 64)
-B_VALUES=(256 512 1024 2048 4096)
+N_VALUES=(64)
+B_VALUES=(128 64 32)
 
 # pipelined | serial | tasks
 APPROACH=pipelined
@@ -33,14 +33,14 @@ MERGE_IO_THREADS=(1)
 
 # Paired 1-to-1 with FINAL_DRIVES.
 TEMP_DRIVES=(
-  "/data-l/iraicu/tmp/"
+  "/data-f/iraicu/tmp/"
 )
 FINAL_DRIVES=(
-  "/data-r/iraicu/vaults/"
+  "/data-e/sfatunmbi/plots/"
 )
 
 CEPH_DIR="/ceph/sfatunmbi/mergedplots"
-EXPERIMENTS_DIR="${HOME}/vaultx/newexperiments/$(hostname)"
+EXPERIMENTS_DIR="${HOME}/vaultx/newexperiments/torus/mergedlittlebs"
 SUDO_PASS="sfatunmbi"
 
 
@@ -64,7 +64,6 @@ if [[ ${#K_VALUES[@]} -eq 0 || ${#N_VALUES[@]} -eq 0 || ${#B_VALUES[@]} -eq 0 ]]
   exit 1
 fi
 
-safe_mkdir "$CEPH_DIR" "$EXPERIMENTS_DIR"
 
 # Check for /usr/bin/time -v support
 HAS_TIME_V=false
@@ -94,6 +93,8 @@ safe_mv() {
 drive_id() {
   echo "$1" | sed 's|^/*||; s|/.*||'
 }
+
+safe_mkdir "$CEPH_DIR" "$EXPERIMENTS_DIR"
 
 # Parse a vaultx merge log and emit one CSV data row.
 # Args: log time_log k n b approach temp_drive final_drive
@@ -238,8 +239,8 @@ for k in "${K_VALUES[@]}"; do
 
         set +e
         if [[ "$HAS_TIME_V" == true ]]; then
-          {
-            /usr/bin/time -v "$BIN" \
+          /usr/bin/time -v -o "$time_log" \
+            "$BIN" \
               -P merge \
               -k  "$k" \
               -n  "$n" \
@@ -249,8 +250,7 @@ for k in "${K_VALUES[@]}"; do
               -mt "$MERGE_IO_THREADS" \
               -A  "$APPROACH" \
               -B  "$b" \
-              2>&1
-          } 2>"$time_log" | tee "$log"
+              2>&1 | tee "$log"
         else
           "$BIN" \
             -P merge \
