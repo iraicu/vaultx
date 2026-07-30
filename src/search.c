@@ -1,3 +1,4 @@
+#define _GNU_SOURCE // Must precede system headers (pulled in via search.h) for RUSAGE_THREAD
 #include "search.h"
 // Open a plot file and populate a reusable search context (supports merged plots).
 bool search_ctx_open(const char *filename, SearchFileCtx *ctx) {
@@ -611,14 +612,30 @@ bool read_bucket_into_buffer_timed(SearchFileCtx *ctx, const uint8_t *query,
                  (off_t)sizeof(MemoTable2Record);
 
   // Time the seek operation
+  struct rusage ru_before_seek, ru_after_seek;
+  getrusage(RUSAGE_THREAD, &ru_before_seek);
   double seek_start = omp_get_wtime();
   if (fseek(ctx->file, offset, SEEK_SET) != 0) {
     perror("Error seeking in file");
     return false;
   }
   double seek_end = omp_get_wtime();
+  getrusage(RUSAGE_THREAD, &ru_after_seek);
   if (seek_ms_out) {
     *seek_ms_out = (seek_end - seek_start) * 1000.0;
+  }
+  // Diagnostic: is the "seek" wall-clock time actually the thread getting
+  // scheduled off-CPU (context switches), rather than the lseek() syscall
+  // itself? strace -T proved lseek() alone is microseconds, so if seek_ms
+  // is large but csw deltas are ~0 here too, the time is being spent in
+  // userspace CPU work inside fseek() that no syscall trace can show.
+  {
+    long nvcsw = ru_after_seek.ru_nvcsw - ru_before_seek.ru_nvcsw;
+    long nivcsw = ru_after_seek.ru_nivcsw - ru_before_seek.ru_nivcsw;
+    if (nvcsw != 0 || nivcsw != 0 || (seek_end - seek_start) * 1000.0 > 0.5) {
+      fprintf(stderr, "RUSAGE seek_ms=%.4f nvcsw=%ld nivcsw=%ld\n",
+              (seek_end - seek_start) * 1000.0, nvcsw, nivcsw);
+    }
   }
 
   // printf("Just completed a seek\n");
