@@ -610,43 +610,37 @@ bool read_bucket_into_buffer_timed(SearchFileCtx *ctx, const uint8_t *query,
   off_t bucketIndex = getBucketIndex(query);
   off_t offset = bucketIndex * (off_t)ctx->num_records_in_bucket_search *
                  (off_t)sizeof(MemoTable2Record);
+  size_t want_bytes =
+      (size_t)ctx->num_records_in_bucket_search * sizeof(MemoTable2Record);
 
-  // Time the seek operation
-  struct rusage ru_before_seek, ru_after_seek;
-  getrusage(RUSAGE_THREAD, &ru_before_seek);
-  double seek_start = omp_get_wtime();
-  if (fseek(ctx->file, offset, SEEK_SET) != 0) {
-    perror("Error seeking in file");
-    return false;
-  }
-  double seek_end = omp_get_wtime();
-  getrusage(RUSAGE_THREAD, &ru_after_seek);
+  // No separate seek phase: pread() combines positioning and transfer into
+  // one syscall. strace -T confirmed lseek() alone costs microseconds here,
+  // so splitting fseek()/fread() into two timed windows wasn't measuring
+  // seek cost - it was measuring glibc's internal stdio buffer-fill
+  // decision (want < the ~4KB stdio buffer takes the "underflow" fill
+  // path, want >= buffer takes a direct bypass read). getrusage() showed
+  // the underflow path occasionally cost a real voluntary context switch,
+  // and only single-plot buckets (2048B, below the buffer) took that path;
+  // merged buckets (4096B, buffer-sized) always took the clean bypass.
+  // pread() skips stdio's buffer entirely, so both now take one identical,
+  // predictable code path and seek_ms is honestly ~0 for both.
   if (seek_ms_out) {
-    *seek_ms_out = (seek_end - seek_start) * 1000.0;
-  }
-  // Diagnostic: is the "seek" wall-clock time actually the thread getting
-  // scheduled off-CPU (context switches), rather than the lseek() syscall
-  // itself? strace -T proved lseek() alone is microseconds, so if seek_ms
-  // is large but csw deltas are ~0 here too, the time is being spent in
-  // userspace CPU work inside fseek() that no syscall trace can show.
-  {
-    long nvcsw = ru_after_seek.ru_nvcsw - ru_before_seek.ru_nvcsw;
-    long nivcsw = ru_after_seek.ru_nivcsw - ru_before_seek.ru_nivcsw;
-    if (nvcsw != 0 || nivcsw != 0 || (seek_end - seek_start) * 1000.0 > 0.5) {
-      fprintf(stderr, "RUSAGE seek_ms=%.4f nvcsw=%ld nivcsw=%ld\n",
-              (seek_end - seek_start) * 1000.0, nvcsw, nivcsw);
-    }
+    *seek_ms_out = 0.0;
   }
 
-  // printf("Just completed a seek\n");
-  // Time the read operation
   double read_start = omp_get_wtime();
-  size_t read_count = fread(ctx->buffer, sizeof(MemoTable2Record),
-                            ctx->num_records_in_bucket_search, ctx->file);
+  ssize_t read_bytes =
+      pread(fileno(ctx->file), ctx->buffer, want_bytes, offset);
   double read_end = omp_get_wtime();
   if (read_ms_out) {
     *read_ms_out = (read_end - read_start) * 1000.0;
   }
+
+  if (read_bytes < 0) {
+    perror("Error reading bucket");
+    return false;
+  }
+  size_t read_count = (size_t)read_bytes / sizeof(MemoTable2Record);
 
   *records_read = read_count;
   size_t effective = read_count;
