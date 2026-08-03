@@ -98,16 +98,11 @@ bool search_ctx_open(const char *filename, SearchFileCtx *ctx) {
           (PlotData *)malloc(ctx->num_files * sizeof(PlotData));
       if (ctx->plotData_array != NULL) {
         // Read the footer through a dedicated, throwaway fd instead of
-        // fileno(ctx->file). pread() alone doesn't move ctx->file's stdio
-        // position, but it's still a real read() on the SAME open file
-        // description that the timed per-lookup fseek()/fread() in
-        // read_bucket_into_buffer_timed() uses later - so it can still
-        // influence that fd's kernel-side readahead/access-pattern state
-        // before the timed region runs. A separate fd removes that
+        // fileno(ctx->file). A separate fd removes that
         // channel entirely: ctx->file is never touched here. The cost is
         // timed on its own (footer_ms) instead of being folded into
-        // open_close_ms, so it stays visible in the breakdown rather than
-        // silently explaining away a "missing" seek cost.
+        // open_close_ms, so it stays visible in the breakdown.
+
         size_t footer_bytes = (size_t)ctx->num_files * sizeof(PlotData);
         off_t footer_offset = (off_t)filesize - (off_t)footer_bytes;
 
@@ -169,7 +164,6 @@ void search_ctx_close(SearchFileCtx *ctx) {
 }
 
 // ---- Single lookup path ----
-
 // Scan a single bucket, counting all matches and returning the first match (if any).
 MemoTable2Record *search_memo_record(
     FILE *file, off_t bucketIndex, uint8_t *SEARCH_UINT8, size_t SEARCH_LENGTH,
@@ -614,14 +608,8 @@ bool read_bucket_into_buffer_timed(SearchFileCtx *ctx, const uint8_t *query,
       (size_t)ctx->num_records_in_bucket_search * sizeof(MemoTable2Record);
   int fd = fileno(ctx->file);
 
-  // History: fseek()/fread() used to split this into "seek" and "read"
-  // timers, but strace -T showed lseek() itself only costs microseconds -
-  // that split was actually measuring glibc's internal stdio buffer-fill
-  // decision (want_bytes below vs. at/above the ~4KB stdio buffer takes a
-  // slower "underflow" vs. a direct bypass path), not real seek time.
-  // pread() below bypasses that buffer entirely.
-  //
-  // To still get an honest seek estimate, pay for the drive's actual
+
+  // To get an honest seek estimate, pay for the drive's actual
   // seek + rotational latency directly: read a single throwaway byte at
   // the target offset and time only that. POSIX_FADV_RANDOM stops the
   // kernel from speculatively reading ahead past the probe, which would
@@ -934,24 +922,6 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
       SEARCH_UINT8[j] = rand() % 256;
     }
 
-    // if (ENABLE_DETAILED_METRICS)
-    // {
-    //     double lookup_start = omp_get_wtime();
-    //
-    //     // Phase: Seek
-    //     double seek_start = omp_get_wtime();
-    //     fRecord = search_memo_record(file, getBucketIndex(SEARCH_UINT8),
-    //     SEARCH_UINT8, SEARCH_LENGTH, num_records_in_bucket_search, buffer);
-    //     global_metrics.lookup.file_seek_time += omp_get_wtime() - seek_start;
-    //     global_metrics.lookup.io_seek_calls++;
-    //
-    //     global_metrics.lookup.total_lookup_time += omp_get_wtime() -
-    //     lookup_start; global_metrics.lookup.bytes_read +=
-    //     num_records_in_bucket_search * sizeof(MemoTable2Record);
-    //     global_metrics.lookup.io_read_calls++;
-    // }
-    // else
-    // {
     int records_per_file = (num_files > 0)
                                ? (num_records_in_bucket_search / num_files)
                                : num_records_in_bucket_search;
@@ -961,7 +931,7 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
                  buffer, num_threads_bucket, plotData_array,
                  num_files, records_per_file, local_key,
                  &matches_found);
-    // }
+    
     if (matches_found > 0) {
       foundRecords++;
       all_matches += (long long)matches_found;
@@ -969,13 +939,10 @@ SearchResult search_memo_records_batch(const char *filename, int num_lookups,
       notFoundRecords++;
     }
 
-    // if (ENABLE_DETAILED_METRICS)
-    //     global_metrics.lookup.lookups_performed++;
   }
 
   double elapsed_time = (omp_get_wtime() - start_time) * 1000.0;
 
-  // Check for reading errors
   if (ferror(file)) {
     perror("Error reading file");
   }

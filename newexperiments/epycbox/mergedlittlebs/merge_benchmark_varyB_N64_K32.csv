@@ -1,0 +1,5 @@
+B_mb,N,K,A,F,T,compute_threads_t,read_batch_R,file_size_mb,per_file_batch_mb,total_data_gb,total_batches,buckets_per_batch,expected_peak_ram_mb,read_time_s,write_time_s,compute_time_s,total_merge_time_s,total_merge_time_min,avg_throughput_mbs,avg_batch_throughput_mbs,peak_memory_mb,wall_time_s,wall_time_min
+192,64,32,pipelined,/data-l/sfatunmbi/plots,/data-m/sfatunmbi/plots,128,1024,32768.0000,NA,2048.0000,NA,NA,384.00,19685.7000,3.8600,3662.2400,23351.8000,389.196667,89.8069,89.9394,2.63,23368.420,389.473667
+128,64,32,pipelined,/data-l/sfatunmbi/plots,/data-m/sfatunmbi/plots,128,1024,32768.0000,NA,2048.0000,NA,NA,256.00,19955.7400,4.1100,3778.8300,23738.6800,395.644667,88.3432,88.5196,2.66,23756.598,395.943300
+64,64,32,pipelined,/data-l/sfatunmbi/plots,/data-m/sfatunmbi/plots,128,1024,32768.0000,NA,2048.0000,NA,NA,128.00,20684.3700,4.4400,4255.9500,24944.7600,415.746000,84.0718,84.5394,2.66,24957.789,415.963150
+32,64,32,pipelined,/data-l/sfatunmbi/plots,/data-m/sfatunmbi/plots,128,1024,32768.0000,NA,2048.0000,NA,NA,64.00,23442.2600,3.4700,5259.1200,28704.8500,478.414167,73.0592,122.2500,2.66,28719.580,478.659667
