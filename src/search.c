@@ -612,25 +612,41 @@ bool read_bucket_into_buffer_timed(SearchFileCtx *ctx, const uint8_t *query,
                  (off_t)sizeof(MemoTable2Record);
   size_t want_bytes =
       (size_t)ctx->num_records_in_bucket_search * sizeof(MemoTable2Record);
+  int fd = fileno(ctx->file);
 
-  // No separate seek phase: pread() combines positioning and transfer into
-  // one syscall. strace -T confirmed lseek() alone costs microseconds here,
-  // so splitting fseek()/fread() into two timed windows wasn't measuring
-  // seek cost - it was measuring glibc's internal stdio buffer-fill
-  // decision (want < the ~4KB stdio buffer takes the "underflow" fill
-  // path, want >= buffer takes a direct bypass read). getrusage() showed
-  // the underflow path occasionally cost a real voluntary context switch,
-  // and only single-plot buckets (2048B, below the buffer) took that path;
-  // merged buckets (4096B, buffer-sized) always took the clean bypass.
-  // pread() skips stdio's buffer entirely, so both now take one identical,
-  // predictable code path and seek_ms is honestly ~0 for both.
+  // History: fseek()/fread() used to split this into "seek" and "read"
+  // timers, but strace -T showed lseek() itself only costs microseconds -
+  // that split was actually measuring glibc's internal stdio buffer-fill
+  // decision (want_bytes below vs. at/above the ~4KB stdio buffer takes a
+  // slower "underflow" vs. a direct bypass path), not real seek time.
+  // pread() below bypasses that buffer entirely.
+  //
+  // To still get an honest seek estimate, pay for the drive's actual
+  // seek + rotational latency directly: read a single throwaway byte at
+  // the target offset and time only that. POSIX_FADV_RANDOM stops the
+  // kernel from speculatively reading ahead past the probe, which would
+  // otherwise let it silently satisfy part (or, for small buckets, all)
+  // of the real read from cache and erase the split we're trying to
+  // measure. The full bucket is re-read from the same offset afterward,
+  // so buffer layout and downstream record parsing are unaffected.
+#if defined(__linux__)
+  posix_fadvise(fd, 0, 0, POSIX_FADV_RANDOM);
+#endif
+
+  uint8_t probe_byte;
+  double seek_start = omp_get_wtime();
+  ssize_t probe_bytes = pread(fd, &probe_byte, 1, offset);
+  double seek_end = omp_get_wtime();
+  if (probe_bytes < 0) {
+    perror("Error probing bucket offset");
+    return false;
+  }
   if (seek_ms_out) {
-    *seek_ms_out = 0.0;
+    *seek_ms_out = (seek_end - seek_start) * 1000.0;
   }
 
   double read_start = omp_get_wtime();
-  ssize_t read_bytes =
-      pread(fileno(ctx->file), ctx->buffer, want_bytes, offset);
+  ssize_t read_bytes = pread(fd, ctx->buffer, want_bytes, offset);
   double read_end = omp_get_wtime();
   if (read_ms_out) {
     *read_ms_out = (read_end - read_start) * 1000.0;
