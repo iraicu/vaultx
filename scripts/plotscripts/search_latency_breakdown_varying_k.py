@@ -15,7 +15,7 @@ SCRIPT_DIR       = os.path.dirname(os.path.abspath(__file__))
 IMAGES_DIR       = os.path.join(SCRIPT_DIR, "..", "..", "images")
 PAPER_IMAGES_DIR = os.path.join(SCRIPT_DIR, "..", "..", "Paper", "images")
 CSV_PATH         = os.path.join(
-    SCRIPT_DIR, "..", "..", "newexperiments", "torus", "search",
+    SCRIPT_DIR, "..", "..", "newexperiments", "torus", "search_without_parallel",
     "search_benchmark_varying_k.csv",
 )
 os.makedirs(IMAGES_DIR, exist_ok=True)

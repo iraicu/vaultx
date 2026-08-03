@@ -1,0 +1,27 @@
+SEARCH                      : true
+
+=== New batch search path ===
+Files: 1 | Lookups: 1000
+
+--- Timing Breakdown (Total for 1000 lookups on 1 files) ---
+  NOTE: 'Avg/Lookup' = wall-clock for one lookup across ALL 1 files.
+        'Avg/Lookup/File' = 9.5925 ms (avg_per_lookup / 1 files)
+  Component            Cumulative   Wall-Clock   Avg/Lookup
+  -----------------    ----------   ----------   ----------
+  File Open/Close       87.3054 ms    87.5824 ms     0.0876 ms
+  Footer Read            9.7501 ms     9.7811 ms     0.0098 ms
+  Disk Seek           7763.9237 ms  7788.5613 ms     7.7886 ms
+  Disk Read            294.4635 ms   295.3980 ms     0.2954 ms
+  Record Hashing      1406.7285 ms  1411.1925 ms     1.4112 ms
+  -----------------    ----------   ----------   ----------
+  TOTAL               9562.1712 ms  9592.5153 ms     9.5925 ms
+------------------------------------------------
+
+Thread config: read(-t)=1 hash(-r)=32 keep_open=0
+Filename                                                                            Size (bytes)    Lookups      Found    Not Found     All Matches Avg Time/Lookup (ms)    Total Time (ms)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/data-d/sfatunmbi/plots/merge_32_8.plot                                   274877907232       1000       1000            0         2046824               9.5826            9582.59
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL (all lookups)                                                                                    1000       1000            0         2046824               9.5925            9592.52
+TIMING 0.0876 7.7886 0.2954 1.4112 9592.5153 9.5925 9.5925 0.0098
+Peak Memory Usage: 2.88 MB

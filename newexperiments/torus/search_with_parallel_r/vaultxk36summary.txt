@@ -1,0 +1,23 @@
+	Command being timed: "./vaultx -S 1000 -D 3 -t 1 -r 32 -f /data-d/sfatunmbi/plots/merge_32_16.plot"
+	User time (seconds): 30.59
+	System time (seconds): 5.29
+	Percent of CPU this job got: 372%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:09.64
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 3292
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 92
+	Minor (reclaiming a frame) page faults: 81418
+	Voluntary context switches: 30965
+	Involuntary context switches: 211
+	Swaps: 0
+	File system inputs: 65840
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
