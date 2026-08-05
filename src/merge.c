@@ -174,7 +174,12 @@ void pin_thread_to_cpu(int cpu_num) {
               total_bytes);                                                    \
     }                                                                          \
                                                                                \
-    free(mergeBatch->mergedBuckets);                                           \
+                                                           \
+    if (fsync(merge_fd) < 0) {                                                \
+      perror("Error fsyncing merge file");                                    \
+    }                                                                        \
+                                                                               \
+    free(mergeBatch->mergedBuckets);                                          \
                                                                                \
     double write_time = omp_get_wtime() - write_start_time;                    \
     write_total_time += write_time;                                            \
@@ -564,6 +569,10 @@ int merge() {
         }
         bytes_written += res;
       }
+
+      if (fsync(merge_fd) < 0) {
+        perror("Error fsyncing merge file");
+      }
       double now = omp_get_wtime();
       double read_time = write_start_time - batch_start_time;
       double write_time = now - write_start_time;
@@ -657,6 +666,10 @@ int merge() {
           exit(EXIT_FAILURE);
         }
         bytes_written += res;
+      }
+  
+      if (fsync(merge_fd) < 0) {
+        perror("Error fsyncing merge file");
       }
 
       write_time = omp_get_wtime() - write_start_time;
