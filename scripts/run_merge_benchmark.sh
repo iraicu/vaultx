@@ -7,10 +7,14 @@
 #
 # CSV columns:
 #   K, N, B, approach, temp_drive, final_drive,
+#   compute_threads_t, merge_io_threads_mt,
 #   total_time_s, total_time_min,
-#   read_time_s, write_time_s, compute_time_s,
+#   read_time_s, write_time_s, interleave_time_s,
 #   avg_throughput_mb_s, min_throughput_mb_s, max_throughput_mb_s,
-#   peak_memory_mb
+#   peak_rss_mb
+#
+# interleave_time_s is the memcpy transpose. read/write/interleave overlap in
+# the pipelined approach and do not sum to total_time_s.
 #
 # After each merge the output file is moved to CEPH_DIR.
 # If an identical filename already exists in CEPH_DIR, the new file is deleted.
@@ -23,23 +27,29 @@ set -euo pipefail
 
 K_VALUES=(32)
 N_VALUES=(64)
-B_VALUES=(128 64 32)
+B_VALUES=(32768)
 
 # pipelined | serial | tasks
 APPROACH=pipelined
 
-COMPUTE_THREADS=$(nproc)
-MERGE_IO_THREADS=(1)
+# Both are swept: every (t, mt) pair runs for every (K, N, B, drive) combination.
+# These used to be a scalar and a never-iterated array, so extra entries here
+# were silently ignored and only the first value ever ran.
+# This script used to force -mt 1 while merge_benchmark.sh left it defaulting
+# to nproc, so the two produced non-comparable numbers. Both now default to
+# nproc. The read loop is over N files, so -mt above N buys nothing.
+COMPUTE_THREADS_VALUES=($(nproc))   # -t  : threads for the interleave memcpy
+MERGE_IO_THREADS_VALUES=($(nproc))  # -mt : threads issuing reads across the N files
 
 # Paired 1-to-1 with FINAL_DRIVES.
 TEMP_DRIVES=(
-  "/data-f/iraicu/tmp/"
+  "/data-l/sfatunmbi/plots/"
 )
 FINAL_DRIVES=(
-  "/data-e/sfatunmbi/plots/"
+  "/data-m/sfatunmbi/plots/"
 )
 
-CEPH_DIR="/ceph/sfatunmbi/mergedplots"
+CEPH_DIR="/ceph/sfatunmbi/singleplots"
 EXPERIMENTS_DIR="${HOME}/vaultx/newexperiments/torus/mergedlittlebs"
 SUDO_PASS="sfatunmbi"
 
@@ -59,8 +69,10 @@ case "$APPROACH" in
   *) echo "Error: APPROACH must be pipelined, serial, or tasks. Got: $APPROACH" >&2; exit 1 ;;
 esac
 
-if [[ ${#K_VALUES[@]} -eq 0 || ${#N_VALUES[@]} -eq 0 || ${#B_VALUES[@]} -eq 0 ]]; then
-  echo "Error: K_VALUES, N_VALUES, and B_VALUES must each contain at least one entry." >&2
+if [[ ${#K_VALUES[@]} -eq 0 || ${#N_VALUES[@]} -eq 0 || ${#B_VALUES[@]} -eq 0 \
+   || ${#COMPUTE_THREADS_VALUES[@]} -eq 0 || ${#MERGE_IO_THREADS_VALUES[@]} -eq 0 ]]; then
+  echo "Error: K_VALUES, N_VALUES, B_VALUES, COMPUTE_THREADS_VALUES and" \
+       "MERGE_IO_THREADS_VALUES must each contain at least one entry." >&2
   exit 1
 fi
 
@@ -101,6 +113,7 @@ safe_mkdir "$CEPH_DIR" "$EXPERIMENTS_DIR"
 parse_log() {
   local log="$1" time_log="$2"
   local k="$3" n="$4" b="$5" approach="$6" temp_drive="$7" final_drive="$8"
+  local t="$9" mt="${10}"
 
   # --- Total merge time from: [X.XXs] Completed merging ...
   local total_time
@@ -108,17 +121,20 @@ parse_log() {
     | grep -oP '(?<=\[)[\d.]+(?=s\])' | head -1 || true)
   [[ -z "$total_time" ]] && total_time="NA"
 
-  # --- Phase times from completion summary
-  local read_time write_time compute_time
+  # --- Phase times from completion summary.
+  # "Merge Time" has always carried the TOTAL merge wall time, not the compute
+  # phase — reading it into compute_time was simply wrong. The interleave
+  # (memcpy transpose) is now reported separately by merge.c.
+  local read_time write_time interleave_time
   read_time=$(grep -m1 "^Read Time:" "$log" 2>/dev/null \
     | grep -oP '[\d.]+(?=s)' | head -1 || true)
   write_time=$(grep -m1 "^Write Time:" "$log" 2>/dev/null \
     | grep -oP '[\d.]+(?=s)' | head -1 || true)
-  compute_time=$(grep -m1 "^Merge Time:" "$log" 2>/dev/null \
+  interleave_time=$(grep -m1 "^Interleave Time:" "$log" 2>/dev/null \
     | grep -oP '[\d.]+(?=s)' | head -1 || true)
-  [[ -z "$read_time"    ]] && read_time="NA"
-  [[ -z "$write_time"   ]] && write_time="NA"
-  [[ -z "$compute_time" ]] && compute_time="NA"
+  [[ -z "$read_time"       ]] && read_time="NA"
+  [[ -z "$write_time"      ]] && write_time="NA"
+  [[ -z "$interleave_time" ]] && interleave_time="NA"
 
   # --- Per-batch throughput from progress lines (pipelined/serial only).
   # Tasks approach uses a different progress format without Throughput:.
@@ -156,10 +172,12 @@ parse_log() {
     peak_mem_mb=$(awk "BEGIN { printf \"%.0f\", 2 * ${b} }")
   fi
 
-  # --- Also try parsing "Peak Memory Usage:" line added by merge.c
+  # --- Prefer the post-merge RSS logged by merge.c. Take the LAST match:
+  # vaultx.c prints a pre-merge RSS under the same label before merge() runs,
+  # which never includes the merge buffers.
   local logged_peak
-  logged_peak=$(grep -m1 "^Peak Memory Usage:" "$log" 2>/dev/null \
-    | grep -oP '[\d.]+(?= MB)' | head -1 || true)
+  logged_peak=$(grep "^Peak Memory Usage:" "$log" 2>/dev/null \
+    | grep -oP '[\d.]+(?= MB)' | tail -1 || true)
   [[ -n "$logged_peak" ]] && peak_mem_mb="$logged_peak"
 
   # --- Convert total time to minutes
@@ -170,17 +188,29 @@ parse_log() {
     total_time_min="NA"
   fi
 
-  printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+  printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
     "$k" "$n" "$b" "$approach" "$temp_drive" "$final_drive" \
+    "$t" "$mt" \
     "$total_time" "$total_time_min" \
-    "$read_time" "$write_time" "$compute_time" \
+    "$read_time" "$write_time" "$interleave_time" \
     "$avg_tput" "$min_tput" "$max_tput" \
     "$peak_mem_mb"
 }
 
-CSV_HEADER="K,N,B,approach,temp_drive,final_drive,total_time_s,total_time_min,read_time_s,write_time_s,compute_time_s,avg_throughput_mb_s,min_throughput_mb_s,max_throughput_mb_s,peak_memory_mb"
+CSV_HEADER="K,N,B,approach,temp_drive,final_drive,compute_threads_t,merge_io_threads_mt,total_time_s,total_time_min,read_time_s,write_time_s,interleave_time_s,avg_throughput_mb_s,min_throughput_mb_s,max_throughput_mb_s,peak_rss_mb"
 
-total_experiments=$(( ${#K_VALUES[@]} * ${#N_VALUES[@]} * ${#B_VALUES[@]} * ${#TEMP_DRIVES[@]} ))
+# SKIP/ERROR placeholder rows must have the same field count as CSV_HEADER.
+NCOL=$(awk -F, '{print NF}' <<<"$CSV_HEADER")
+placeholder_row() { # $1 = marker (SKIP|ERROR)
+  local marker="$1" out="${k},${n},${b},${APPROACH},${temp_drive},${final_drive},${t},${mt}"
+  local i
+  for (( i=9; i<=NCOL; i++ )); do out+=",${marker}"; done
+  printf "%s\n" "$out"
+}
+
+total_experiments=$(( ${#K_VALUES[@]} * ${#N_VALUES[@]} * ${#B_VALUES[@]} \
+                      * ${#COMPUTE_THREADS_VALUES[@]} * ${#MERGE_IO_THREADS_VALUES[@]} \
+                      * ${#TEMP_DRIVES[@]} ))
 current_exp=0
 
 echo "=== run_merge_benchmark ==="
@@ -188,7 +218,8 @@ echo "  K values    : ${K_VALUES[*]}"
 echo "  N values    : ${N_VALUES[*]}"
 echo "  B values    : ${B_VALUES[*]} MB"
 echo "  Approach    : $APPROACH"
-echo "  Threads     : compute=$COMPUTE_THREADS  io=$MERGE_IO_THREADS"
+echo "  -t values   : ${COMPUTE_THREADS_VALUES[*]}"
+echo "  -mt values  : ${MERGE_IO_THREADS_VALUES[*]}"
 echo "  Ceph dir    : $CEPH_DIR"
 echo "  Results dir : $EXPERIMENTS_DIR"
 echo "  Total runs  : $total_experiments"
@@ -208,14 +239,16 @@ for k in "${K_VALUES[@]}"; do
 
   for n in "${N_VALUES[@]}"; do
     for b in "${B_VALUES[@]}"; do
-      for (( di=0; di<${#TEMP_DRIVES[@]}; di++ )); do
+     for t in "${COMPUTE_THREADS_VALUES[@]}"; do
+      for mt in "${MERGE_IO_THREADS_VALUES[@]}"; do
+       for (( di=0; di<${#TEMP_DRIVES[@]}; di++ )); do
 
         temp_drive="${TEMP_DRIVES[$di]}"
         final_drive="${FINAL_DRIVES[$di]}"
         (( current_exp++ )) || true
 
         echo ""
-        echo "  [${current_exp}/${total_experiments}]  K=$k  N=$n  B=${b}MB  Approach=$APPROACH"
+        echo "  [${current_exp}/${total_experiments}]  K=$k  N=$n  B=${b}MB  t=$t  mt=$mt  Approach=$APPROACH"
         echo "   temp=$temp_drive  →  final=$final_drive"
 
         plot_count=0
@@ -225,9 +258,7 @@ for k in "${K_VALUES[@]}"; do
 
         if (( plot_count < n )); then
           echo "  SKIP: found $plot_count k${k} plots in $temp_drive, need $n" >&2
-          printf "%s\n" \
-            "${k},${n},${b},${APPROACH},${temp_drive},${final_drive},SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP" \
-            >> "$csv"
+          placeholder_row SKIP >> "$csv"
           continue
         fi
 
@@ -246,8 +277,8 @@ for k in "${K_VALUES[@]}"; do
               -n  "$n" \
               -F  "$temp_drive" \
               -T  "$final_drive" \
-              -t  "$COMPUTE_THREADS" \
-              -mt "$MERGE_IO_THREADS" \
+              -t  "$t" \
+              -mt "$mt" \
               -A  "$APPROACH" \
               -B  "$b" \
               2>&1 | tee "$log"
@@ -258,8 +289,8 @@ for k in "${K_VALUES[@]}"; do
             -n  "$n" \
             -F  "$temp_drive" \
             -T  "$final_drive" \
-            -t  "$COMPUTE_THREADS" \
-            -mt "$MERGE_IO_THREADS" \
+            -t  "$t" \
+            -mt "$mt" \
             -A  "$APPROACH" \
             -B  "$b" \
             2>&1 | tee "$log"
@@ -269,9 +300,7 @@ for k in "${K_VALUES[@]}"; do
 
         if [[ "$vaultx_exit" -ne 0 ]]; then
           echo "  Error: vaultx exited with code $vaultx_exit" >&2
-          printf "%s\n" \
-            "${k},${n},${b},${APPROACH},${temp_drive},${final_drive},ERROR,ERROR,ERROR,ERROR,ERROR,ERROR,ERROR,ERROR,ERROR" \
-            >> "$csv"
+          placeholder_row ERROR >> "$csv"
           rm -f "$log" "$time_log"
           drop_caches
           continue
@@ -279,6 +308,7 @@ for k in "${K_VALUES[@]}"; do
 
         parse_log "$log" "$time_log" \
           "$k" "$n" "$b" "$APPROACH" "$temp_drive" "$final_drive" \
+          "$t" "$mt" \
           >> "$csv"
         echo "  Row written → $csv"
 
@@ -302,7 +332,7 @@ for k in "${K_VALUES[@]}"; do
             safe_rm "$merged_file"
           else
             echo "  Moving '$merged_name' → $CEPH_DIR/"
-            safe_mv "$merged_file" "$CEPH_DIR/"
+            #safe_mv "$merged_file" "$CEPH_DIR/"
           fi
         else
           echo "  Warning: no merged file found in $final_drive" >&2
@@ -310,7 +340,9 @@ for k in "${K_VALUES[@]}"; do
 
         drop_caches
 
-      done  # drive pairs
+       done   # drive pairs
+      done  # -mt values
+     done   # -t values
     done    # B values
   done      # N values
 

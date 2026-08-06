@@ -14,13 +14,18 @@
 # then deleted from DEST_DIR to free space before the next run.
 #
 # CSV columns:
-#   B_mb, N, K, A, F, T, compute_threads_t, read_batch_R,
+#   B_mb, N, K, A, F, T, compute_threads_t, merge_io_threads_mt, read_batch_R,
 #   file_size_mb, per_file_batch_mb, total_data_gb,
 #   total_batches, buckets_per_batch, expected_peak_ram_mb,
-#   read_time_s, write_time_s, compute_time_s,
+#   read_time_s, write_time_s, interleave_time_s,
 #   total_merge_time_s, total_merge_time_min,
 #   avg_throughput_mbs, avg_batch_throughput_mbs,
-#   peak_memory_mb, wall_time_s, wall_time_min
+#   peak_rss_mb, wall_time_s, wall_time_min
+#
+# interleave_time_s is the memcpy transpose, reported directly by merge.c.
+# read/write/interleave OVERLAP in the pipelined approach and are not expected
+# to sum to total_merge_time_s.
+# expected_peak_ram_mb is modelled (2xB); peak_rss_mb is measured.
 #
 # Usage: ./merge_benchmark.sh
 set -euo pipefail
@@ -33,15 +38,23 @@ SOURCE_DIR=/ceph/sfatunmbi/singleplots
 
 DEST_DIR=/data-m/sfatunmbi/plots
 
-CEPH_DIR=/ceph/sfatunmbi/mergedplots
+CEPH_DIR=/ceph/sfatunmbi/singleplots
 
-CSV_DIR=/home/sfatunmbi/vaultx/newexperiments/epycbox/merge_benchmark
+CSV_DIR=/home/sfatunmbi/vaultx/newexperiments/epycbox/mergedlittlebs
 
 K=32
-B_VALUES=(32768 16384 8192 4096 2048 1024 512 256)
+B_VALUES=(32768)
 N_VALUES=(64)
 
-COMPUTE_THREADS=$(nproc)
+# Every (t, mt) pair is run for every (N, B) combination. Put more than one
+# value in either array to sweep it.
+# -mt used to be left unset here, which silently defaulted to nproc
+# (globals.c init_system_defaults). It is passed explicitly now so the value
+# lands in the CSV; nproc keeps the existing epycbox results reproducible.
+# Note the read loop is over N files, so -mt above N buys nothing.
+COMPUTE_THREADS_VALUES=($(nproc))   # -t  : threads for the interleave memcpy
+MERGE_IO_THREADS_VALUES=($(nproc))  # -mt : threads issuing reads across the N files
+
 READ_BATCH_SIZE=1024
 MERGE_APPROACH=pipelined
 
@@ -54,6 +67,8 @@ BIN="${ROOT_DIR}/vaultx"
 [[ -d "$SOURCE_DIR" ]] || { echo "Error: SOURCE_DIR '$SOURCE_DIR' does not exist." >&2; exit 1; }
 [[ ${#B_VALUES[@]} -ge 1 ]] || { echo "Error: B_VALUES must have at least one entry." >&2; exit 1; }
 [[ ${#N_VALUES[@]} -ge 1 ]] || { echo "Error: N_VALUES must have at least one entry." >&2; exit 1; }
+[[ ${#COMPUTE_THREADS_VALUES[@]} -ge 1 ]] || { echo "Error: COMPUTE_THREADS_VALUES must have at least one entry." >&2; exit 1; }
+[[ ${#MERGE_IO_THREADS_VALUES[@]} -ge 1 ]] || { echo "Error: MERGE_IO_THREADS_VALUES must have at least one entry." >&2; exit 1; }
 
 
 drop_caches() {
@@ -75,17 +90,29 @@ safe_cp() {
 
 n_b=${#B_VALUES[@]}
 n_n=${#N_VALUES[@]}
+n_t=${#COMPUTE_THREADS_VALUES[@]}
+n_mt=${#MERGE_IO_THREADS_VALUES[@]}
 
-if (( n_b > 1 && n_n == 1 )); then
-  exp_mode="vary_B"
-  csv_label="varyB_N${N_VALUES[0]}_K${K}"
-elif (( n_b == 1 && n_n > 1 )); then
-  exp_mode="vary_N"
-  csv_label="B${B_VALUES[0]}_varyN_K${K}"
+# Name the CSV after whichever knobs actually vary, so a -t/-mt sweep no longer
+# lands in a file called "varyB_varyN".
+varied=()
+(( n_b  > 1 )) && varied+=("varyB")   || true
+(( n_n  > 1 )) && varied+=("varyN")   || true
+(( n_t  > 1 )) && varied+=("varyT")   || true
+(( n_mt > 1 )) && varied+=("varyMT")  || true
+
+if (( ${#varied[@]} == 0 )); then
+  exp_mode="single"
+  csv_label="B${B_VALUES[0]}_N${N_VALUES[0]}_t${COMPUTE_THREADS_VALUES[0]}_mt${MERGE_IO_THREADS_VALUES[0]}_K${K}"
 else
-  exp_mode="vary_BN"
-  csv_label="varyB_varyN_K${K}"
+  exp_mode=$(IFS=_; echo "${varied[*]}")
+  csv_label="${exp_mode}_K${K}"
+  (( n_b  == 1 )) && csv_label="B${B_VALUES[0]}_${csv_label}"   || true
+  (( n_n  == 1 )) && csv_label="N${N_VALUES[0]}_${csv_label}"   || true
 fi
+
+total_runs=$(( n_b * n_n * n_t * n_mt ))
+current_run=0
 
 
 safe_mkdir "$DEST_DIR" "$CEPH_DIR" "$CSV_DIR"
@@ -93,7 +120,7 @@ safe_mkdir "$DEST_DIR" "$CEPH_DIR" "$CSV_DIR"
 CSV="${CSV_DIR}/merge_benchmark_${csv_label}.csv"
 
 printf '%s\n' \
-  "B_mb,N,K,A,F,T,compute_threads_t,read_batch_R,file_size_mb,per_file_batch_mb,total_data_gb,total_batches,buckets_per_batch,expected_peak_ram_mb,read_time_s,write_time_s,compute_time_s,total_merge_time_s,total_merge_time_min,avg_throughput_mbs,avg_batch_throughput_mbs,peak_memory_mb,wall_time_s,wall_time_min" \
+  "B_mb,N,K,A,F,T,compute_threads_t,merge_io_threads_mt,read_batch_R,file_size_mb,per_file_batch_mb,total_data_gb,total_batches,buckets_per_batch,expected_peak_ram_mb,read_time_s,write_time_s,interleave_time_s,total_merge_time_s,total_merge_time_min,avg_throughput_mbs,avg_batch_throughput_mbs,peak_rss_mb,wall_time_s,wall_time_min" \
   > "$CSV"
 
 echo ""
@@ -102,21 +129,27 @@ echo "  Experiment mode  : $exp_mode"
 echo "  K                : $K"
 echo "  B values (MB)    : ${B_VALUES[*]}"
 echo "  N values         : ${N_VALUES[*]}"
+echo "  Compute threads  : ${COMPUTE_THREADS_VALUES[*]} (-t)"
+echo "  Merge IO threads : ${MERGE_IO_THREADS_VALUES[*]} (-mt)"
 echo "  Source dir       : $SOURCE_DIR"
 echo "  Dest dir         : $DEST_DIR"
 echo "  Ceph dir         : $CEPH_DIR"
-echo "  Compute threads  : $COMPUTE_THREADS (-t)"
 echo "  Read batch size  : $READ_BATCH_SIZE (-R)"
 echo "  Merge approach   : $MERGE_APPROACH (-A)"
+echo "  Total runs       : $total_runs"
 echo "  CSV              : $CSV"
 echo ""
 
 
 for n in "${N_VALUES[@]}"; do
   for b in "${B_VALUES[@]}"; do
+   for t in "${COMPUTE_THREADS_VALUES[@]}"; do
+    for mt in "${MERGE_IO_THREADS_VALUES[@]}"; do
+
+    current_run=$(( current_run + 1 ))
 
     echo "============================================================"
-    echo " N=$n  B=${b} MB  K=$K"
+    echo " [${current_run}/${total_runs}]  N=$n  B=${b} MB  t=$t  mt=$mt  K=$K"
     echo "============================================================"
 
     # ── Pre-run: verify enough subplots exist ─────────────────────────────
@@ -138,7 +171,7 @@ for n in "${N_VALUES[@]}"; do
     log=$(mktemp --suffix=".merge_bench.log")
 
     echo "  CMD: $BIN -P merge -k $K -n $n -F $SOURCE_DIR -T $DEST_DIR \\"
-    echo "             -B $b -t $COMPUTE_THREADS -R $READ_BATCH_SIZE -A $MERGE_APPROACH"
+    echo "             -B $b -t $t -mt $mt -R $READ_BATCH_SIZE -A $MERGE_APPROACH"
     echo ""
 
     wall_start_ms=$(date +%s%3N)
@@ -147,7 +180,7 @@ for n in "${N_VALUES[@]}"; do
     "$BIN" -P merge \
       -k "$K" -n "$n" \
       -F "$SOURCE_DIR" -T "$DEST_DIR" \
-      -B "$b" -t "$COMPUTE_THREADS" \
+      -B "$b" -t "$t" -mt "$mt" \
       -R "$READ_BATCH_SIZE" -A "$MERGE_APPROACH" \
       2>&1 | tee "$log"
     vaultx_exit=${PIPESTATUS[0]}
@@ -166,11 +199,17 @@ for n in "${N_VALUES[@]}"; do
 
     # ── Parse summary block ───────────────────────────────────────────────
     # Printed by merge.c at the very end of a successful merge:
-    #   Read Time: X.XXs
-    #   Write Time: X.XXs
-    #   Merge Time: X.XXs          ← this is total process wall time in merge.c
+    #   Read Time: X.XXs           ← per-batch reads across the N source files
+    #   Write Time: X.XXs          ← per-batch writes + final fsync/close
+    #   Interleave Time: X.XXs     ← the memcpy transpose, measured directly
+    #   Total Merge Time: X.XXs    ← whole merge() wall time
     #   Avg Throughput: X.XX MB/s
-    #   Peak Memory Usage: XXX MB
+    #   Expected Peak RAM: XXX MB  ← modelled 2xB, NOT a measurement
+    #   Peak Memory Usage: X.XX MB ← real post-merge high-water RSS
+    #
+    # These no longer have to sum to the total: reads/writes/interleave overlap
+    # in the pipelined approach, and the gap between their sum and the total is
+    # itself the useful signal. Do not re-derive one from the others.
 
     read_time_s=$(grep "^Read Time:" "$log" 2>/dev/null | head -1 \
       | awk '{v=$3; gsub(/s$/,"",v); printf "%.4f", v+0}') || true
@@ -178,13 +217,18 @@ for n in "${N_VALUES[@]}"; do
     write_time_s=$(grep "^Write Time:" "$log" 2>/dev/null | head -1 \
       | awk '{v=$3; gsub(/s$/,"",v); printf "%.4f", v+0}') || true
 
-    total_merge_time_s=$(grep "^Merge Time:" "$log" 2>/dev/null | head -1 \
+    interleave_time_s=$(grep "^Interleave Time:" "$log" 2>/dev/null | head -1 \
       | awk '{v=$3; gsub(/s$/,"",v); printf "%.4f", v+0}') || true
+
+    total_merge_time_s=$(grep "^Total Merge Time:" "$log" 2>/dev/null | head -1 \
+      | awk '{v=$4; gsub(/s$/,"",v); printf "%.4f", v+0}') || true
 
     # "Avg Throughput:" is not printed by vaultx; derive from total data / merge time
     avg_throughput_mbs=""
 
-    peak_memory_mb=$(grep "^Peak Memory Usage:" "$log" 2>/dev/null | head -1 \
+    # Take the LAST match: vaultx.c prints a pre-merge RSS under this same
+    # label before merge() is even called, which is what this used to record.
+    peak_rss_mb=$(grep "^Peak Memory Usage:" "$log" 2>/dev/null | tail -1 \
       | awk '{printf "%.2f", $4+0}') || true
 
     # ── Parse config block ────────────────────────────────────────────────
@@ -231,8 +275,9 @@ for n in "${N_VALUES[@]}"; do
 
     read_time_s="${read_time_s:-NA}"
     write_time_s="${write_time_s:-NA}"
+    interleave_time_s="${interleave_time_s:-NA}"
     total_merge_time_s="${total_merge_time_s:-NA}"
-    peak_memory_mb="${peak_memory_mb:-NA}"
+    peak_rss_mb="${peak_rss_mb:-NA}"
     total_data_gb="${total_data_gb:-NA}"
     total_batches="${total_batches:-NA}"
     buckets_per_batch="${buckets_per_batch:-NA}"
@@ -251,15 +296,9 @@ for n in "${N_VALUES[@]}"; do
       total_merge_time_min="NA"
     fi
 
-    if [[ "$total_merge_time_s" != "NA" && "$read_time_s" != "NA" && "$write_time_s" != "NA" ]]; then
-      compute_time_s=$(awk "BEGIN {
-        ct = ${total_merge_time_s} - ${read_time_s} - ${write_time_s}
-        if (ct < 0) ct = 0
-        printf \"%.4f\", ct
-      }")
-    else
-      compute_time_s="NA"
-    fi
+    # interleave_time_s is parsed straight from merge.c now. It used to be
+    # derived as total - read - write, which forced the three phases to sum to
+    # the total by construction and quietly absorbed the unmeasured write time.
 
     # file_size_mb: total data / N files (not printed directly by vaultx)
     if [[ -n "$total_data_gb" && "$total_data_gb" != "NA" ]]; then
@@ -291,7 +330,7 @@ for n in "${N_VALUES[@]}"; do
         echo "  '$merged_name' already in Ceph — deleting local copy."
       else
         echo "  Copying '$merged_name' → $CEPH_DIR/ ..."
-        safe_cp "$merged_file" "$CEPH_DIR/"
+        #safe_cp "$merged_file" "$CEPH_DIR/"
         echo "  Copy done."
       fi
       safe_rm "$merged_file"
@@ -306,20 +345,22 @@ for n in "${N_VALUES[@]}"; do
 
     # ── Append row to CSV ─────────────────────────────────────────────────
 
-    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
       "$b" "$n" "$K" \
       "$MERGE_APPROACH" "$SOURCE_DIR" "$DEST_DIR" \
-      "$COMPUTE_THREADS" "$READ_BATCH_SIZE" \
+      "$t" "$mt" "$READ_BATCH_SIZE" \
       "$file_size_mb" "$per_file_batch_mb" "$total_data_gb" \
       "$total_batches" "$buckets_per_batch" "$expected_peak_ram_mb" \
-      "$read_time_s" "$write_time_s" "$compute_time_s" \
+      "$read_time_s" "$write_time_s" "$interleave_time_s" \
       "$total_merge_time_s" "$total_merge_time_min" \
       "$avg_throughput_mbs" "$avg_batch_throughput_mbs" \
-      "$peak_memory_mb" "$wall_time_s" "$wall_time_min" \
+      "$peak_rss_mb" "$wall_time_s" "$wall_time_min" \
       >> "$CSV"
 
     echo "  Row written → $CSV"
     echo ""
+    done
+   done
   done
 done
 

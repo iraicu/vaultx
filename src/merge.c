@@ -9,6 +9,17 @@
 #define BPRINTF(...) \
   do { if (!BENCHMARK) printf(__VA_ARGS__); } while (0)
 
+#include <sys/resource.h>
+
+/* Real high-water RSS of the process, in MB. vaultx.c samples peak memory
+   *before* merge() is called, so its figure never includes the merge buffers;
+   this is sampled after the merge so the reported peak actually covers them. */
+static double merge_peak_rss_mb(void) {
+  struct rusage ru;
+  if (getrusage(RUSAGE_SELF, &ru) != 0) return -1.0;
+  return (double)ru.ru_maxrss / 1024.0; /* ru_maxrss is KB on Linux */
+}
+
 #if defined(__linux__)
 #include <sched.h>
 #include <sys/syscall.h>
@@ -565,8 +576,12 @@ int merge() {
         bytes_written += res;
       }
       double now = omp_get_wtime();
-      double read_time = write_start_time - batch_start_time;
-      double write_time = now - write_start_time;
+      /* These two used to be locals shadowing the outer read_time/write_time,
+         so write_total_time never saw a per-batch write -- it only ever picked
+         up the final fsync, and the whole write cost silently landed in the
+         interleave accumulator. read_time is already correct from above. */
+      write_time = now - write_start_time;
+      write_total_time += write_time;
       double batch_time = now - batch_start_time;
       double total_time = now - start_time;
       double batch_throughput_MBps =
@@ -871,8 +886,11 @@ int merge() {
 
   double process_time = omp_get_wtime() - start_time;
 
-  if (merge_total_time == 0) {
+  /* Approaches that do not time the interleave directly (serial) leave the
+     accumulator at zero; back it out of the total instead. */
+  if (merge_total_time <= 0.0) {
     merge_total_time = process_time - read_total_time - write_total_time;
+    if (merge_total_time < 0.0) merge_total_time = 0.0;
   }
 
   /* Set global merge timing variables so the caller can print an aggregate
@@ -901,11 +919,17 @@ int merge() {
     BPRINTF("Merge Approach: %s\n", aname);
     BPRINTF("Source: %s\n", SOURCE);
     BPRINTF("Destination: %s\n", DESTINATION);
-    BPRINTF("Read Time: %.2fs\n", read_total_time);
-    BPRINTF("Write Time: %.2fs\n", write_total_time);
+    BPRINTF("Read Time: %.2fs\n", merge_read_time);
+    BPRINTF("Write Time: %.2fs\n", merge_write_time);
+    BPRINTF("Interleave Time: %.2fs\n", merge_compute_time);
+    BPRINTF("Total Merge Time: %.2fs\n", merge_total_time);
+    /* Deprecated alias: "Merge Time" has always carried the *total*, not the
+       interleave. Kept so older parsers keep reading what they always read. */
     BPRINTF("Merge Time: %.2fs\n", merge_total_time);
     BPRINTF("Avg Throughput: %.2f MB/s\n", avg_throughput);
-    BPRINTF("Peak Memory Usage: %.0f MB\n\n\n", peak_mem_mb);
+    /* Modelled, not measured -- 2xB double buffer. */
+    BPRINTF("Expected Peak RAM: %.0f MB\n", peak_mem_mb);
+    BPRINTF("Peak Memory Usage: %.2f MB\n\n\n", merge_peak_rss_mb());
   }
 
   if (MERGE_APPROACH != 2) {
