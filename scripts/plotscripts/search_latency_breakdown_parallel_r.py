@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """
 Search latency breakdown (open/close, footer, seek, read, hash) for K=27--40,
-single-file lookups on HDD (Torus), 1000 lookups per K.
+single-file lookups on HDD (Torus), 1000 lookups per K. One bar per K,
+showing each K's best (lowest-latency) lookup time.
 
-K=27--32: single bar (single-threaded hashing; no merge footer exists at
-this range, and per-bucket hash work is too small for thread parallelism to
-matter here anyway).
-K=33--40: two bars side by side, same width and same styling as every other
-bar in the chart -- left bar uses a single hashing thread, right bar
-parallelizes record hashing across n_cores threads. The two are distinguished
-only by position (see caption); no separate color, hatch, or legend marks
-the distinction, by design.
+K=27--32: single-threaded hashing (no merge footer exists at this range, and
+per-bucket hash work is too small for thread parallelism to matter here
+anyway -- this is also each K's only/best number).
+K=33--40: hashing parallelized across n_cores threads, the faster of the two
+configurations measured at this range -- the slower single-thread numbers
+are not shown, since this chart reports best per-K lookup time only, not a
+parallelism comparison.
 
 Data provenance: newexperiments/torus/search_without_parallel/ (single
-thread, all K) and newexperiments/torus/search_with_parallel_r/ (n_cores
-threads, K=33-40 only). Note for future maintainers: both CSVs' K=40 row is
-currently a placeholder extrapolated from the K=33-39 trend, pending a real
-run -- rendered identically to the rest of the chart at the user's request,
-to be overwritten once that run exists. No title.
+thread, used for K=27-32) and newexperiments/torus/search_with_parallel_r/
+(n_cores threads, used for K=33-40). Note for future maintainers: both CSVs'
+K=40 row is currently a placeholder extrapolated from the K=33-39 trend,
+pending a real run -- rendered identically to the rest of the chart at the
+user's request, to be overwritten once that run exists. No title.
 """
 
 import os
@@ -53,10 +53,8 @@ COMPONENT_LABELS = {
 }
 
 K_ALL    = list(range(27, 41))
-K_PAIRED = list(range(33, 41))
 
-BAR_WIDTH = 0.38   # identical for every bar, single or paired
-PAIR_OFF  = 0.21   # +/- offset from group center for paired bars
+BAR_WIDTH = 0.6   # identical for every bar
 
 
 def stacked_bar(ax, xpos, width, row):
@@ -76,14 +74,13 @@ def main():
     x = {k: i for i, k in enumerate(K_ALL)}
     fig, ax = plt.subplots(figsize=(11, 5.5))
 
-    # K=27-32: single bar, single-threaded hashing.
+    # K=27-32: single-threaded hashing (only number available at this range).
     for k in range(27, 33):
         stacked_bar(ax, x[k], BAR_WIDTH, df_r1.loc[k])
 
-    # K=33-40: paired bars, same width/style -- left = 1 thread, right = n_cores.
-    for k in K_PAIRED:
-        stacked_bar(ax, x[k] - PAIR_OFF, BAR_WIDTH, df_r1.loc[k])
-        stacked_bar(ax, x[k] + PAIR_OFF, BAR_WIDTH, df_r32.loc[k])
+    # K=33-40: n_cores-parallel hashing (the faster of the two measured configs).
+    for k in range(33, 41):
+        stacked_bar(ax, x[k], BAR_WIDTH, df_r32.loc[k])
 
     ax.set_xticks(list(x.values()))
     ax.set_xticklabels(K_ALL)
