@@ -6,11 +6,9 @@ best per-plot times in chia_plotter_best_times.py.
 
 Each Chia CPU plotter produces an uncompressed K=32 plot of ~102 GB, so
 100 TB (100,000 GB) requires ceil(100000 / 102) = ~980.4 such plots, i.e.
-~980.4 * 2^32 total records. VX plots hold the same 2^32 records per K=32
-vault but occupy only ~32 GB, so matching the same record count needs the
-same number of VX plots (~980.4) -- far less than 100 TB of space (~31.4 TB).
+~980.4 * 2^32 total records.
 Bars grouped by plotter across 4 machines, same colors/order as
-chia_plotter_best_times.py. Log-scale y-axis (values span ~1 to ~430 days).
+chia_plotter_best_times.py. Log-scale y-axis (values span ~6 to ~430 days).
 """
 
 import os
@@ -35,15 +33,6 @@ MIN_PER_DAY       = 1440.0
 # Best per-plot K=32 time (minutes), identical source data to
 # chia_plotter_best_times.py -- converted here to days-to-fill-100TB.
 GROUPS = [
-    {
-        "plotter": "VX",
-        "data": [
-            ("8Socket",   1.77),
-            ("Epycbox",  3.77),
-            ("Torus",   6.4),
-            ("OPI5",    33.3),
-        ],
-    },
     {
         "plotter": "Bladebit",
         "data": [
@@ -74,7 +63,6 @@ GROUPS = [
 ]
 
 COLORS = {
-    "VX":       "#1F77B4",
     "ChiaPOS":  "#D62728",
     "Madmax":   "#FF7F0E",
     "Bladebit": "#2CA02C",
@@ -99,7 +87,7 @@ def main():
         group_centers.append(float(np.mean(xs)))
         offset += N_BARS + GROUP_GAP
 
-    fig, ax = plt.subplots(figsize=(15, 6))
+    fig, ax = plt.subplots(figsize=(12, 6))
     ax.set_yscale("log")
 
     for g_idx, group in enumerate(GROUPS):
@@ -130,8 +118,8 @@ def main():
                 color=COLORS[group["plotter"]], transform=trans, clip_on=False)
 
     ax.set_xlim(-0.7, max(all_xs) + 0.7)
-    ax.set_ylim(0.5, 1000)
-    ax.set_ylabel("Time to reach 100 TB-equivalent records (days, log scale)", fontsize=10.5)
+    ax.set_ylim(1, 1000)
+    ax.set_ylabel("Time to fill a 100 TB reservation (days, log scale)", fontsize=10.5)
     ax.grid(axis="y", which="major", linestyle="--", alpha=0.4, zorder=0)
     ax.text(0.99, 0.97, "↓ lower is better",
             transform=ax.transAxes, fontsize=8, ha="right", va="top",
@@ -141,7 +129,6 @@ def main():
         mpatches.Patch(color=COLORS["Bladebit"], label="Bladebit"),
         mpatches.Patch(color=COLORS["Madmax"],   label="Madmax"),
         mpatches.Patch(color=COLORS["ChiaPOS"],  label="ChiaPOS"),
-        mpatches.Patch(color=COLORS["VX"],       label="VX"),
     ]
     ax.legend(handles=legend_patches, fontsize=9, loc="upper left")
 

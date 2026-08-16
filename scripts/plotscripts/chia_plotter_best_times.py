@@ -26,15 +26,6 @@ os.makedirs(PAPER_IMAGES_DIR, exist_ok=True)
 # configuration found for each machine/plotter (documented in the paper).
 GROUPS = [
     {
-        "plotter": "VX",
-        "data": [
-            ("8Socket",   1.77),
-            ("Epycbox",  3.77),
-            ("Torus",   6.4),
-            ("OPI5",    33.3),
-        ],
-    },
-    {
         "plotter": "Bladebit",
         "data": [
             ("8Socket",   9.33),
@@ -64,7 +55,6 @@ GROUPS = [
 ]
 
 COLORS = {
-    "VX":       "#1F77B4",
     "ChiaPOS":  "#D62728",
     "Madmax":   "#FF7F0E",
     "Bladebit": "#2CA02C",
@@ -88,7 +78,7 @@ def main():
         group_centers.append(float(np.mean(xs)))
         offset += N_BARS + GROUP_GAP
 
-    fig, ax = plt.subplots(figsize=(15, 6))
+    fig, ax = plt.subplots(figsize=(12, 6))
 
     for g_idx, group in enumerate(GROUPS):
         plotter = group["plotter"]
@@ -140,7 +130,6 @@ def main():
         mpatches.Patch(color=COLORS["Bladebit"], label="Bladebit"),
         mpatches.Patch(color=COLORS["Madmax"],   label="Madmax"),
         mpatches.Patch(color=COLORS["ChiaPOS"],  label="ChiaPOS"),
-        mpatches.Patch(color=COLORS["VX"],       label="VX"),
     ]
     ax.legend(handles=legend_patches, fontsize=9, loc="upper left")
 
